@@ -7,7 +7,6 @@ cmake_minimum_required(VERSION 2.8)
 include(./toolchain/arm-gcc-toolchain.cmake)
 
 set(TARGET "toolchain-demo")
-set(COMPILE_CONFIG "stm32")
 
 ##### Project Setup #####
 project(${TARGET} C CXX ASM)
@@ -32,7 +31,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/drivers/BSP)
 add_subdirectory(${PROJECT_SOURCE_DIR}/drivers/CMSIS)
 add_subdirectory(${PROJECT_SOURCE_DIR}/drivers/HAL)
 
-target_link_libraries(${TARGET} bsp cmsis hal ${LIKER_LIBS_FLAGS})
+target_link_libraries(${TARGET} bsp cmsis hal ${LINKER_LIBS_FLAGS})
 
 # Add post build commands
 include(${PROJECT_SOURCE_DIR}/toolchain/post-build.cmake)

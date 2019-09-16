@@ -20,8 +20,8 @@ endif()
 
 # Set compiler flags
 # Common arguments
-add_definitions("-D${DEVICE} -D${CPU_TYPE_U}xx -D${CPU_FAMILY_U} -D${CPU_FAMILY_A} ${OPTIONAL_DEBUG_SYMBOLS}")
-set(COMMON_DEFINITIONS "-Wextra -Wall -Wno-unused-parameter -mcpu=cortex-${CPU_TYPE} -mthumb -fno-builtin -ffunction-sections -fdata-sections -fomit-frame-pointer ${OPTIONAL_DEBUG_SYMBOLS}")
+add_definitions("-D${DEVICE} -D${CPU_TYPE_U}xx -D${CPU_FAMILY_U} -D${CPU_FAMILY_A}")
+set(COMMON_DEFINITIONS "-Wextra -Wall -Wno-unused-parameter -mcpu=cortex-${CPU_TYPE} -mthumb -fno-builtin -ffunction-sections -fdata-sections -fomit-frame-pointer")
 set(DEPFLAGS "-MMD -MP")
 
 # Enable FLTO optimization if required
@@ -39,7 +39,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${COMMON_DEFINITIONS} -Xlinker -T ${LINKER_FILE} -Wl
 
 
 # Set default inclusions
-set(LIKER_LIBS_FLAGS ${LIKER_LIBS_FLAGS} -lgcc -lc -lnosys -lgcc -lc -lnosys)
+set(LINKER_LIBS_FLAGS ${LINKER_LIBS_FLAGS} -lgcc -lc -lnosys )
 
 # Debug Flags
 set(COMMON_DEBUG_FLAGS "-O0 -g -gdwarf-2")
