@@ -3,6 +3,8 @@
 # Set minimum CMake version
 cmake_minimum_required(VERSION 2.8)
 
+include(./toolchain/variables.cmake)
+
 # Set the compiler (must be prior to project setup)
 include(./toolchain/arm-gcc-toolchain.cmake)
 

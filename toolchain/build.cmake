@@ -1,19 +1,6 @@
-set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Release or debug compilation")
-set_property(
-  CACHE CMAKE_BUILD_TYPE
-  PROPERTY STRINGS
-  "Debug" "Release"
-)
-
-set(LINKER_FILE "" CACHE FILEPATH  "LD Linker file path")
-if(NOT LINKER_FILE OR LINKER_FILE STREQUAL "")
-  message("LINKER_FILE variable not defined. Provide a valid linker file path")
-endif()
-
 include(${PROJECT_SOURCE_DIR}/toolchain/stm32.cmake)
 
 # Add optional -D compiler definitions
-set(OPTIONAL_DEFINITIONS "" CACHE STRING "Optional compiler definitions")
 if(NOT OPTIONAL_DEFINITIONS STREQUAL "")
  add_definitions(${OPTIONAL_DEFINITIONS})
 endif()
