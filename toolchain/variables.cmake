@@ -4,6 +4,9 @@ set_property(
   PROPERTY STRINGS
   "Debug" "Release"
 )
+
+message("Build type: ${CMAKE_BUILD_TYPE}")
+
 set(STARTUP_FILE "" CACHE FILEPATH "Startup file path")
 set(LINKER_FILE "" CACHE FILEPATH  "LD Linker file path")
 # Optional -D compiler definitions
@@ -19,8 +22,10 @@ elseif(NOT IS_ABSOLUTE ${LINKER_FILE})
 endif()
 if(NOT EXISTS "${LINKER_FILE}")
     message(FATAL_ERROR "LINKER_FILE path does not exist")
+else()
+    message("Linker file: ${LINKER_FILE}")
 endif()
-
+  
 
 if(NOT STARTUP_FILE OR STARTUP_FILE STREQUAL "")
   message(FATAL_ERROR "STARTUP_FILE variable not defined. Provide a valid startup file path")
@@ -29,6 +34,8 @@ elseif(NOT IS_ABSOLUTE ${STARTUP_FILE})
 endif()
 if(NOT EXISTS "${STARTUP_FILE}")
     message(FATAL_ERROR "STARTUP_FILE path does not exist")
+else()
+  message("Startup file: ${STARTUP_FILE}")
 endif()
 
 

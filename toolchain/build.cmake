@@ -19,10 +19,10 @@ else()
 endif()
 
 # Build flags
-set(CMAKE_C_FLAGS "-std=gnu99 ${COMMON_DEFINITIONS} --specs=nano.specs ${DEPFLAGS}")
-set(CMAKE_CXX_FLAGS "${COMMON_DEFINITIONS} --specs=nano.specs ${DEPFLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu99 ${COMMON_DEFINITIONS} ${FPU_OPTIONS} --specs=nano.specs ${DEPFLAGS}")
+set(CMAKE_CXX_FLAGS "${COMMON_DEFINITIONS} ${FPU_OPTIONS} --specs=nano.specs ${DEPFLAGS}")
 set(CMAKE_ASM_FLAGS "${COMMON_DEFINITIONS} --specs=nano.specs -x assembler-with-cpp")
-set(CMAKE_EXE_LINKER_FLAGS "${COMMON_DEFINITIONS} -Xlinker -T ${LINKER_FILE} -Wl,-Map=${CMAKE_PROJECT_NAME}.map -Wl,--gc-sections")
+set(CMAKE_EXE_LINKER_FLAGS "${COMMON_DEFINITIONS} ${FPU_OPTIONS} -Xlinker -T ${LINKER_FILE} -Wl,-Map=${CMAKE_PROJECT_NAME}.map -Wl,--gc-sections")
 
 
 # Set default inclusions
