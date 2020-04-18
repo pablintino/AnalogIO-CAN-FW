@@ -4,3 +4,6 @@
 [submodule "external/FreeRTOS/freertos-kernel"]
 	path = external/FreeRTOS/freertos-kernel
 	url = git@github.com:FreeRTOS/FreeRTOS-Kernel.git
+[submodule "external/STM32Cube/STM32Cube-F3-Src"]
+	path = external/STM32Cube/STM32Cube-F3-Src
+	url = git@github.com:STMicroelectronics/STM32CubeF3.git
