@@ -44,10 +44,10 @@ set(CMAKE_EXE_LINKER_FLAGS      "${CMAKE_EXE_LINKER_FLAGS}"         CACHE STRING
 
 
 # Just print the actual value of the flags
-message("-- CMAKE_C_FLAGS -> ${CMAKE_C_FLAGS}")
-message("-- CMAKE_CXX_FLAGS -> ${CMAKE_CXX_FLAGS}")
-message("-- CMAKE_ASM_FLAGS -> ${CMAKE_ASM_FLAGS}")
-message("-- CMAKE_EXE_LINKER_FLAGS -> ${CMAKE_EXE_LINKER_FLAGS}")
+message(STATUS "CMAKE_C_FLAGS -> ${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS -> ${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_ASM_FLAGS -> ${CMAKE_ASM_FLAGS}")
+message(STATUS "CMAKE_EXE_LINKER_FLAGS -> ${CMAKE_EXE_LINKER_FLAGS}")
 
 # Debug Flags
 set(COMMON_DEBUG_FLAGS "-O0 -g -gdwarf-2")
@@ -64,3 +64,5 @@ set(CMAKE_ASM_FLAGS_RELEASE "${COMMON_RELEASE_FLAGS}")
 # Set default inclusions
 link_libraries(-lgcc -lc -lnosys)
 
+# Add CPU definitions
+add_definitions(${CPU_DEFINITIONS})

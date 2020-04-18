@@ -1,12 +1,28 @@
 set(CMAKE_SYSTEM_PROCESSOR ARM)
 
-set(DEVICE "" CACHE STRING "STM32 device full name")
-message("-- Device: ${DEVICE}")
+set(DEVICE "" CACHE STRING "MCU device full name")
+message(STATUS "Device: ${DEVICE}")
 
 if("${DEVICE}" STREQUAL "")
-    message(FATAL_ERROR "-- No processor defined")
+    message(FATAL_ERROR "No processor defined")
 endif()
 
+# Verify if the MCU is a STM32
+if(NOT DEVICE MATCHES "^STM32?")
+    message(FATAL_ERROR "The given DEVICE is not a STM32 part. Curremtly only SMT32 parts are supported")
+endif()
+
+# Extract STM32 family from MCU part
+string(REGEX REPLACE "^[sS][tT][mM]32(([fF][0-47])|([hH]7)|([lL][0-14])|([tT])|([wW])).+$" "\\1" CPU_STM32_FAMILY ${DEVICE})
+string(TOUPPER ${CPU_STM32_FAMILY} CPU_STM32_FAMILY)
+set(CPU_STM32_FAMILY             "${CPU_STM32_FAMILY}"                CACHE STRING "STM32 family")
+
+# Check if the part is a supported one
+set(STM32_SUPPORTED_FAMILIES L0 L1 L4 F0 F1 F2 F3 F4 F7 H7 CACHE INTERNAL "STM32 supported families")
+list(FIND STM32_SUPPORTED_FAMILIES "${CPU_STM32_FAMILY}" FAMILY_INDEX)
+if(FAMILY_INDEX EQUAL -1)
+    message(FATAL_ERROR "Invalid/unsupported STM32 family: ${CPU_STM32_FAMILY}")
+endif()
 
 string(TOUPPER ${DEVICE} DEVICE_U)
 string(TOLOWER ${DEVICE} DEVICE_L)
@@ -14,17 +30,13 @@ string(TOLOWER ${DEVICE} DEVICE_L)
 # Determine device family
 string(REGEX MATCH "^(STM32[FL][0-9])" CPU_FAMILY_U "${DEVICE_U}")
 string(TOLOWER ${CPU_FAMILY_U} CPU_FAMILY_L)
-message("-- Family: ${CPU_FAMILY_U}")
+message(STATUS "Family: ${CPU_FAMILY_U}")
 
-# Generic families
-string(REGEX MATCH "^(STM32[FL][0-9][0-9][0-9])([A-Z])([A-Z])" CPU_FAMILY_MATCH "${DEVICE_U}")
-set(CPU_FAMILY_A "${CMAKE_MATCH_1}x${CMAKE_MATCH_3}")
-message("-- Family Match: ${CPU_FAMILY_A}")
 
 # Determine short device type
 string(REGEX MATCH "^(STM32[FL][0-9][0-9][0-9])" CPU_TYPE_U "${DEVICE_U}")
 string(TOLOWER ${CPU_TYPE_U} CPU_TYPE_L)
-message("-- Type: ${CPU_TYPE_U}")
+message(STATUS "Type: ${CPU_TYPE_U}")
 
 
 # Set CPU type for compiler
@@ -43,9 +55,9 @@ elseif(${CPU_FAMILY_U} STREQUAL "STM32L0")
 elseif(${CPU_FAMILY_U} STREQUAL "STM32L1")
     set(CPU_TYPE "m3")
 else()
-    message(FATAL_ERROR "-- Unrecognised device family: ${CPU_FAMILY_U}")
+    message(FATAL_ERROR "Unrecognised device family: ${CPU_FAMILY_U}")
 endif()
 
 # Add common GLOBAL CPU definitions (all targets)
-list(APPEND CPU_DEFINITIONS "${CPU_TYPE_U}xx" "${CPU_FAMILY_U}" "${CPU_FAMILY_A}")
+list(APPEND CPU_DEFINITIONS -D${DEVICE} -D${CPU_TYPE_U}xx -D${CPU_FAMILY_U})
 SET(CPU_DEFINITIONS ${CPU_DEFINITIONS})
