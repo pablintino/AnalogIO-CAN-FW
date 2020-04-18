@@ -6,12 +6,12 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR ARM)
 
 # Find GCC for ARM
-include(find_compiler)
-find_arm_compiler(ARM_COMPILER_CC arm-none-eabi-gcc)
-find_arm_compiler(ARM_COMPILER_CXX arm-none-eabi-g++)
-find_arm_compiler(ARM_OBJDUMP_BIN arm-none-eabi-objdump)
-find_arm_compiler(ARM_OBJCP_BIN arm-none-eabi-objcopy)
-find_arm_compiler(ARM_OBJSIZE_BIN arm-none-eabi-size)
+include(find-compiler)
+find_arm_executable(ARM_COMPILER_CC arm-none-eabi-gcc)
+find_arm_executable(ARM_COMPILER_CXX arm-none-eabi-g++)
+find_arm_executable(ARM_OBJDUMP_BIN arm-none-eabi-objdump)
+find_arm_executable(ARM_OBJCP_BIN arm-none-eabi-objcopy)
+find_arm_executable(ARM_OBJSIZE_BIN arm-none-eabi-size)
 
 
 # Get GCC binaries path

@@ -1,5 +1,5 @@
 # Add FPU options
-if(DEFINED CPU_FPU_ISA AND NOT &{CPU_FPU_ISA} STREQUAL "")
+if(DEFINED CPU_FPU_ISA AND NOT ${CPU_FPU_ISA} STREQUAL "")
     set(FPU_OPTIONS "-mfpu=${CPU_FPU_ISA} -mfloat-abi=softfp")
 else()
     set(FPU_OPTIONS "")
