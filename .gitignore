@@ -3,3 +3,7 @@ build/
 
 #Ignore vscode setting directory
 .vscode/
+
+#Ignore idea based editors and their builds
+.idea/
+cmake-build*
