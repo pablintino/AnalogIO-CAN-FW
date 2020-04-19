@@ -1,0 +1,7 @@
+device @TARGET_DEVICE@
+if swd
+speed auto
+loadfile @TARGET_EXECUTABLE_HEX@
+r
+g
+q
