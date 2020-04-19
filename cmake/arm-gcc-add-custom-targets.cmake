@@ -1,7 +1,7 @@
 function(add_binary_build_targets EXECUTABLE)
   get_filename_component(EXEC_NAME ${EXECUTABLE} NAME_WE)
-  add_custom_target(build-hex DEPENDS ${TARGET} COMMAND ${CMAKE_OBJCOPY} -Oihex ${EXECUTABLE} ${EXEC_NAME}.hex)
-  add_custom_target(build-bin DEPENDS ${TARGET} COMMAND ${CMAKE_OBJCOPY} -Obinary ${EXECUTABLE} ${EXEC_NAME}.bin)
+  add_custom_target(build-hex DEPENDS ${EXECUTABLE} COMMAND ${CMAKE_OBJCOPY} -Oihex ${EXECUTABLE} ${EXEC_NAME}.hex)
+  add_custom_target(build-bin DEPENDS ${EXECUTABLE} COMMAND ${CMAKE_OBJCOPY} -Obinary ${EXECUTABLE} ${EXEC_NAME}.bin)
 endfunction()
 
 function(add_target_size_print_targets TARGET)
