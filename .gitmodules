@@ -4,3 +4,6 @@
 [submodule "external/STM32Cube/STM32Cube-F3-Src"]
 	path = external/STM32Cube/STM32Cube-F3-Src
 	url = git@github.com:STMicroelectronics/STM32CubeF3.git
+[submodule "external/uCOS-III/uCOS-III-kernel"]
+	path = external/uCOS-III/uCOS-III-kernel
+	url = git@github.com:SiliconLabs/uC-OS3.git
