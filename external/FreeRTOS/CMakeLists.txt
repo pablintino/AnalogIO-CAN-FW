@@ -20,7 +20,7 @@ endif()
 if(NOT EXISTS "${FREERTOS_BASE_DIR}/tasks.c")
     message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 else()
-    set(FREERTOS_BASE_DIR "${FREERTOS_BASE_DIR}" CACHE FILEPATH "linker flags")
+    set(FREERTOS_BASE_DIR "${FREERTOS_BASE_DIR}" CACHE FILEPATH "FreeRTOS base directory")
 endif()
 
 
