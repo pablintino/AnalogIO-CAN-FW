@@ -7,3 +7,9 @@
 [submodule "external/uCOS-III/uCOS-III-kernel"]
 	path = external/uCOS-III/uCOS-III-kernel
 	url = git@github.com:SiliconLabs/uC-OS3.git
+[submodule "external/uCOS-III/uCOS-CPU"]
+	path = external/uCOS-III/uCOS-CPU
+	url = git@github.com:SiliconLabs/uC-CPU.git
+[submodule "external/uCOS-III/uCOS-LIB"]
+	path = external/uCOS-III/uCOS-LIB
+	url = git@github.com:SiliconLabs/uC-LIB.git

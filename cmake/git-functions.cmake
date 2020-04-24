@@ -21,17 +21,22 @@
 ## SOFTWARE.
 
 
-function(add_binary_build_targets EXECUTABLE)
-  get_filename_component(EXEC_NAME ${EXECUTABLE} NAME_WE)
-  add_custom_target(build-hex DEPENDS ${EXECUTABLE} COMMAND ${CMAKE_OBJCOPY} -Oihex ${EXECUTABLE} ${EXEC_NAME}.hex)
-  add_custom_target(build-bin DEPENDS ${EXECUTABLE} COMMAND ${CMAKE_OBJCOPY} -Obinary ${EXECUTABLE} ${EXEC_NAME}.bin)
-endfunction()
+function(git_submodule_update BASE_DIR MODULE_NAME)
 
-function(add_target_size_print_targets TARGET)
-    if(RUNTIME_OUTPUT_DIRECTORY)
-        set(FILENAME "${RUNTIME_OUTPUT_DIRECTORY}/${TARGET}")
-    else()
-        set(FILENAME "${TARGET}")
+    find_package(Git QUIET)
+
+    if(GIT_FOUND AND EXISTS "${BASE_DIR}/.git")
+    # Update submodules as needed
+        option(GIT_SUBMODULE "Check submodules during build" ON)
+        if(GIT_SUBMODULE)
+            message(STATUS "${MODULE_NAME} submodule update")
+            execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                            WORKING_DIRECTORY ${BASE_DIR}
+                            RESULT_VARIABLE GIT_SUBMOD_RESULT)
+            if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+                message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+            endif()
+        endif()
     endif()
-    add_custom_command(TARGET ${TARGET} POST_BUILD COMMAND ${CMAKE_SIZE_UTIL} ${FILENAME})
+
 endfunction()
