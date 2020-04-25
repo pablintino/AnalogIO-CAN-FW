@@ -142,8 +142,8 @@ g_pfnVectors:
 	.word	SVC_Handler
 	.word	DebugMon_Handler
 	.word	0
-	.word	PendSV_Handler
-	.word	SysTick_Handler
+	.word	OS_CPU_PendSVHandler
+	.word	OS_CPU_SysTickHandler
 	.word	WWDG_IRQHandler
 	.word	PVD_IRQHandler
 	.word	TAMP_STAMP_IRQHandler
@@ -256,10 +256,6 @@ g_pfnVectors:
 	.weak	DebugMon_Handler
 	.thumb_set DebugMon_Handler,Default_Handler
 
-	.weak	PendSV_Handler
-	.thumb_set PendSV_Handler,Default_Handler
-
-	.weak	SysTick_Handler
 	.thumb_set SysTick_Handler,Default_Handler
 
 	.weak	WWDG_IRQHandler

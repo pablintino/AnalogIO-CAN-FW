@@ -54,7 +54,7 @@ if( NOT C_FLAGS_INITIALIZED )
   
     set(CMAKE_C_FLAGS "-std=gnu99 ${COMMON_GCC_COMPILE_OPTS} ${FPU_OPTIONS} --specs=nano.specs ${DEPFLAGS}")
     set(CMAKE_CXX_FLAGS "${COMMON_GCC_COMPILE_OPTS} ${FPU_OPTIONS} --specs=nano.specs  ${DEPFLAGS}")
-    set(CMAKE_ASM_FLAGS "${COMMON_GCC_COMPILE_OPTS} --specs=nano.specs -x assembler-with-cpp")
+    set(CMAKE_ASM_FLAGS "${COMMON_GCC_COMPILE_OPTS} ${FPU_OPTIONS} --specs=nano.specs -x assembler-with-cpp")
     set(CMAKE_EXE_LINKER_FLAGS "${FPU_OPTIONS} -Xlinker -T ${LD_LINKER_FILE} -Wl,-Map=output_linkage.map -Wl,--gc-sections")
   
 endif()

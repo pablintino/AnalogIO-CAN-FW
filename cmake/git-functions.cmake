@@ -25,7 +25,7 @@ function(git_submodule_update BASE_DIR MODULE_NAME)
 
     find_package(Git QUIET)
 
-    if(GIT_FOUND AND EXISTS "${BASE_DIR}/.git")
+    if(GIT_FOUND)
     # Update submodules as needed
         option(GIT_SUBMODULE "Check submodules during build" ON)
         if(GIT_SUBMODULE)

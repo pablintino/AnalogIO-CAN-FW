@@ -24,6 +24,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f3xx_hal.h"
 #include "stm32f3xx_nucleo_32.h"
+#include "bsp_clocks.h"
+#include "cpu.h"
+#include "cpu_core.h"
+#include "os.h"
+#include "app_cfg.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
