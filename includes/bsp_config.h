@@ -23,34 +23,11 @@
  *
  **/
 
+#ifndef BSP_CONFIG_H
+#define BSP_CONFIG_H
 
-#ifndef BSP_CLOCKS_H
-#define BSP_CLOCKS_H
-
-#include "stm32f3xx.h"
-#include "bsp_config.h"
-
-/* Actually supported HSE speeds **/
-#define BSP_HSE_4MHZ (4000000UL)
-#define BSP_HSE_8MHZ (8000000UL)
-#define BSP_HSE_16MHZ (16000000UL)
-
-/* Assumed to use 8MHz for all STM32 families... */
-#define BSP_HSI_VALUE    ((uint32_t)8000000)
+/* Indicates the usage of an external crystal oscillator */
+//#define BSP_USE_HSE_VALUE (4000000UL)
 
 
-#if !defined(BSP_USE_HSE_VALUE)
-#define BSP_CLK_SRC_SPEED BSP_HSI_VALUE
-#elif BSP_USE_HSE_VALUE != BSP_HSE_4MHZ && BSP_USE_HSE_VALUE != BSP_HSE_8MHZ &&  BSP_USE_HSE_VALUE != BSP_HSE_16MHZ
-    #error "BSP_USE_HSE_VALUE not currently supported by SW"
-#else
-#define BSP_CLK_SRC_SPEED BSP_USE_HSE_VALUE
-#endif
-
-#define BSP_SYSTICK_RATE 1000UL
-
-
-void BSP_configure_clocks(void);
-uint32_t BSP_get_system_freq(void);
-
-#endif
+#endif BSP_CONFIG_H
