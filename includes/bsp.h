@@ -23,11 +23,17 @@
  *
  **/
 
-#ifndef BSP_CONFIG_H
-#define BSP_CONFIG_H
 
-/* Indicates the usage of an external crystal oscillator */
-//#define BSP_USE_HSE_VALUE (4000000UL)
+#ifndef BSP_H
+#define BSP_H
+
+#include "bsp_config.h"
+#include "bsp_irq_manager.h"
+#include "bsp_clocks.h"
+#include "bsp_io.h"
 
 
-#endif  //BSP_CONFIG_H
+void BSP_init(void);
+
+
+#endif //BSP_H

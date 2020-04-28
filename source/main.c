@@ -49,22 +49,13 @@ static  void  AppTaskStart (void *p_arg)
     (void)p_arg;
 
     OS_ERR  err;
-    GPIO_InitTypeDef  GPIO_InitStruct;
 
-    BSP_configure_clocks();
-
+    BSP_init();
 
     LED3_GPIO_CLK_ENABLE();
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
-    GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull  = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-
-    GPIO_InitStruct.Pin = LED3_PIN;
-    HAL_GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStruct);
-
-
+    BSP_conf_output_pin(GPIOB, 3, BSP_IO_PP, BSP_IO_HIGH);
 
     while (DEF_TRUE) {                                          /* Task body, always written as an infinite loop.       */
         HAL_GPIO_TogglePin(LED3_GPIO_PORT, LED3_PIN);

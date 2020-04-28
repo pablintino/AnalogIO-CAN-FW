@@ -7,3 +7,6 @@ build/
 #Ignore idea based editors and their builds
 .idea/
 cmake-build*
+
+#Ignore any non-template JLink files
+*.jlink

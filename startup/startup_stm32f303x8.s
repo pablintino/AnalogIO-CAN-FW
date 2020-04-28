@@ -144,50 +144,48 @@ g_pfnVectors:
 	.word	0
 	.word	OS_CPU_PendSVHandler
 	.word	OS_CPU_SysTickHandler
-	.word	WWDG_IRQHandler
-	.word	PVD_IRQHandler
-	.word	TAMP_STAMP_IRQHandler
-	.word	RTC_WKUP_IRQHandler
-	.word	FLASH_IRQHandler
-	.word	RCC_IRQHandler
-	.word	EXTI0_IRQHandler
-	.word	EXTI1_IRQHandler
-	.word	EXTI2_TSC_IRQHandler
-	.word	EXTI3_IRQHandler
-	.word	EXTI4_IRQHandler
-	.word	DMA1_Channel1_IRQHandler
-	.word	DMA1_Channel2_IRQHandler
-	.word	DMA1_Channel3_IRQHandler
-	.word	DMA1_Channel4_IRQHandler
-	.word	DMA1_Channel5_IRQHandler
-	.word	DMA1_Channel6_IRQHandler
-	.word	DMA1_Channel7_IRQHandler
-	.word	ADC1_2_IRQHandler
-	.word	CAN_TX_IRQHandler
-	.word	CAN_RX0_IRQHandler
-	.word	CAN_RX1_IRQHandler
-	.word	CAN_SCE_IRQHandler
-	.word	EXTI9_5_IRQHandler
-	.word	TIM1_BRK_TIM15_IRQHandler
-	.word	TIM1_UP_TIM16_IRQHandler
-	.word	TIM1_TRG_COM_TIM17_IRQHandler
-	.word	TIM1_CC_IRQHandler
-	.word	TIM2_IRQHandler
-	.word	TIM3_IRQHandler
+	.word	BSP_IntHandlerWWDG
+	.word	BSP_IntHandlerPVD
+	.word	BSP_IntHandlerTamper_STAMP
+	.word	BSP_IntHandlerRTC_WKUP
+	.word	BSP_IntHandlerFLASH
+	.word	BSP_IntHandlerRCC
+	.word	BSP_IntHandlerEXTI0
+	.word	BSP_IntHandlerEXTI1
+	.word	BSP_IntHandlerEXTI2_TS
+	.word	BSP_IntHandlerEXTI3
+	.word	BSP_IntHandlerEXTI4
+	.word	BSP_IntHandlerDMA1_CH1
+	.word	BSP_IntHandlerDMA1_CH2
+	.word	BSP_IntHandlerDMA1_CH3
+	.word	BSP_IntHandlerDMA1_CH4
+	.word	BSP_IntHandlerDMA1_CH5
+	.word	BSP_IntHandlerDMA1_CH6
+	.word	BSP_IntHandlerDMA1_CH7
+	.word	BSP_IntHandlerADC1_2
+	.word	BSP_IntHandlerCAN_TX
+	.word	BSP_IntHandlerCAN_RX0
+	.word	BSP_IntHandlerCAN_RX1
+	.word	BSP_IntHandlerCAN_SCE
+	.word	BSP_IntHandlerEXTI9_5
+	.word	BSP_IntHandlerTIM1_BRK_TIM15
+	.word	BSP_IntHandlerTIM1_UP_TIM16
+	.word	BSP_IntHandlerTIM1_TRG_COM_TIM17
+	.word	BSP_IntHandlerTIM1_CC
+	.word	BSP_IntHandlerTIM2
+	.word	BSP_IntHandlerTIM3
 	.word	0
-	.word	I2C1_EV_IRQHandler
-	.word	I2C1_ER_IRQHandler
-	.word	0
-	.word	0
-	.word	SPI1_IRQHandler
-	.word	0
-	.word	USART1_IRQHandler
-	.word	USART2_IRQHandler
-	.word	USART3_IRQHandler
-	.word	EXTI15_10_IRQHandler
-	.word	RTC_Alarm_IRQHandler
+	.word	BSP_IntHandlerI2C1_EV
+	.word	BSP_IntHandlerI2C1_ER
 	.word	0
 	.word	0
+	.word	BSP_IntHandlerSPI1
+	.word	0
+	.word	BSP_IntHandlerUSART1
+	.word	BSP_IntHandlerUSART2
+	.word	BSP_IntHandlerUSART3
+	.word	BSP_IntHandlerEXTI15_10
+	.word	BSP_IntHandlerRTC_Alarm
 	.word	0
 	.word	0
 	.word	0
@@ -198,8 +196,10 @@ g_pfnVectors:
 	.word	0
 	.word	0
 	.word	0
-	.word	TIM6_DAC1_IRQHandler
-	.word	TIM7_DAC2_IRQHandler
+	.word	0
+	.word	0
+	.word	BSP_IntHandlerTIM6_DAC1
+	.word	BSP_IntHandlerTIM7_DAC2
 	.word	0
 	.word	0
 	.word	0
@@ -208,10 +208,8 @@ g_pfnVectors:
 	.word	0
 	.word	0
 	.word	0
-	.word	COMP2_IRQHandler
-	.word	COMP4_6_IRQHandler
-	.word	0
-	.word	0
+	.word	BSP_IntHandlerCOMP2
+	.word	BSP_IntHandlerCOMP4_6
 	.word	0
 	.word	0
 	.word	0
@@ -225,7 +223,9 @@ g_pfnVectors:
 	.word	0
 	.word	0
 	.word	0
-	.word	FPU_IRQHandler
+	.word	0
+	.word	0
+	.word	BSP_IntHandlerFPU
 
 /*******************************************************************************
 *

@@ -53,4 +53,4 @@
 void BSP_configure_clocks(void);
 uint32_t BSP_get_system_freq(void);
 
-#endif
+#endif  //BSP_CLOCKS_H

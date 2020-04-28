@@ -1,0 +1,7 @@
+device @TARGET_DEVICE@
+if swd
+speed auto
+erase
+r
+g
+q
