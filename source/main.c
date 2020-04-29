@@ -56,12 +56,18 @@ static  void  AppTaskStart (void *p_arg)
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
     BSP_conf_output_pin(GPIOB, 3, BSP_IO_PP, BSP_IO_HIGH);
+    BSP_conf_input_pin(GPIOB, 3, BSP_IO_PP, BSP_IO_HIGH);
 
-    while (DEF_TRUE) {                                          /* Task body, always written as an infinite loop.       */
-        HAL_GPIO_TogglePin(LED3_GPIO_PORT, LED3_PIN);
-        OSTimeDly(100,
-                  OS_OPT_TIME_PERIODIC,
-                  &err);
+
+    while (DEF_TRUE) {                                /* Task body, always written as an infinite loop. */
+
+        OSTimeDly(100, OS_OPT_TIME_PERIODIC, &err);
+
+        if(BSP_read_pin(GPIOB, 4) == 1){
+            BSP_write_pin(GPIOB, 3, 1);
+        }else{
+            BSP_write_pin(GPIOB, 3, 0);
+        }
 
     }
 }

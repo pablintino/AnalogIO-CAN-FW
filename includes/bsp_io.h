@@ -23,7 +23,16 @@ enum bsp_port_pp_pd_t {
 typedef enum bsp_port_pp_pd_t bsp_port_pp_pd_t;
 
 
-void BSP_conf_output_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed);
+void
+BSP_conf_output_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed);
+
 void BSP_conf_input_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed);
+
+void BSP_write_toggle_pin(GPIO_TypeDef *port, uint8_t pin_number);
+
+void BSP_write_pin(GPIO_TypeDef *port, uint8_t pin_number, uint8_t value);
+
+uint8_t BSP_read_pin(GPIO_TypeDef *port, uint8_t pin_number);
+
 
 #endif //BSP_IO_H

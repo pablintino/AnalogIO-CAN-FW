@@ -30,7 +30,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 endif()
 
 # Project definition
-project(toolchain-demo C CXX ASM)
+project(analog-io-can-fw C CXX ASM)
 # Define here the final executable name for the rest of cmake sources
 set(EXECUTABLE_NAME ${CMAKE_PROJECT_NAME}.elf CACHE STRING "Executable file name")
 
