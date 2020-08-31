@@ -159,6 +159,20 @@ elseif(CPU_STM32_FAMILY STREQUAL "L4")
                           
     set(HAL_PREFIX stm32l4xx_)
 
+elseif(CPU_STM32_FAMILY STREQUAL "G4")
+    set(STM32_HAL_COMPONENTS    adc comp cordic cortex crc cryp dac dma fdcan flash
+                                flash_ramfunc fmac gpio hrtim i2c i2c irda iwdg lptim
+                                nand nor opamp pcd pwr qspi rcc rng rtc sai smartcard
+                                smbus spi sram tim uart usart wwdg)
+
+    set(STM32_HAL_REQUIRED_COMPONENTS cortex pwr rcc)
+
+    # Components that have _ex sources
+    set(HAL_EX_COMPONENTS adc crc cryp dac dma flash i2c opamp pcd pwr rcc rtc sai
+                                smartcard spi tim uart usart)
+                          
+    set(HAL_PREFIX stm32g4xx_)
+
 else()
     # If the above cases don't match the chip the family is not currently supported 
     message(FATAL_ERROR "HAL not supported family")

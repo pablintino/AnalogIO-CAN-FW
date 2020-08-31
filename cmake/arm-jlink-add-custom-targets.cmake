@@ -57,3 +57,4 @@ function(add_jlink_erase_target)
         message(STATUS "Cannot find JLinkExe (commander). Flash target will not be added")
     endif()
 endfunction()
+

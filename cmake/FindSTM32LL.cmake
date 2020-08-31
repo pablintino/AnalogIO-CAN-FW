@@ -113,7 +113,16 @@ elseif(CPU_STM32_FAMILY STREQUAL "L4")
 
     set(STM32_LL_REQUIRED_COMPONENTS bus cortex pwr rcc system utils)
 
-    set(STM32_LL_PREFIX stm32l4xx_)
+	set(STM32_LL_PREFIX stm32l4xx_)
+	
+elseif(CPU_STM32_FAMILY STREQUAL "G4")
+    set(STM32_LL_COMPONENTS	adc bus comp cordic cortex crc crs dac dma dmamux dma exti 
+						fmac fmc gpio hrtim i2c iwdg lptim lpuart opamp pwr rcc rng rtc spi 
+						system tim ucpd usart usb utils wwdg)
+
+    set(STM32_LL_REQUIRED_COMPONENTS bus cortex pwr rcc system utils)
+
+    set(STM32_LL_PREFIX stm32g4xx_)
 
 else()
     # If the above cases don't match the chip the family is not currently supported 

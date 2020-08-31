@@ -22,22 +22,24 @@
 
 
 # Set the expected FreeRTOS base directory
-set(STM32CUBE_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}/STM32Cube-F3-Src")
+set(STM32CUBE_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}/STM32Cube-Src")
 
 # Update STM32 HAL submodule
 # TODO!! Now this submodle is cloned for STM32F3, but the HAL for CPU_STM32_FAMILY should be cloned instead
-git_submodule_update(${STM32CUBE_BASE_DIR} "STM32F3-HAL")
+git_submodule_update(${STM32CUBE_BASE_DIR} "STM32-HAL")
 
-if(NOT EXISTS "${STM32CUBE_BASE_DIR}/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f3xx.h")
+string(TOLOWER ${CPU_STM32_FAMILY} CPU_STM32_FAMILY_L)
+
+if(NOT EXISTS "${STM32CUBE_BASE_DIR}/Drivers/CMSIS/Device/ST/STM32${CPU_STM32_FAMILY}xx/Include/stm32${CPU_STM32_FAMILY_L}xx.h")
     message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
     else()
-    set(FREERTOS_BASE_DIR "${STM32CUBE_BASE_DIR}" CACHE FILEPATH "linker flags")
+    set(STM32CUBE_BASE_DIR "${STM32CUBE_BASE_DIR}" CACHE FILEPATH "STM32Cube base directory")
 endif()
 
 
 # Just set the headers that CMSIS lib will expose
 set(CMSIS_INCLUDE_DIRS
-    ${STM32CUBE_BASE_DIR}/Drivers/CMSIS/Device/ST/STM32F3xx/Include
+    ${STM32CUBE_BASE_DIR}/Drivers/CMSIS/Device/ST/STM32${CPU_STM32_FAMILY}xx/Include
     ${STM32CUBE_BASE_DIR}/Drivers/CMSIS/Core/Include
 )
 # Create the lib as an INTERFACE one
