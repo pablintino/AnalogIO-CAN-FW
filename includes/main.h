@@ -22,8 +22,6 @@
 #define __MAIN_H
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f3xx_hal.h"
-#include "stm32f3xx_nucleo_32.h"
 #include "bsp.h"
 #include "cpu.h"
 #include "cpu_core.h"

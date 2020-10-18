@@ -146,90 +146,74 @@ g_pfnVectors:
 	.word	SVC_Handler
 	.word	DebugMon_Handler
 	.word	0
-	.word	PendSV_Handler
-	.word	SysTick_Handler
-	.word	WWDG_IRQHandler
-	.word	PVD_PVM_IRQHandler
-	.word	RTC_TAMP_LSECSS_IRQHandler
-	.word	RTC_WKUP_IRQHandler
-	.word	FLASH_IRQHandler
-	.word	RCC_IRQHandler
-	.word	EXTI0_IRQHandler
-	.word	EXTI1_IRQHandler
-	.word	EXTI2_IRQHandler
-	.word	EXTI3_IRQHandler
-	.word	EXTI4_IRQHandler
-	.word	DMA1_Channel1_IRQHandler
-	.word	DMA1_Channel2_IRQHandler
-	.word	DMA1_Channel3_IRQHandler
-	.word	DMA1_Channel4_IRQHandler
-	.word	DMA1_Channel5_IRQHandler
-	.word	DMA1_Channel6_IRQHandler
+	.word	OS_CPU_PendSVHandler
+	.word	OS_CPU_SysTickHandler
+	.word	BSP_IntHandlerWWDG
+	.word	BSP_IntHandlerPVD
+	.word	BSP_IntHandlerTMP_STMP
+	.word	BSP_IntHandlerRTC_WKUP
+	.word	BSP_IntHandlerFLASH
+	.word	BSP_IntHandlerRCC
+	.word	BSP_IntHandlerEXTI0
+	.word	BSP_IntHandlerEXTI1
+	.word	BSP_IntHandlerEXTI2
+	.word	BSP_IntHandlerEXTI3
+	.word	BSP_IntHandlerEXTI4
+	.word	BSP_IntHandlerDMA1_CH1
+	.word	BSP_IntHandlerDMA1_CH2
+	.word	BSP_IntHandlerDMA1_CH3
+	.word	BSP_IntHandlerDMA1_CH4
+	.word	BSP_IntHandlerDMA1_CH5
+	.word	BSP_IntHandlerDMA1_CH6
 	.word	0
-	.word	ADC1_2_IRQHandler
-	.word	USB_HP_IRQHandler
-	.word	USB_LP_IRQHandler
-	.word	FDCAN1_IT0_IRQHandler
-	.word	FDCAN1_IT1_IRQHandler
-	.word	EXTI9_5_IRQHandler
-	.word	TIM1_BRK_TIM15_IRQHandler
-	.word	TIM1_UP_TIM16_IRQHandler
-	.word	TIM1_TRG_COM_TIM17_IRQHandler
-	.word	TIM1_CC_IRQHandler
-	.word	TIM2_IRQHandler
-	.word	TIM3_IRQHandler
-	.word	TIM4_IRQHandler
-	.word	I2C1_EV_IRQHandler
-	.word	I2C1_ER_IRQHandler
-	.word	I2C2_EV_IRQHandler
-	.word	I2C2_ER_IRQHandler
-	.word	SPI1_IRQHandler
-	.word	SPI2_IRQHandler
-	.word	USART1_IRQHandler
-	.word	USART2_IRQHandler
-	.word	USART3_IRQHandler
-	.word	EXTI15_10_IRQHandler
-	.word	RTC_Alarm_IRQHandler
-	.word	USBWakeUp_IRQHandler
-	.word	TIM8_BRK_IRQHandler
-	.word	TIM8_UP_IRQHandler
-	.word	TIM8_TRG_COM_IRQHandler
-	.word	TIM8_CC_IRQHandler
-	.word	0
-	.word	0
-	.word	LPTIM1_IRQHandler
-	.word	0
-	.word	SPI3_IRQHandler
-	.word	UART4_IRQHandler
-	.word	0
-	.word	TIM6_DAC_IRQHandler
-	.word	TIM7_IRQHandler
-	.word	DMA2_Channel1_IRQHandler
-	.word	DMA2_Channel2_IRQHandler
-	.word	DMA2_Channel3_IRQHandler
-	.word	DMA2_Channel4_IRQHandler
-	.word	DMA2_Channel5_IRQHandler
+	.word	BSP_IntHandlerADC1_2
+	.word	BSP_IntHandlerUSB_HP
+	.word	BSP_IntHandlerUSB_LP
+	.word	BSP_IntHandlerFDCAN1_IT0
+	.word	BSP_IntHandlerFDCAN1_IT1
+	.word	BSP_IntHandlerEXTI9_5
+	.word	BSP_IntHandlerTIM1_BRK_TIM15
+	.word	BSP_IntHandlerTIM1_UP_TIM16
+	.word	BSP_IntHandlerTIM1_TRG_COM_TIM17
+	.word	BSP_IntHandlerTIM1_CC
+	.word	BSP_IntHandlerTIM2
+	.word	BSP_IntHandlerTIM3
+	.word	BSP_IntHandlerTIM4
+	.word	BSP_IntHandlerI2C1_EV
+	.word	BSP_IntHandlerI2C2_ER
+	.word	BSP_IntHandlerI2C2_EV
+	.word	BSP_IntHandlerI2C2_ER
+	.word	BSP_IntHandlerSPI1
+	.word	BSP_IntHandlerSPI2
+	.word	BSP_IntHandlerUSART1
+	.word	BSP_IntHandlerUSART2
+	.word	BSP_IntHandlerUSART3
+	.word	BSP_IntHandlerEXTI15_10
+	.word	BSP_IntHandlerRTC_ALARM
+	.word	BSP_IntHandlerUSB_WKUP
+	.word	BSP_IntHandlerTIM8_BRK
+	.word	BSP_IntHandlerTIM8_UP
+	.word	BSP_IntHandlerTIM8_TRG_COM
+	.word	BSP_IntHandlerTIM8_CC
 	.word	0
 	.word	0
-	.word	UCPD1_IRQHandler
-	.word	COMP1_2_3_IRQHandler
-	.word	COMP4_IRQHandler
+	.word	BSP_IntHandlerLPTIM1
+	.word	0
+	.word	BSP_IntHandlerSPI3
+	.word	BSP_IntHandlerUART4
+	.word	0
+	.word	BSP_IntHandlerTIM6_DAC1
+	.word	BSP_IntHandlerTIM7_DAC2
+	.word	BSP_IntHandlerDMA2_CH1
+	.word	BSP_IntHandlerDMA2_CH2
+	.word	BSP_IntHandlerDMA2_CH3
+	.word	BSP_IntHandlerDMA2_CH4
+	.word	BSP_IntHandlerDMA2_CH5
 	.word	0
 	.word	0
-	.word	0
-	.word	0
-	.word	0
-	.word	0
-	.word	0
-	.word	0
-	.word	0
-	.word	CRS_IRQHandler
-	.word	SAI1_IRQHandler
-	.word	0
-	.word	0
-	.word	0
-	.word	0
-	.word	FPU_IRQHandler
+	.word	BSP_IntHandlerUCPD1
+	.word	BSP_IntHandlerCOMP1_3
+	.word	BSP_IntHandlerCOMP4_6
 	.word	0
 	.word	0
 	.word	0
@@ -238,18 +222,34 @@ g_pfnVectors:
 	.word	0
 	.word	0
 	.word	0
-	.word	RNG_IRQHandler
-	.word	LPUART1_IRQHandler
-	.word	I2C3_EV_IRQHandler
-	.word	I2C3_ER_IRQHandler
-	.word	DMAMUX_OVR_IRQHandler
+	.word	0
+	.word	BSP_IntHandlerCRS
+	.word	BSP_IntHandlerSAI
 	.word	0
 	.word	0
-	.word	DMA2_Channel6_IRQHandler
 	.word	0
 	.word	0
-	.word	CORDIC_IRQHandler
-	.word	FMAC_IRQHandler
+	.word	BSP_IntHandlerFPU
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	0
+	.word	BSP_IntHandlerRNG
+	.word	BSP_IntHandlerLPUART1
+	.word	BSP_IntHandlerI2C3_EV
+	.word	BSP_IntHandlerI2C3_ER
+	.word	BSP_IntHandlerDMAMUX_OVR
+	.word	0
+	.word	0
+	.word	BSP_IntHandlerDMA2_CH6
+	.word	0
+	.word	0
+	.word	BSP_IntHandlerCORDIC
+	.word	BSP_IntHandlerFMAC
 
 /*******************************************************************************
 *
@@ -280,220 +280,220 @@ g_pfnVectors:
 	.weak	DebugMon_Handler
 	.thumb_set DebugMon_Handler,Default_Handler
 
-	.weak	PendSV_Handler
-	.thumb_set PendSV_Handler,Default_Handler
+	.weak	OS_CPU_PendSVHandler
+	.thumb_set OS_CPU_PendSVHandler,Default_Handler
 
-	.weak	SysTick_Handler
-	.thumb_set SysTick_Handler,Default_Handler
+	.weak	OS_CPU_SysTickHandler
+	.thumb_set OS_CPU_SysTickHandler,Default_Handler
 
-	.weak	WWDG_IRQHandler
-	.thumb_set WWDG_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerWWDG
+	.thumb_set BSP_IntHandlerWWDG,Default_Handler
 
-	.weak	PVD_PVM_IRQHandler
-	.thumb_set PVD_PVM_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerPVD
+	.thumb_set BSP_IntHandlerPVD,Default_Handler
 
-	.weak	RTC_TAMP_LSECSS_IRQHandler
-	.thumb_set RTC_TAMP_LSECSS_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTAMPER_STAMP
+	.thumb_set BSP_IntHandlerTMP_STMP,Default_Handler
 
-	.weak	RTC_WKUP_IRQHandler
-	.thumb_set RTC_WKUP_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerRTC_WKUP
+	.thumb_set BSP_IntHandlerRTC_WKUP,Default_Handler
 
-	.weak	FLASH_IRQHandler
-	.thumb_set FLASH_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerFLASH
+	.thumb_set BSP_IntHandlerFLASH,Default_Handler
 
-	.weak	RCC_IRQHandler
-	.thumb_set RCC_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerRCC
+	.thumb_set BSP_IntHandlerRCC,Default_Handler
 
-	.weak	EXTI0_IRQHandler
-	.thumb_set EXTI0_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerEXTI0
+	.thumb_set BSP_IntHandlerEXTI0,Default_Handler
 
-	.weak	EXTI1_IRQHandler
-	.thumb_set EXTI1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerEXTI1
+	.thumb_set BSP_IntHandlerEXTI1,Default_Handler
 
-	.weak	EXTI2_IRQHandler
-	.thumb_set EXTI2_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerEXTI2
+	.thumb_set BSP_IntHandlerEXTI2,Default_Handler
 
-	.weak	EXTI3_IRQHandler
-	.thumb_set EXTI3_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerEXTI3
+	.thumb_set BSP_IntHandlerEXTI3,Default_Handler
 
-	.weak	EXTI4_IRQHandler
-	.thumb_set EXTI4_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerEXTI4
+	.thumb_set BSP_IntHandlerEXTI4,Default_Handler
 
-	.weak	DMA1_Channel1_IRQHandler
-	.thumb_set DMA1_Channel1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA1_CH1
+	.thumb_set BSP_IntHandlerDMA1_CH1,Default_Handler
 
-	.weak	DMA1_Channel2_IRQHandler
-	.thumb_set DMA1_Channel2_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA1_CH2
+	.thumb_set BSP_IntHandlerDMA1_CH2,Default_Handler
 
-	.weak	DMA1_Channel3_IRQHandler
-	.thumb_set DMA1_Channel3_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA1_CH3
+	.thumb_set BSP_IntHandlerDMA1_CH3,Default_Handler
 
-	.weak	DMA1_Channel4_IRQHandler
-	.thumb_set DMA1_Channel4_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA1_CH4
+	.thumb_set BSP_IntHandlerDMA1_CH4,Default_Handler
 
-	.weak	DMA1_Channel5_IRQHandler
-	.thumb_set DMA1_Channel5_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA1_CH5
+	.thumb_set BSP_IntHandlerDMA1_CH5,Default_Handler
 
-	.weak	DMA1_Channel6_IRQHandler
-	.thumb_set DMA1_Channel6_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA1_CH6
+	.thumb_set BSP_IntHandlerDMA1_CH6,Default_Handler
 
-	.weak	ADC1_2_IRQHandler
-	.thumb_set ADC1_2_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerADC1_2
+	.thumb_set BSP_IntHandlerADC1_2,Default_Handler
 
-	.weak	USB_HP_IRQHandler
-	.thumb_set USB_HP_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerUSB_HP
+	.thumb_set BSP_IntHandlerUSB_HP,Default_Handler
 
-	.weak	USB_LP_IRQHandler
-	.thumb_set USB_LP_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerUSB_LP
+	.thumb_set BSP_IntHandlerUSB_LP,Default_Handler
 
-	.weak	FDCAN1_IT0_IRQHandler
-	.thumb_set FDCAN1_IT0_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerFDCAN1_IT0
+	.thumb_set BSP_IntHandlerFDCAN1_IT0,Default_Handler
 
-	.weak	FDCAN1_IT1_IRQHandler
-	.thumb_set FDCAN1_IT1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerFDCAN1_IT1
+	.thumb_set BSP_IntHandlerFDCAN1_IT1,Default_Handler
 
-	.weak	EXTI9_5_IRQHandler
-	.thumb_set EXTI9_5_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerEXTI9_5
+	.thumb_set BSP_IntHandlerEXTI9_5,Default_Handler
 
-	.weak	TIM1_BRK_TIM15_IRQHandler
-	.thumb_set TIM1_BRK_TIM15_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM1_BRK_TIM15
+	.thumb_set BSP_IntHandlerTIM1_BRK_TIM15,Default_Handler
 
-	.weak	TIM1_UP_TIM16_IRQHandler
-	.thumb_set TIM1_UP_TIM16_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM1_UP_TIM16
+	.thumb_set BSP_IntHandlerTIM1_UP_TIM16,Default_Handler
 
-	.weak	TIM1_TRG_COM_TIM17_IRQHandler
-	.thumb_set TIM1_TRG_COM_TIM17_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM1_TRG_COM_TIM17
+	.thumb_set BSP_IntHandlerTIM1_TRG_COM_TIM17,Default_Handler
 
-	.weak	TIM1_CC_IRQHandler
-	.thumb_set TIM1_CC_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM1_CC
+	.thumb_set BSP_IntHandlerTIM1_CC,Default_Handler
 
-	.weak	TIM2_IRQHandler
-	.thumb_set TIM2_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM2
+	.thumb_set BSP_IntHandlerTIM2,Default_Handler
 
-	.weak	TIM3_IRQHandler
-	.thumb_set TIM3_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM3
+	.thumb_set BSP_IntHandlerTIM3,Default_Handler
 
-	.weak	TIM4_IRQHandler
-	.thumb_set TIM4_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM4
+	.thumb_set BSP_IntHandlerTIM4,Default_Handler
 
-	.weak	I2C1_EV_IRQHandler
-	.thumb_set I2C1_EV_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerI2C1_EV
+	.thumb_set BSP_IntHandlerI2C1_EV,Default_Handler
 
-	.weak	I2C1_ER_IRQHandler
-	.thumb_set I2C1_ER_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerI2C1_ER
+	.thumb_set BSP_IntHandlerI2C1_ER,Default_Handler
 
-	.weak	I2C2_EV_IRQHandler
-	.thumb_set I2C2_EV_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerI2C2_EV
+	.thumb_set BSP_IntHandlerI2C2_EV,Default_Handler
 
-	.weak	I2C2_ER_IRQHandler
-	.thumb_set I2C2_ER_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerI2C2_ER
+	.thumb_set BSP_IntHandlerI2C2_ER,Default_Handler
 
-	.weak	SPI1_IRQHandler
-	.thumb_set SPI1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerSPI1
+	.thumb_set BSP_IntHandlerSPI1,Default_Handler
 
-	.weak	SPI2_IRQHandler
-	.thumb_set SPI2_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerSPI2
+	.thumb_set BSP_IntHandlerSPI2,Default_Handler
 
-	.weak	USART1_IRQHandler
-	.thumb_set USART1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerUSART1
+	.thumb_set BSP_IntHandlerUSART1,Default_Handler
 
-	.weak	USART2_IRQHandler
-	.thumb_set USART2_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerUSART2
+	.thumb_set BSP_IntHandlerUSART2,Default_Handler
 
-	.weak	USART3_IRQHandler
-	.thumb_set USART3_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerUSART3
+	.thumb_set BSP_IntHandlerUSART3,Default_Handler
 
-	.weak	EXTI15_10_IRQHandler
-	.thumb_set EXTI15_10_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerEXTI15_10
+	.thumb_set BSP_IntHandlerEXTI15_10,Default_Handler
 
-	.weak	RTC_Alarm_IRQHandler
-	.thumb_set RTC_Alarm_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerRTC_ALARM
+	.thumb_set BSP_IntHandlerRTC_ALARM,Default_Handler
 
-	.weak	USBWakeUp_IRQHandler
-	.thumb_set USBWakeUp_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerUSB_WKUP
+	.thumb_set BSP_IntHandlerUSB_WKUP,Default_Handler
 
-	.weak	TIM8_BRK_IRQHandler
-	.thumb_set TIM8_BRK_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM8_BRK
+	.thumb_set BSP_IntHandlerTIM8_BRK,Default_Handler
 
-	.weak	TIM8_UP_IRQHandler
-	.thumb_set TIM8_UP_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM8_UP
+	.thumb_set BSP_IntHandlerTIM8_UP,Default_Handler
 
-	.weak	TIM8_TRG_COM_IRQHandler
-	.thumb_set TIM8_TRG_COM_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM8_TRG_COM
+	.thumb_set BSP_IntHandlerTIM8_TRG_COM,Default_Handler
 
-	.weak	TIM8_CC_IRQHandler
-	.thumb_set TIM8_CC_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM8_CC
+	.thumb_set BSP_IntHandlerTIM8_CC,Default_Handler
 
-	.weak	LPTIM1_IRQHandler
-	.thumb_set LPTIM1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerLPTIM1
+	.thumb_set BSP_IntHandlerLPTIM1,Default_Handler
 
-	.weak	SPI3_IRQHandler
-	.thumb_set SPI3_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerSPI3
+	.thumb_set BSP_IntHandlerSPI3,Default_Handler
 
-	.weak	UART4_IRQHandler
-	.thumb_set UART4_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerUART4
+	.thumb_set BSP_IntHandlerUART4,Default_Handler
 
-	.weak	TIM6_DAC_IRQHandler
-	.thumb_set TIM6_DAC_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM6_DAC1
+	.thumb_set BSP_IntHandlerTIM6_DAC1,Default_Handler
 
-	.weak	TIM7_IRQHandler
-	.thumb_set TIM7_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerTIM7_DAC2
+	.thumb_set BSP_IntHandlerTIM7_DAC2,Default_Handler
 
-	.weak	DMA2_Channel1_IRQHandler
-	.thumb_set DMA2_Channel1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA2_CH1
+	.thumb_set BSP_IntHandlerDMA2_CH1,Default_Handler
 
-	.weak	DMA2_Channel2_IRQHandler
-	.thumb_set DMA2_Channel2_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA2_CH2
+	.thumb_set BSP_IntHandlerDMA2_CH2,Default_Handler
 
-	.weak	DMA2_Channel3_IRQHandler
-	.thumb_set DMA2_Channel3_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA2_CH3
+	.thumb_set BSP_IntHandlerDMA2_CH3,Default_Handler
 
-	.weak	DMA2_Channel4_IRQHandler
-	.thumb_set DMA2_Channel4_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA2_CH4
+	.thumb_set BSP_IntHandlerDMA2_CH4,Default_Handler
 
-	.weak	DMA2_Channel5_IRQHandler
-	.thumb_set DMA2_Channel5_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerDMA2_CH5
+	.thumb_set BSP_IntHandlerDMA2_CH5,Default_Handler
 
-	.weak	UCPD1_IRQHandler
-	.thumb_set UCPD1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerUCPD1
+	.thumb_set BSP_IntHandlerUCPD1,Default_Handler
 
-	.weak	COMP1_2_3_IRQHandler
-	.thumb_set COMP1_2_3_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerCOMP1_3
+	.thumb_set BSP_IntHandlerCOMP1_3,Default_Handler
 
-	.weak	COMP4_IRQHandler
-	.thumb_set COMP4_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerCOMP4_6
+	.thumb_set BSP_IntHandlerCOMP4_6,Default_Handler
 
-	.weak	CRS_IRQHandler
-	.thumb_set CRS_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerCRS
+	.thumb_set BSP_IntHandlerCRS,Default_Handler
 
-	.weak	SAI1_IRQHandler
-	.thumb_set SAI1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerSAI
+	.thumb_set BSP_IntHandlerSAI,Default_Handler
 
-	.weak	FPU_IRQHandler
-	.thumb_set FPU_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerFPU
+	.thumb_set BSP_IntHandlerFPU,Default_Handler
 
-	.weak	RNG_IRQHandler
-	.thumb_set RNG_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerRNG
+	.thumb_set BSP_IntHandlerRNG,Default_Handler
 
-	.weak	LPUART1_IRQHandler
-	.thumb_set LPUART1_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerLPUART1
+	.thumb_set BSP_IntHandlerLPUART1,Default_Handler
 
-	.weak	I2C3_EV_IRQHandler
-	.thumb_set I2C3_EV_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerI2C3_EV
+	.thumb_set BSP_IntHandlerI2C3_EV,Default_Handler
 
 	.weak	I2C3_ER_IRQHandler
 	.thumb_set I2C3_ER_IRQHandler,Default_Handler
 
-	.weak	DMAMUX_OVR_IRQHandler
-	.thumb_set DMAMUX_OVR_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerI2C3_ER
+	.thumb_set BSP_IntHandlerI2C3_ER,Default_Handler
 
-	.weak	DMA2_Channel6_IRQHandler
+	.weak	BSP_IntHandlerDMA2_CH6
 	.thumb_set DMA2_Channel6_IRQHandler,Default_Handler
 
-	.weak	CORDIC_IRQHandler
-	.thumb_set CORDIC_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerCORDIC
+	.thumb_set BSP_IntHandlerCORDIC,Default_Handler
 
-	.weak	FMAC_IRQHandler
-	.thumb_set FMAC_IRQHandler,Default_Handler
+	.weak	BSP_IntHandlerFMAC
+	.thumb_set BSP_IntHandlerFMAC,Default_Handler
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

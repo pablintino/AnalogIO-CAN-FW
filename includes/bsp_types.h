@@ -23,11 +23,18 @@
  *
  **/
 
-#ifndef BSP_CONFIG_H
-#define BSP_CONFIG_H
 
-/* Indicates the usage of an external crystal oscillator */
-#define BSP_HSE_VALUE (24000000UL)
+#ifndef BSP_TYPES_H
+#define BSP_TYPES_H
+
+#include <stdint.h>
+
+typedef enum {
+    STATUS_OK = 1U,
+    STATUS_ERR = 2U,
+    STATUS_TMT = 3U
+} ret_status;
 
 
-#endif  //BSP_CONFIG_H
+
+#endif //BSP_TYPES_H

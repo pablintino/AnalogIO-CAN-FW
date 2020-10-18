@@ -23,11 +23,27 @@
  *
  **/
 
-#ifndef BSP_CONFIG_H
-#define BSP_CONFIG_H
 
-/* Indicates the usage of an external crystal oscillator */
-#define BSP_HSE_VALUE (24000000UL)
+#include <os.h>
+#include "bsp_tick.h"
+#include "stm32g4xx.h"
+
+uint32_t tickCountMs;
 
 
-#endif  //BSP_CONFIG_H
+uint32_t BSP_TICK_get_ticks(void){
+    OS_ERR err;
+    uint32_t ticks;
+    // Obtain ticks from uC
+    ticks = OSTimeGet(&err);
+    if(err != OS_ERR_NONE){
+        return ticks;
+    }
+    // TODO This situation should be managed
+    return 0;
+}
+
+void BSP_TICK_config(uint32_t sys_frequency){
+
+    SysTick_Config(sys_frequency / (uint32_t) BSP_SYSTICK_RATE);
+}

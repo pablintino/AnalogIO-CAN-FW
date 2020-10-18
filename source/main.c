@@ -52,7 +52,7 @@ static  void  AppTaskStart (void *p_arg)
 
     BSP_init();
 
-    LED3_GPIO_CLK_ENABLE();
+    //LED3_GPIO_CLK_ENABLE();
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
     BSP_conf_output_pin(GPIOB, 3, BSP_IO_PP, BSP_IO_HIGH);
