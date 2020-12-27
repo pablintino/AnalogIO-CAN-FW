@@ -75,6 +75,27 @@
                                 ((VALUE) == RCC_CFGR_HPRE_DIV512))
 
 
+#define IS_APB1_DIVIDER(VALUE) (((VALUE) == RCC_CFGR_PPRE1_DIV1) || ((VALUE) == RCC_CFGR_PPRE1_DIV2)|| \
+                                ((VALUE) == RCC_CFGR_PPRE1_DIV4)|| ((VALUE) == RCC_CFGR_PPRE1_DIV8) || \
+                                ((VALUE) == RCC_CFGR_PPRE1_DIV16))
+
+#define IS_APB2_DIVIDER(VALUE) (((VALUE) == RCC_CFGR_PPRE2_DIV1) || ((VALUE) == RCC_CFGR_PPRE2_DIV2)|| \
+                                ((VALUE) == RCC_CFGR_PPRE2_DIV4)|| ((VALUE) == RCC_CFGR_PPRE2_DIV8) || \
+                                ((VALUE) == RCC_CFGR_PPRE2_DIV16))
+
+
+
+
+#define BSP_CLK_PERIPH_ENABLE_GPIO_A RCC_AHB2ENR_GPIOAEN
+#define BSP_CLK_PERIPH_ENABLE_GPIO_B RCC_AHB2ENR_GPIOBEN
+#define BSP_CLK_PERIPH_ENABLE_GPIO_C RCC_AHB2ENR_GPIOCEN
+#define BSP_CLK_PERIPH_ENABLE_GPIO_D RCC_AHB2ENR_GPIODEN
+#define BSP_CLK_PERIPH_ENABLE_GPIO_E RCC_AHB2ENR_GPIOEEN
+#define BSP_CLK_PERIPH_ENABLE_GPIO_F RCC_AHB2ENR_GPIOFEN
+#define BSP_CLK_PERIPH_ENABLE_GPIO_G RCC_AHB2ENR_GPIOGEN
+#define BSP_CLK_PERIPH_ENABLE_GPIO(MODULE) (RCC->AHB2ENR |= (MODULE))
+
+
 typedef struct
 {
     uint32_t PLLState;   /*!< The new state of the PLL.
@@ -130,6 +151,7 @@ typedef struct
 }bsp_clk_clock_config_t;
 
 ret_status BSP_CLK_config_clocks_osc(const bsp_clk_osc_config_t *oscc);
+ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc);
 
 uint32_t BSP_CLK_get_sysclk_freq(void);
 uint32_t BSP_CLK_get_hclk_freq(void);

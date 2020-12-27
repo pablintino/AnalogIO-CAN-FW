@@ -28,15 +28,13 @@
 #include "bsp_tick.h"
 #include "stm32g4xx.h"
 
-uint32_t tickCountMs;
-
 
 uint32_t BSP_TICK_get_ticks(void){
     OS_ERR err;
     uint32_t ticks;
     // Obtain ticks from uC
     ticks = OSTimeGet(&err);
-    if(err != OS_ERR_NONE){
+    if(err == OS_ERR_NONE){
         return ticks;
     }
     // TODO This situation should be managed
@@ -44,6 +42,5 @@ uint32_t BSP_TICK_get_ticks(void){
 }
 
 void BSP_TICK_config(uint32_t sys_frequency){
-
     SysTick_Config(sys_frequency / (uint32_t) BSP_SYSTICK_RATE);
 }

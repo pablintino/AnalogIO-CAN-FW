@@ -19,7 +19,7 @@ int main(void) {
     }
 
     OSTaskCreate(&AppTaskStartTCB,                              /* Create the start task                                */
-                 "Start Task",
+                 "Start Tsk",
                  AppTaskStart,
                  0u,
                  APP_CFG_TASK_START_PRIO,
@@ -52,22 +52,37 @@ static  void  AppTaskStart (void *p_arg)
 
     BSP_init();
 
-    //LED3_GPIO_CLK_ENABLE();
+
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
-    BSP_conf_output_pin(GPIOB, 3, BSP_IO_PP, BSP_IO_HIGH);
-    BSP_conf_input_pin(GPIOB, 3, BSP_IO_PP, BSP_IO_HIGH);
+    BSP_IO_conf_output_pin(GPIOA, 4, BSP_IO_PP, BSP_IO_HIGH);
+    BSP_IO_conf_output_pin(GPIOA, 5, BSP_IO_PP, BSP_IO_HIGH);
+    BSP_IO_conf_output_pin(GPIOA, 6, BSP_IO_PP, BSP_IO_HIGH);
+    //BSP_IO_conf_input_pin(GPIOB, 3, BSP_IO_PP, BSP_IO_HIGH);
 
 
     while (DEF_TRUE) {                                /* Task body, always written as an infinite loop. */
 
-        OSTimeDly(100, OS_OPT_TIME_PERIODIC, &err);
+        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
 
-        if(BSP_read_pin(GPIOB, 4) == 1){
-            BSP_write_pin(GPIOB, 3, 1);
+        BSP_IO_write_pin(GPIOA, 4, 1);
+        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
+        BSP_IO_write_pin(GPIOA, 5, 1);
+        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
+        BSP_IO_write_pin(GPIOA, 6, 1);
+
+        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
+
+        BSP_IO_write_pin(GPIOA, 4, 0);
+        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
+        BSP_IO_write_pin(GPIOA, 5, 0);
+        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
+        BSP_IO_write_pin(GPIOA, 6, 0);
+        /*if(BSP_IO_read_pin(GPIOA, 4) == 1){
+            BSP_write_pin(GPIOA, 3, 1);
         }else{
-            BSP_write_pin(GPIOB, 3, 0);
-        }
+            BSP_IO_write_pin(GPIOA, 3, 0);
+        }*/
 
     }
 }

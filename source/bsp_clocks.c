@@ -30,20 +30,36 @@
 #define __BSP_CLK_WAIT_FLAG_CLEAR 0
 #define __BSP_CLK_WAIT_FLAG_SET 0x0001U
 
+static const uint32_t HPRE_DIVIDERS[] = {2, 4, 8, 16, 64, 128, 256, 512};
 
 /*
  * Internal functions declarations.
  */
 static uint64_t __get_base_pll_freq(void);
+
 static ret_status __wait_flag_status(volatile uint32_t *reg, uint32_t flag, uint8_t wait_ready, uint32_t timeout);
+
 static ret_status __config_clock_hse(const bsp_clk_osc_config_t *oscc);
+
 static ret_status __config_clock_pll(const bsp_pll_config_t *pllc);
-static uint32_t __calculate_pll_freq(void);
+
+static uint32_t __calculate_pll_vco_freq(void);
+
+static uint32_t __calculate_pllqclk_freq(void);
+
+static uint32_t __calculate_pllrclk_freq(void);
+
+static uint32_t __calculate_pllpclk_freq(void);
+
 static ret_status __config_clock_hsi(const bsp_clk_osc_config_t *oscc);
+
 static ret_status __pll_validate_params(const bsp_pll_config_t *pllc);
+
 static ret_status __config_clock_hclk(const bsp_clk_clock_config_t *clkc);
+
 static ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc);
 
+static ret_status __wait_flag_status_2(volatile uint32_t *reg, uint32_t mask, uint32_t masked_value, uint32_t timeout);
 
 
 /* Used to give the current frequency even if not set by BSP_configure_system_clock */
@@ -54,7 +70,7 @@ uint32_t BSP_CLK_get_sysclk_freq(void) {
 
         case RCC_CFGR_SWS_PLL:  /* PLL used as system clock */
         {
-            return __calculate_pll_freq();
+            return __calculate_pllrclk_freq();
         }
         case RCC_CFGR_SWS_HSE:
             return BSP_HSE_VALUE;
@@ -66,6 +82,15 @@ uint32_t BSP_CLK_get_sysclk_freq(void) {
     }
 }
 
+uint32_t BSP_CLK_get_hclk_freq(void){
+    uint32_t sys_freq = BSP_CLK_get_sysclk_freq();
+    uint32_t ahb_divider = 1;
+    if(RCC->CFGR & RCC_CFGR_HPRE_3){
+        /* AHB Clock is divided */
+        ahb_divider = HPRE_DIVIDERS[((RCC->CFGR & RCC_CFGR_HPRE) >> RCC_CFGR_HPRE_Pos)];
+    }
+    return sys_freq / ahb_divider;
+}
 
 ret_status BSP_CLK_reset_clocks(void) {
     ret_status tmp_status;
@@ -149,7 +174,7 @@ ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc) {
     /*------------------------- SYSCLK Configuration ---------------------------*/
     if (clkc->ClockType & BSP_CLK_CLOCK_TYPE_SYSCLK) {
         temp_status = __config_clock_sysclk(clkc);
-        if (temp_status != STATUS_OK){
+        if (temp_status != STATUS_OK) {
             return temp_status;
         }
     }
@@ -157,7 +182,7 @@ ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc) {
     /*------------------------- HCLK (AHB Bus main clock) Configuration ---------------------------*/
     if (clkc->ClockType & BSP_CLK_CLOCK_TYPE_HCLK) {
         temp_status = __config_clock_hclk(clkc);
-        if (temp_status != STATUS_OK){
+        if (temp_status != STATUS_OK) {
             return temp_status;
         }
     }
@@ -174,7 +199,9 @@ ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc) {
  *
  */
 uint64_t __get_base_pll_freq(void) {
-    return (RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC) == RCC_PLLCFGR_PLLSRC_HSE ? BSP_HSE_VALUE : BSP_CLK_HSI_VALUE;
+    uint64_t osc_base_freq =
+            (RCC->PLLCFGR & RCC_PLLCFGR_PLLSRC) == RCC_PLLCFGR_PLLSRC_HSE ? BSP_HSE_VALUE : BSP_CLK_HSI_VALUE;
+    return osc_base_freq / (((RCC->PLLCFGR & RCC_PLLCFGR_PLLM) >> RCC_PLLCFGR_PLLM_Pos) + 1);
 }
 
 
@@ -185,8 +212,20 @@ ret_status __wait_flag_status(volatile uint32_t *reg, uint32_t flag, uint8_t wai
         return STATUS_ERR;
     }
 
-    while ((wait_ready == __BSP_CLK_WAIT_FLAG_CLEAR && (*reg & flag)) ||
+    while ((wait_ready == __BSP_CLK_WAIT_FLAG_CLEAR && ((*reg) & flag)) ||
            (wait_ready != __BSP_CLK_WAIT_FLAG_CLEAR && (!(*reg) & flag))) {
+        if (BSP_TICK_get_ticks() - tickstart > timeout) {
+            return STATUS_TMT;
+        }
+    }
+    return STATUS_OK;
+}
+
+
+ret_status __wait_flag_status_2(volatile uint32_t *reg, uint32_t mask, uint32_t masked_value, uint32_t timeout) {
+    uint32_t tickstart = BSP_TICK_get_ticks();
+
+    while (((*reg) & mask) != masked_value) {
         if (BSP_TICK_get_ticks() - tickstart > timeout) {
             return STATUS_TMT;
         }
@@ -207,7 +246,7 @@ ret_status __config_clock_hsi(const bsp_clk_osc_config_t *oscc) {
         /* Enable HSI */
         RCC->CR |= RCC_CR_HSION;
         //TODO Remove hardcoded timeout
-        return __wait_flag_status(&RCC->CR, RCC_CR_HSIRDY, __BSP_CLK_WAIT_FLAG_SET, BSP_CLK_HSI_READY_TMT);
+        return __wait_flag_status_2(&RCC->CR, RCC_CR_HSIRDY, RCC_CR_HSIRDY, BSP_CLK_HSI_READY_TMT);
 
     } else {
         /* Disable HSI oscillator */
@@ -215,7 +254,7 @@ ret_status __config_clock_hsi(const bsp_clk_osc_config_t *oscc) {
 
         /* Wait for HSI to turn off */
         //TODO Remove hardcoded timeout
-        return __wait_flag_status(&RCC->CR, RCC_CR_HSIRDY, __BSP_CLK_WAIT_FLAG_CLEAR, BSP_CLK_HSI_READY_TMT);
+        return __wait_flag_status_2(&RCC->CR, RCC_CR_HSIRDY, 0UL, BSP_CLK_HSI_READY_TMT);
     }
 }
 
@@ -236,7 +275,7 @@ ret_status __config_clock_hse(const bsp_clk_osc_config_t *oscc) {
 
         /* Wait for HSE to turn on */
         //TODO Remove hardcoded timeout
-        return __wait_flag_status(&RCC->CR, RCC_CR_HSERDY, __BSP_CLK_WAIT_FLAG_SET, BSP_CLK_HSE_READY_TMT);
+        return __wait_flag_status_2(&RCC->CR, RCC_CR_HSERDY, RCC_CR_HSERDY, BSP_CLK_HSE_READY_TMT);
 
     } else {
         /* Disable HSE oscillator */
@@ -246,8 +285,7 @@ ret_status __config_clock_hse(const bsp_clk_osc_config_t *oscc) {
                    (1U << RCC_CR_HSEBYP_Pos);
 
         /* Wait for HSE to turn off */
-        //TODO Remove hardcoded timeout
-        return __wait_flag_status(&RCC->CR, RCC_CR_HSERDY, __BSP_CLK_WAIT_FLAG_CLEAR, BSP_CLK_HSE_READY_TMT);
+        return __wait_flag_status_2(&RCC->CR, RCC_CR_HSERDY, 0, BSP_CLK_HSE_READY_TMT);
     }
 }
 
@@ -257,7 +295,7 @@ ret_status __disable_pll() {
     RCC->CR &= ~RCC_CR_PLLON;
 
     /* Wait until PLL is disabled */
-    return __wait_flag_status(&RCC->CR, RCC_CR_PLLRDY, __BSP_CLK_WAIT_FLAG_CLEAR, BSP_CLK_PLL_READY_TMT);
+    return __wait_flag_status_2(&RCC->CR, RCC_CR_PLLRDY, 0UL, BSP_CLK_PLL_READY_TMT);
 }
 
 
@@ -269,8 +307,8 @@ ret_status __pll_validate_params(const bsp_pll_config_t *pllc) {
     uint32_t pll_r_freq;
 
     /* Validate PLL SRC type */
-    if (pllc->PLLSource != BSP_CLK_CLOCK_PLL_SRC_NONE ||
-        pllc->PLLSource != BSP_CLK_CLOCK_PLL_SRC_HSE ||
+    if (pllc->PLLSource != BSP_CLK_CLOCK_PLL_SRC_NONE &&
+        pllc->PLLSource != BSP_CLK_CLOCK_PLL_SRC_HSE &&
         pllc->PLLSource != BSP_CLK_CLOCK_PLL_SRC_HSI) {
         return STATUS_ERR;
     }
@@ -289,19 +327,19 @@ ret_status __pll_validate_params(const bsp_pll_config_t *pllc) {
     }
 
     /* PLL P output frequency must be between 2.0645 and 170MHz */
-    pll_p_freq = pll_vco_output_freq * pllc->PLLP;
+    pll_p_freq = pll_vco_output_freq / pllc->PLLP;
     if (pll_p_freq > 170000000UL || pll_p_freq < 2064500UL) {
         return STATUS_ERR;
     }
 
     /* PLL P output frequency must be between 8 and 170MHz */
-    pll_q_freq = pll_vco_output_freq * pllc->PLLQ;
+    pll_q_freq = pll_vco_output_freq / pllc->PLLQ;
     if (pll_q_freq > 170000000UL || pll_q_freq < 8000000UL) {
         return STATUS_ERR;
     }
 
     /* PLL P output frequency must be between 8 and 170MHz */
-    pll_r_freq = pll_vco_output_freq * pllc->PLLR;
+    pll_r_freq = pll_vco_output_freq / pllc->PLLR;
     if (pll_r_freq > 170000000UL || pll_r_freq < 8000000UL) {
         return STATUS_ERR;
     }
@@ -340,11 +378,11 @@ ret_status __config_clock_pll(const bsp_pll_config_t *pllc) {
         tmp_pllcfgr = RCC->PLLCFGR;
         tmp_pllcfgr &= ~(RCC_PLLCFGR_PLLN | RCC_PLLCFGR_PLLM | RCC_PLLCFGR_PLLP | RCC_PLLCFGR_PLLQ | RCC_PLLCFGR_PLLR |
                          RCC_PLLCFGR_PLLSRC_Msk);
-        tmp_pllcfgr |= (((pllc->PLLM - 1U) & RCC_PLLCFGR_PLLM_Msk) << RCC_PLLCFGR_PLLM_Pos) |
-                       ((pllc->PLLN & RCC_PLLCFGR_PLLN_Msk) << RCC_PLLCFGR_PLLN_Pos) |
-                       ((pllc->PLLP & RCC_PLLCFGR_PLLP_Msk) << RCC_PLLCFGR_PLLP_Pos) |
-                       ((((pllc->PLLQ >> 1U) - 1U) & RCC_PLLCFGR_PLLQ_Msk) << RCC_PLLCFGR_PLLQ_Pos) |
-                       ((((pllc->PLLR >> 1U) - 1U) & RCC_PLLCFGR_PLLR_Msk) << RCC_PLLCFGR_PLLR_Pos);
+        tmp_pllcfgr |= (((pllc->PLLM - 1U) << RCC_PLLCFGR_PLLM_Pos) & RCC_PLLCFGR_PLLM_Msk) |
+                       ((pllc->PLLN << RCC_PLLCFGR_PLLN_Pos) & RCC_PLLCFGR_PLLN_Msk) |
+                       ((pllc->PLLP << RCC_PLLCFGR_PLLPDIV_Pos) & RCC_PLLCFGR_PLLPDIV_Msk) |
+                       ((((pllc->PLLQ >> 1U) - 1U) << RCC_PLLCFGR_PLLQ_Pos) & RCC_PLLCFGR_PLLQ_Msk) |
+                       ((((pllc->PLLR >> 1U) - 1U) << RCC_PLLCFGR_PLLR_Pos) & RCC_PLLCFGR_PLLR_Msk);
 
         /* Set PLL clock source */
         tmp_pllcfgr |= pllc->PLLSource;
@@ -355,7 +393,7 @@ ret_status __config_clock_pll(const bsp_pll_config_t *pllc) {
         RCC->CR |= RCC_CR_PLLON;
 
         /* Wait until PLL is enabled */
-        return __wait_flag_status(&RCC->CR, RCC_CR_PLLRDY, __BSP_CLK_WAIT_FLAG_SET, BSP_CLK_PLL_READY_TMT);
+        return __wait_flag_status_2(&RCC->CR, RCC_CR_PLLRDY_Msk, RCC_CR_PLLRDY, BSP_CLK_PLL_READY_TMT);
 
     } else {
         return __disable_pll();
@@ -363,13 +401,24 @@ ret_status __config_clock_pll(const bsp_pll_config_t *pllc) {
 
 }
 
+uint32_t __calculate_pllpclk_freq(void) {
+    return __calculate_pll_vco_freq() / ((uint8_t) ((RCC->PLLCFGR & RCC_PLLCFGR_PLLPDIV) >> RCC_PLLCFGR_PLLPDIV_Pos));
+}
 
-uint32_t __calculate_pll_freq(void) {
-    uint32_t pllmul = (uint8_t) (RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> RCC_PLLCFGR_PLLN_Pos;
-    uint8_t pll_main_div = (uint8_t) (RCC->PLLCFGR & RCC_PLLCFGR_PLLPDIV) >> RCC_PLLCFGR_PLLPDIV_Pos;
-    uint8_t pll_system_clk_div = (uint8_t) (RCC->PLLCFGR & RCC_PLLCFGR_PLLR) >> RCC_PLLCFGR_PLLR_Pos;
-    return (uint32_t) (__get_base_pll_freq() / (uint64_t) (pll_main_div + pll_system_clk_div)) *
-           ((uint64_t) pllmul);
+uint32_t __calculate_pllrclk_freq(void) {
+    return __calculate_pll_vco_freq() /
+           ((uint8_t) (((RCC->PLLCFGR & RCC_PLLCFGR_PLLR) >> RCC_PLLCFGR_PLLR_Pos) + 1) << 1);
+}
+
+uint32_t __calculate_pllqclk_freq(void) {
+    return __calculate_pll_vco_freq() /
+           ((uint8_t) (((RCC->PLLCFGR & RCC_PLLCFGR_PLLQ) >> RCC_PLLCFGR_PLLQ_Pos) + 1) << 1);
+}
+
+uint32_t __calculate_pll_vco_freq(void) {
+    uint32_t pllmul = (uint8_t) ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> RCC_PLLCFGR_PLLN_Pos);
+
+    return (uint32_t) (__get_base_pll_freq() * pllmul);
 }
 
 ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc) {
@@ -389,10 +438,14 @@ ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc) {
         }
 
         /* As stated in RM0440, chapter 7.2.7: For clock jumps above 80MHz an intermediate jump with AHB/2 clock should be made */
-        pll_output_freq = __calculate_pll_freq();
+        pll_output_freq = __calculate_pllrclk_freq();
         if (pll_output_freq > 80000000U) {
             RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_HPRE) | RCC_CFGR_HPRE_DIV2;
         }
+
+        /* Enable SYSCLK PLL output (R output) */
+        RCC->PLLCFGR |= RCC_PLLCFGR_PLLREN;
+
     } else {
         /* HSE or HSE selected as System Clock Source. Be sure that the source OSC is ready */
         if (((clkc->SystemClockSource == BSP_CLK_CLOCK_SOURCE_HSE) && !(RCC->CR & RCC_CR_HSERDY)) ||
@@ -401,7 +454,7 @@ ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc) {
         }
 
         /* Same case as jumps over 80MHz barrier. If target frequency goes under 80MHz a secondary
-         * frequency jump with AHB/2 is neccesary. See RM0440, chapter 7.2.7 */
+         * frequency jump with AHB/2 is necessary. See RM0440, chapter 7.2.7 */
         pll_output_freq = BSP_CLK_get_sysclk_freq();
         if (pll_output_freq > 80000000U) {
             RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_HPRE) | RCC_CFGR_HPRE_DIV2;
@@ -410,14 +463,14 @@ ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc) {
 
     /* Set the specified clock source */
     RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | clkc->SystemClockSource;
-    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI);
 
-    return STATUS_OK;
+    return __wait_flag_status_2(&RCC->CFGR, RCC_CFGR_SWS, clkc->SystemClockSource << RCC_CFGR_SWS_Pos, 5000UL);
 }
 
 
 ret_status __config_clock_hclk(const bsp_clk_clock_config_t *clkc) {
-    if(!IS_HPRE_DIVIDER(clkc->AHBDivider)){
+    if (!IS_HPRE_DIVIDER(clkc->AHBDivider) || !IS_APB1_DIVIDER(clkc->APB1Divider) ||
+        !IS_APB2_DIVIDER(clkc->APB2Divider)) {
         return STATUS_ERR;
     }
 
@@ -431,5 +484,6 @@ ret_status __config_clock_hclk(const bsp_clk_clock_config_t *clkc) {
 
     //TODO Check that the change success (If the written value is not set after some cycles it means that the HW has
     // rejected the value)
+
     return STATUS_OK;
 }

@@ -44,12 +44,12 @@ conf_digital_io(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_u
                 bsp_port_io_type_t type);
 
 void
-BSP_conf_output_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed) {
+BSP_IO_conf_output_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed) {
     conf_digital_io(port, pin_number, pull_up_down, speed, OUTPUT);
 }
 
 void
-BSP_write_toggle_pin(GPIO_TypeDef *port, uint8_t pin_number) {
+BSP_IO_write_toggle_pin(GPIO_TypeDef *port, uint8_t pin_number) {
     if (pin_number < 16) {
         uint16_t pin_bin = 1 << pin_number;
         port->BSRR = (port->ODR & pin_bin) != 0X00u ? (uint32_t) pin_bin << 16ul : (uint32_t) pin_bin;
@@ -58,7 +58,7 @@ BSP_write_toggle_pin(GPIO_TypeDef *port, uint8_t pin_number) {
 }
 
 void
-BSP_write_pin(GPIO_TypeDef *port, uint8_t pin_number, uint8_t value) {
+BSP_IO_write_pin(GPIO_TypeDef *port, uint8_t pin_number, uint8_t value) {
     if (pin_number < 16) {
         uint16_t pin_bin = 1 << pin_number;
 
@@ -71,7 +71,7 @@ BSP_write_pin(GPIO_TypeDef *port, uint8_t pin_number, uint8_t value) {
 }
 
 uint8_t
-BSP_read_pin(GPIO_TypeDef *port, uint8_t pin_number) {
+BSP_IO_read_pin(GPIO_TypeDef *port, uint8_t pin_number) {
     uint8_t res = 0;
     if (pin_number < 16) {
         res = (uint8_t)((port->IDR & (uint32_t)(1 << pin_number)) >> pin_number);
@@ -80,7 +80,7 @@ BSP_read_pin(GPIO_TypeDef *port, uint8_t pin_number) {
 }
 
 void
-BSP_conf_input_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed) {
+BSP_IO_conf_input_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed) {
     conf_digital_io(port, pin_number, pull_up_down, speed, OUTPUT);
 }
 
