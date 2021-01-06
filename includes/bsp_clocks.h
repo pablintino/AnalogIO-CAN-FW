@@ -27,17 +27,20 @@
 #ifndef BSP_CLOCKS_H
 #define BSP_CLOCKS_H
 
-#include "stm32g4xx.h"
 #include "bsp_config.h"
 #include "bsp_types.h"
+#include "bsp_common_utils.h"
+#include "stm32g4xx.h"
+#include "stddef.h"
+
 
 /* Assumed to use 16MHz for STM32G4 family... */
 #define BSP_CLK_HSI_VALUE    16000000UL
+#define BSP_CLK_LSE_VALUE    32768U
 
 #define BSP_CLK_HSE_READY_TMT 100UL
 #define BSP_CLK_HSI_READY_TMT 2UL
 #define BSP_CLK_PLL_READY_TMT 2UL
-
 
 
 #define BSP_CLK_CLOCK_TYPE_HSE 0x0001U
@@ -48,15 +51,25 @@
 #define BSP_CLK_CLOCK_STATE_HSE_STATE_ENABLE 0x0001U
 #define BSP_CLK_CLOCK_STATE_HSE_STATE_BYPASS 0x0002U
 
+#define IS_HSE_STATE(VALUE) (((VALUE) == BSP_CLK_CLOCK_STATE_HSE_STATE_ENABLE) || ((VALUE) == BSP_CLK_CLOCK_STATE_HSE_STATE_BYPASS))
+
 #define BSP_CLK_CLOCK_STATE_HSI_STATE_DISABLE 0x0000U
 #define BSP_CLK_CLOCK_STATE_HSI_STATE_ENABLE 0x0001U
+
+#define IS_HSI_STATE(VALUE) (((VALUE) == BSP_CLK_CLOCK_STATE_HSI_STATE_DISABLE) || ((VALUE) == BSP_CLK_CLOCK_STATE_HSI_STATE_ENABLE))
 
 #define BSP_CLK_CLOCK_STATE_PLL_STATE_DISABLE 0x0000U
 #define BSP_CLK_CLOCK_STATE_PLL_STATE_ENABLE 0x0001U
 
 #define BSP_CLK_CLOCK_PLL_SRC_NONE 0
-#define BSP_CLK_CLOCK_PLL_SRC_HSI RCC_PLLCFGR_PLLSRC_HSI
-#define BSP_CLK_CLOCK_PLL_SRC_HSE RCC_PLLCFGR_PLLSRC_HSE
+#define BSP_CLK_CLOCK_PLL_SRC_HSI 0x00000002U
+#define BSP_CLK_CLOCK_PLL_SRC_HSE 0x00000003U
+
+#define BSP_CLK_IS_PLLN_VALID(VALUE) ((VALUE >= 8UL) && (VALUE <= 127UL))
+#define BSP_CLK_IS_PLLM_VALID(VALUE) ((VALUE >= 1UL) && (VALUE <= 16UL))
+#define BSP_CLK_IS_PLLP_VALID(VALUE) ((VALUE >= 2UL) && (VALUE <= 31UL))
+#define BSP_CLK_IS_PLLQ_VALID(VALUE) ((VALUE == 2UL) || (VALUE == 4UL) || (VALUE == 6UL) || (VALUE == 8UL))
+#define BSP_CLK_IS_PLLR_VALID(VALUE) ((VALUE == 2UL) || (VALUE == 4UL) || (VALUE == 6UL) || (VALUE == 8UL))
 
 
 #define BSP_CLK_CLOCK_TYPE_SYSCLK 0x0001U
@@ -64,100 +77,114 @@
 #define BSP_CLK_CLOCK_TYPE_PCLK1 0x0004U
 #define BSP_CLK_CLOCK_TYPE_PCLK2 0x0008U
 
-#define BSP_CLK_CLOCK_SOURCE_PLL RCC_CFGR_SW_PLL
-#define BSP_CLK_CLOCK_SOURCE_HSE RCC_CFGR_SW_HSE
-#define BSP_CLK_CLOCK_SOURCE_HSI RCC_CFGR_SW_HSI
+#define BSP_CLK_CLOCK_SOURCE_PLL 0x00000003U
+#define BSP_CLK_CLOCK_SOURCE_HSE 0x00000002U
+#define BSP_CLK_CLOCK_SOURCE_HSI 0x00000001U
 
-#define IS_HPRE_DIVIDER(VALUE) (((VALUE) == RCC_CFGR_HPRE_DIV1) || ((VALUE) == RCC_CFGR_HPRE_DIV2)|| \
-                                ((VALUE) == RCC_CFGR_HPRE_DIV4)|| ((VALUE) == RCC_CFGR_HPRE_DIV8) || \
-                                ((VALUE) == RCC_CFGR_HPRE_DIV16)|| ((VALUE) == RCC_CFGR_HPRE_DIV64) || \
-                                ((VALUE) == RCC_CFGR_HPRE_DIV128)|| ((VALUE) == RCC_CFGR_HPRE_DIV256) || \
-                                ((VALUE) == RCC_CFGR_HPRE_DIV512))
+#define IS_CLOCK_SOURCE(VALUE) (((VALUE) == BSP_CLK_CLOCK_SOURCE_PLL) || ((VALUE) == BSP_CLK_CLOCK_SOURCE_HSE)|| \
+                                ((VALUE) == BSP_CLK_CLOCK_SOURCE_HSI))
 
 
-#define IS_APB1_DIVIDER(VALUE) (((VALUE) == RCC_CFGR_PPRE1_DIV1) || ((VALUE) == RCC_CFGR_PPRE1_DIV2)|| \
-                                ((VALUE) == RCC_CFGR_PPRE1_DIV4)|| ((VALUE) == RCC_CFGR_PPRE1_DIV8) || \
-                                ((VALUE) == RCC_CFGR_PPRE1_DIV16))
+#define BSP_CLK_AHB_PRESCALER_1     RCC_CFGR_HPRE_DIV1
+#define BSP_CLK_AHB_PRESCALER_2     RCC_CFGR_HPRE_DIV2
+#define BSP_CLK_AHB_PRESCALER_4     RCC_CFGR_HPRE_DIV4
+#define BSP_CLK_AHB_PRESCALER_8     RCC_CFGR_HPRE_DIV8
+#define BSP_CLK_AHB_PRESCALER_16    RCC_CFGR_HPRE_DIV16
+#define BSP_CLK_AHB_PRESCALER_64    RCC_CFGR_HPRE_DIV64
+#define BSP_CLK_AHB_PRESCALER_128   RCC_CFGR_HPRE_DIV128
+#define BSP_CLK_AHB_PRESCALER_256   RCC_CFGR_HPRE_DIV256
+#define BSP_CLK_AHB_PRESCALER_512   RCC_CFGR_HPRE_DIV512
 
-#define IS_APB2_DIVIDER(VALUE) (((VALUE) == RCC_CFGR_PPRE2_DIV1) || ((VALUE) == RCC_CFGR_PPRE2_DIV2)|| \
-                                ((VALUE) == RCC_CFGR_PPRE2_DIV4)|| ((VALUE) == RCC_CFGR_PPRE2_DIV8) || \
-                                ((VALUE) == RCC_CFGR_PPRE2_DIV16))
-
-
-
-
-#define BSP_CLK_PERIPH_ENABLE_GPIO_A RCC_AHB2ENR_GPIOAEN
-#define BSP_CLK_PERIPH_ENABLE_GPIO_B RCC_AHB2ENR_GPIOBEN
-#define BSP_CLK_PERIPH_ENABLE_GPIO_C RCC_AHB2ENR_GPIOCEN
-#define BSP_CLK_PERIPH_ENABLE_GPIO_D RCC_AHB2ENR_GPIODEN
-#define BSP_CLK_PERIPH_ENABLE_GPIO_E RCC_AHB2ENR_GPIOEEN
-#define BSP_CLK_PERIPH_ENABLE_GPIO_F RCC_AHB2ENR_GPIOFEN
-#define BSP_CLK_PERIPH_ENABLE_GPIO_G RCC_AHB2ENR_GPIOGEN
-#define BSP_CLK_PERIPH_ENABLE_GPIO(MODULE) (RCC->AHB2ENR |= (MODULE))
-
-
-typedef struct
-{
-    uint32_t PLLState;   /*!< The new state of the PLL.
-                            This parameter can be a value of @ref RCC_PLL_Config                      */
-
-    uint32_t PLLSource;  /*!< RCC_PLLSource: PLL entry clock source.
-                            This parameter must be a value of @ref RCC_PLL_Clock_Source               */
-
-    uint32_t PLLM;       /*!< PLLM: Division factor for PLL VCO input clock.
-                            This parameter must be a value of @ref RCC_PLLM_Clock_Divider             */
-
-    uint32_t PLLN;       /*!< PLLN: Multiplication factor for PLL VCO output clock.
-                            This parameter must be a number between Min_Data = 8 and Max_Data = 127    */
-
-    uint32_t PLLP;       /*!< PLLP: Division factor for ADC clock.
-                            This parameter must be a value of @ref RCC_PLLP_Clock_Divider             */
-
-    uint32_t PLLQ;       /*!< PLLQ: Division factor for SAI, I2S, USB, FDCAN and QUADSPI clocks.
-                            This parameter must be a value of @ref RCC_PLLQ_Clock_Divider             */
-
-    uint32_t PLLR;       /*!< PLLR: Division for the main system clock.
-                            User have to set the PLLR parameter correctly to not exceed max frequency 170MHZ.
-                            This parameter must be a value of @ref RCC_PLLR_Clock_Divider             */
-
-}bsp_pll_config_t;
-
-
-typedef struct
-{
-    uint32_t ClockType;            /*!< The oscillators to be configured.
-                                      This parameter can be a value of @ref RCC_Oscillator_Type                   */
-
-    uint32_t HSEState;             /*!< The new state of the HSE.
-                                      This parameter can be a value of @ref RCC_HSE_Config                        */
-
-    uint32_t HSIState;             /*!< The new state of the HSI.
-                                      This parameter can be a value of @ref RCC_HSI_Config                        */
-
-    bsp_pll_config_t PLL;        /*!< Main PLL structure parameters                                               */
-
-}bsp_clk_osc_config_t;
+#define IS_HPRE_DIVIDER(VALUE) (((VALUE) == BSP_CLK_AHB_PRESCALER_1) || ((VALUE) == BSP_CLK_AHB_PRESCALER_2)|| \
+                                ((VALUE) == BSP_CLK_AHB_PRESCALER_4)|| ((VALUE) == BSP_CLK_AHB_PRESCALER_8) || \
+                                ((VALUE) == BSP_CLK_AHB_PRESCALER_16)|| ((VALUE) == BSP_CLK_AHB_PRESCALER_64) || \
+                                ((VALUE) == BSP_CLK_AHB_PRESCALER_128)|| ((VALUE) == BSP_CLK_AHB_PRESCALER_256) || \
+                                ((VALUE) == BSP_CLK_AHB_PRESCALER_512))
 
 
 
-typedef struct
-{
+enum bsp_clk_apb1_prescaler {
+    APB1_PRESCALER_1 = RCC_CFGR_PPRE1_DIV1, /*!< APB1 CLK is SYSCLK */
+    APB1_PRESCALER_2 = RCC_CFGR_PPRE1_DIV2, /*!< APB1 CLK is SYSCLK/2 */
+    APB1_PRESCALER_4 = RCC_CFGR_PPRE1_DIV4, /*!< APB1 CLK is SYSCLK/4 */
+    APB1_PRESCALER_8 = RCC_CFGR_PPRE1_DIV8, /*!< APB1 CLK is SYSCLK/8 */
+    APB1_PRESCALER_16 = RCC_CFGR_PPRE1_DIV16 /*!< APB1 CLK is SYSCLK/16 */
+};
+
+enum bsp_clk_apb2_prescaler {
+    APB2_PRESCALER_1 = RCC_CFGR_PPRE2_DIV1, /*!< APB1 CLK is SYSCLK */
+    APB2_PRESCALER_2 = RCC_CFGR_PPRE2_DIV2, /*!< APB1 CLK is SYSCLK/2 */
+    APB2_PRESCALER_4 = RCC_CFGR_PPRE2_DIV4, /*!< APB1 CLK is SYSCLK/4 */
+    APB2_PRESCALER_8 = RCC_CFGR_PPRE2_DIV8, /*!< APB1 CLK is SYSCLK/8 */
+    APB2_PRESCALER_16 = RCC_CFGR_PPRE2_DIV16 /*!< APB1 CLK is SYSCLK/16 */
+};
+
+enum bsp_clk_enable_clock {
+    ENGPIOG = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 6), /*!< GPIO G Port Enable */
+    ENGPIOF = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 5), /*!< GPIO F Port Enable */
+    ENGPIOE = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 4), /*!< GPIO E Port Enable */
+    ENGPIOD = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 3), /*!< GPIO D Port Enable */
+    ENGPIOC = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 2), /*!< GPIO C Port Enable */
+    ENGPIOB = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 1), /*!< GPIO B Port Enable */
+    ENGPIOA = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 0), /*!< GPIO A Port Enable */
+    ENUSART1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB2ENR), 14)  /*!< USART 1 Enable */
+};
+
+
+typedef struct {
+    uint32_t PLLState;
+    uint32_t PLLSource;
+    uint32_t PLLM;
+    uint32_t PLLN;
+    uint32_t PLLP;
+    uint32_t PLLQ;
+    uint32_t PLLR;
+} bsp_pll_config_t;
+
+
+typedef struct {
+    uint32_t ClockType;
+    uint32_t HSEState;
+    uint32_t HSIState;
+    bsp_pll_config_t PLL;
+} bsp_clk_osc_config_t;
+
+
+typedef struct {
     uint32_t ClockType;
     uint32_t SystemClockSource;
     uint32_t AHBDivider;
-    uint32_t APB1Divider;
-    uint32_t APB2Divider;
+    enum bsp_clk_apb1_prescaler APB1_prescaler;
+    enum bsp_clk_apb2_prescaler APB2_prescaler;
 
-}bsp_clk_clock_config_t;
+} bsp_clk_clock_config_t;
+
+
+#define IS_APB1_DIVIDER(VALUE) (((VALUE) == APB1_PRESCALER_1) || ((VALUE) == APB1_PRESCALER_2)|| \
+                                ((VALUE) == APB1_PRESCALER_4)|| ((VALUE) == APB1_PRESCALER_8) || \
+                                ((VALUE) == APB1_PRESCALER_16))
+
+#define IS_APB2_DIVIDER(VALUE) (((VALUE) == APB2_PRESCALER_1) || ((VALUE) == APB2_PRESCALER_2)|| \
+                                ((VALUE) == APB2_PRESCALER_4)|| ((VALUE) == APB2_PRESCALER_8) || \
+                                ((VALUE) == APB2_PRESCALER_16))
+
 
 ret_status BSP_CLK_config_clocks_osc(const bsp_clk_osc_config_t *oscc);
+
 ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc);
 
 uint32_t BSP_CLK_get_sysclk_freq(void);
+
 uint32_t BSP_CLK_get_hclk_freq(void);
+
 uint32_t BSP_CLK_get_pclk1_freq(void);
+
 uint32_t BSP_CLK_get_pclk2_freq(void);
 
 ret_status BSP_CLK_reset_clocks(void);
+
+void BSP_CLK_enable_periph_clock(enum bsp_clk_enable_clock clock_en);
+
+void BSP_CLK_disable_periph_clock(enum bsp_clk_enable_clock clock_disable);
 
 #endif  //BSP_CLOCKS_H

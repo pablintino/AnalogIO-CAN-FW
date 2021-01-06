@@ -28,9 +28,60 @@
 #include "bsp.h"
 
 
-void BSP_init(void){
+static ret_status __configure_clocks(void);
 
-    BSP_TICK_config(BSP_CLK_get_hclk_freq());
+static ret_status __configure_usart(void);
+
+
+void BSP_init(void) {
+
+    ret_status temp_status = __configure_clocks();
+    if (temp_status != STATUS_OK) {
+        while (1) { ; };
+    }
+
+    BSP_IRQ_init();
+    BSP_CLK_enable_periph_clock(ENGPIOA);
+    BSP_CLK_enable_periph_clock(ENUSART1);
+
+    temp_status = __configure_usart();
+    if (temp_status != STATUS_OK) {
+        while (1) { ; };
+    }
+    BSP_USART_enable(USART1);
+}
+
+
+static ret_status __configure_usart(void) {
+
+
+    /* -2- Configure IO in output push-pull mode to drive external LEDs */
+    BSP_IO_conf_af(GPIOA,
+                   BSP_IO_PIN_9 | BSP_IO_PIN_10,
+                   7,
+                   BSP_IO_PU,
+                   BSP_IO_LOW,
+                   BSP_IO_OUT_TYPE_PP);
+
+    bsp_usart_config_t usart_config;
+    usart_config.HardwareControl = BSP_USART_HW_CONTROL_NONE;
+    usart_config.StopBits = BSP_USART_STOP_BITS_1;
+    usart_config.Baudrate = 115200;
+    usart_config.Mode = BSP_USART_MODE_TX;
+    usart_config.Parity = BSP_USART_PARITY_NONE;
+    usart_config.Prescaler = BSP_USART_PRESCALER_2;
+    usart_config.BitLengh = BSP_USART_BIT_LENGTH_8;
+    usart_config.BitSampling = BSP_USART_SAMPLING_16_BITS;
+    return BSP_USART_conf(USART1, &usart_config);
+
+
+}
+
+static ret_status __configure_clocks(void) {
+
+    ret_status temp_status;
+
+    BSP_TCK_config(BSP_CLK_get_hclk_freq());
 
     bsp_clk_osc_config_t oscConfig;
     oscConfig.ClockType = BSP_CLK_CLOCK_TYPE_PLL | BSP_CLK_CLOCK_TYPE_HSE;
@@ -45,20 +96,17 @@ void BSP_init(void){
     oscConfig.PLL.PLLR = 2;
 
     bsp_clk_clock_config_t clockConfig;
-    clockConfig.ClockType = BSP_CLK_CLOCK_TYPE_SYSCLK;
+    clockConfig.ClockType = BSP_CLK_CLOCK_TYPE_SYSCLK | BSP_CLK_CLOCK_TYPE_HCLK;
     clockConfig.SystemClockSource = BSP_CLK_CLOCK_SOURCE_PLL;
+    clockConfig.AHBDivider = BSP_CLK_AHB_PRESCALER_1;
+    clockConfig.APB1_prescaler = APB1_PRESCALER_1;
+    clockConfig.APB2_prescaler = APB2_PRESCALER_1;
 
-    if(BSP_CLK_config_clocks_osc(&oscConfig) == STATUS_OK){
-        if(BSP_CLK_config_clocks(&clockConfig) != STATUS_OK){
-            /* TODO Notify this with status LED */
-        }
-    }else{
-        /* TODO Notify this with status LED */
+    temp_status = BSP_CLK_config_clocks_osc(&oscConfig);
+    if (temp_status == STATUS_OK) {
+        temp_status = BSP_CLK_config_clocks(&clockConfig);
+
     }
 
-    BSP_interrupts_init();
-
-    BSP_CLK_PERIPH_ENABLE_GPIO(BSP_CLK_PERIPH_ENABLE_GPIO_A);
-
+    return temp_status;
 }
-

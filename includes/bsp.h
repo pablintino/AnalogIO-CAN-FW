@@ -31,7 +31,7 @@
 #include "bsp_irq_manager.h"
 #include "bsp_clocks.h"
 #include "bsp_io.h"
-
+#include "bsp_usart.h"
 
 void BSP_init(void);
 

@@ -24,23 +24,11 @@
  **/
 
 
-#include <os.h>
-#include "bsp_tick.h"
-#include "stm32g4xx.h"
+#ifndef FW_COMMON_TYPES_H
+#define FW_COMMON_TYPES_H
 
 
-uint32_t BSP_TICK_get_ticks(void){
-    OS_ERR err;
-    uint32_t ticks;
-    // Obtain ticks from uC
-    ticks = OSTimeGet(&err);
-    if(err == OS_ERR_NONE){
-        return ticks;
-    }
-    // TODO This situation should be managed
-    return 0;
-}
+#define __REG32_T(ADDR) (*(volatile uint32_t*) (ADDR))
 
-void BSP_TCK_config(uint32_t sys_frequency){
-    SysTick_Config(sys_frequency / (uint32_t) BSP_SYSTICK_RATE);
-}
+
+#endif //FW_COMMON_TYPES_H

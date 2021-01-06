@@ -213,7 +213,7 @@ g_pfnVectors:
 	.word	0
 	.word	BSP_IntHandlerUCPD1
 	.word	BSP_IntHandlerCOMP1_3
-	.word	BSP_IntHandlerCOMP4_6
+	.word	BSP_IntHandlerCOMP4
 	.word	0
 	.word	0
 	.word	0
@@ -460,8 +460,8 @@ g_pfnVectors:
 	.weak	BSP_IntHandlerCOMP1_3
 	.thumb_set BSP_IntHandlerCOMP1_3,Default_Handler
 
-	.weak	BSP_IntHandlerCOMP4_6
-	.thumb_set BSP_IntHandlerCOMP4_6,Default_Handler
+	.weak	BSP_IntHandlerCOMP4
+	.thumb_set BSP_IntHandlerCOMP4,Default_Handler
 
 	.weak	BSP_IntHandlerCRS
 	.thumb_set BSP_IntHandlerCRS,Default_Handler

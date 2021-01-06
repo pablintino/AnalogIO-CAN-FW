@@ -24,96 +24,133 @@
  **/
 
 
+#include <bsp_common_utils.h>
 #include "bsp_io.h"
 
 
 /* internal type */
-enum bsp_port_io_type_t {
-    INPUT = 0,
-    OUTPUT = 1,
-    ALTERNATE = 2,
-    ANALOG = 3
-};
-typedef enum bsp_port_io_type_t bsp_port_io_type_t;
+typedef enum {
+    INPUT = 0x00U,
+    OUTPUT = 0x01U,
+    ALTERNATE = 0x02U,
+    ANALOG = 0x03U
+} bsp_port_io_type_t;
 
 
-static void configure_io_type(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_io_type_t io_type);
+static void __configure_output_characteristics(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_speed_t speed,
+                                               bsp_port_output_type_t output_type);
 
-static void
-conf_digital_io(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed,
-                bsp_port_io_type_t type);
+static ret_status
+__configure_io_ports(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_io_type_t io_type, uint8_t af_function,
+                     bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
 
 void
-BSP_IO_conf_output_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed) {
-    conf_digital_io(port, pin_number, pull_up_down, speed, OUTPUT);
+BSP_IO_conf_output_pin(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down,
+                       bsp_port_speed_t speed,
+                       bsp_port_output_type_t output_type) {
+    __configure_io_ports(port, pin_number, OUTPUT, 0U, pull_up_down, speed, output_type);
 }
 
 void
-BSP_IO_write_toggle_pin(GPIO_TypeDef *port, uint8_t pin_number) {
-    if (pin_number < 16) {
+BSP_IO_conf_input_pin(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down,
+                      bsp_port_speed_t speed) {
+    __configure_io_ports(port, pin_number, INPUT, 0U, pull_up_down, speed, BSP_IO_OUT_TYPE_PP);
+}
+
+
+void BSP_IO_conf_af(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t af_function, bsp_port_pp_pd_t pull_up_down,
+                    bsp_port_speed_t speed, bsp_port_output_type_t output_type) {
+    __configure_io_ports(port, pin_number, ALTERNATE, af_function, pull_up_down, speed, output_type);
+}
+
+
+void BSP_IO_toggle_pin(BSP_IO_Port *port, uint8_t pin_number) {
+    if (BSP_IO_IS_PIN_VALID(pin_number)) {
         uint16_t pin_bin = 1 << pin_number;
-        port->BSRR = (port->ODR & pin_bin) != 0X00u ? (uint32_t) pin_bin << 16ul : (uint32_t) pin_bin;
+        port->BSRR = (port->ODR & pin_bin) != 0x00U ? (uint32_t) pin_bin << 16ul : (uint32_t) pin_bin;
 
     }
 }
 
-void
-BSP_IO_write_pin(GPIO_TypeDef *port, uint8_t pin_number, uint8_t value) {
-    if (pin_number < 16) {
-        uint16_t pin_bin = 1 << pin_number;
+ret_status BSP_IO_write_pin(BSP_IO_Port *port, uint8_t pin_number, bool value) {
 
-        if (value == 0) {
-            port->BRR = (uint32_t) pin_bin;
-        } else {
-            port->BSRR = (uint32_t) pin_bin;
-        }
+    if (!BSP_IO_IS_PIN_VALID(pin_number)) {
+        return STATUS_ERR;
     }
+
+    if (value == 0) {
+        __BSP_SET_MASKED_REG(port->BRR, 0x01U << pin_number);
+    } else {
+        __BSP_SET_MASKED_REG(port->BSRR, 0x01U << pin_number);
+    }
+    return STATUS_OK;
 }
 
-uint8_t
-BSP_IO_read_pin(GPIO_TypeDef *port, uint8_t pin_number) {
+uint8_t BSP_IO_read_pin(BSP_IO_Port *port, uint8_t pin_number) {
     uint8_t res = 0;
-    if (pin_number < 16) {
-        res = (uint8_t)((port->IDR & (uint32_t)(1 << pin_number)) >> pin_number);
+    if (BSP_IO_IS_PIN_VALID(pin_number)) {
+        res = (uint8_t) ((port->IDR & (uint32_t) (1 << pin_number)) >> pin_number);
     }
     return res;
 }
 
-void
-BSP_IO_conf_input_pin(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed) {
-    conf_digital_io(port, pin_number, pull_up_down, speed, OUTPUT);
+ret_status
+__configure_io_ports(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_io_type_t io_type, uint8_t af_function,
+                     bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type) {
+    if (!__BSP_IO_IS_PIN_VALID(pin_number)) {
+        return STATUS_ERR;
+    }
+
+    /* RM0440 indicates that for ANALOG pins only Pull-Down or no weak resistors can be configured */
+    if (io_type == ANALOG && pull_up_down != BSP_IO_NO_PU_PD && pull_up_down != BSP_IO_PD) {
+        return STATUS_ERR;
+    }
+
+    for (uint8_t pin_n = 0; pin_n < BSP_IO_PORT_LENGTH; pin_n++) {
+        /* Check if the current pin_n needs to be configured */
+        if (pin_number & (1 << (pin_n & 0x0F))) {
+
+            /* First configure de IO type by using the MODER register */
+            __BSP_SET_MASKED_REG_VALUE(port->MODER, 0x03UL << (pin_n * 2),
+                                       (io_type & 0x3UL) << (pin_n * 2));
+
+            /* Configure Pull-Up / Pull-Down resistors */
+            __BSP_SET_MASKED_REG_VALUE(port->PUPDR, 0x03UL << (pin_n * 2),
+                                       (pull_up_down & 0x3UL) << (pin_n * 2));
+
+            /* If pins are declared as output or AF configure speed and output type */
+            if (io_type == OUTPUT || io_type == ALTERNATE) {
+                __configure_output_characteristics(port, pin_n, speed, output_type);
+            } else {
+                /* Reset to input defaults. Note: PA14 has a special speed default value */
+                __configure_output_characteristics(port, pin_n,
+                                                   port == GPIOA && pin_n == 14 ? BSP_IO_VERY_HIGH : BSP_IO_LOW,
+                                                   BSP_IO_OUT_TYPE_PP);
+            }
+
+            /* Setup alternate MUX */
+            /*_BSP_SET_MASKED_REG_VALUE(port->AFR[pin_n >> 3U], 0x0FU << (pin_n * 4),
+                                       io_type == ALTERNATE ? (af_function & 0x0FU) << (pin_n * 4) : 0x00U);*/
+            uint32_t temp;
+            temp = port->AFR[pin_n >> 3U];
+            temp &= ~(0xFU << ((pin_n & 0x07U) * 4U));
+            temp |= ((af_function) << ((pin_n & 0x07U) * 4U));
+            port->AFR[pin_n >> 3U] = temp;
+
+        }
+    }
+
+    return STATUS_OK;
 }
 
 
-static void configure_io_type(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_io_type_t io_type) {
-    uint32_t tmp_reg;
-
-    /* First configure de IO type by using the MODER register */
-    tmp_reg = port->MODER;
-    tmp_reg &= ~(0x03UL << (pin_number * 2));
-    tmp_reg |= ((io_type & 0x3UL) << (pin_number * 2));
-    port->MODER = tmp_reg;
-}
-
-
-static void
-conf_digital_io(GPIO_TypeDef *port, uint16_t pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed,
-                bsp_port_io_type_t type) {
-
-    uint32_t tmp_reg;
-
-    /* First configure de IO type by using the MODER register */
-    configure_io_type(port, pin_number, type);
-
-    /* Configure PP or PD output configuration */
-    tmp_reg = port->PUPDR;
-    tmp_reg &= ~(0x03UL << (pin_number * 2));
-    tmp_reg |= ((pull_up_down & 0x3UL) << (pin_number * 2));
-    port->PUPDR = tmp_reg;
-
+static void __configure_output_characteristics(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_speed_t speed,
+                                               bsp_port_output_type_t output_type) {
     /* Configure speed */
-    tmp_reg = port->OSPEEDR;
-    tmp_reg &= ~(0x03UL << (pin_number * 2));
-    tmp_reg |= ((speed & 0x3UL) << (pin_number * 2));
-    port->OSPEEDR = tmp_reg;
+    __BSP_SET_MASKED_REG_VALUE(port->OSPEEDR, 0x03UL << (pin_number * 2),
+                               (speed & 0x3UL) << (pin_number * 2));
+
+    /* Configure Push-Pull or Open Drain output mode */
+    __BSP_SET_MASKED_REG_VALUE(port->OTYPER, 0x01 << pin_number, output_type & 0x01U << pin_number);
 }
+
