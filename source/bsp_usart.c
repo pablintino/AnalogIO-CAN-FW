@@ -24,6 +24,7 @@
  **/
 
 
+#include <bsp_tick.h>
 #include "bsp_usart.h"
 #include "bsp_common_utils.h"
 #include "bsp_clocks.h"
@@ -127,12 +128,17 @@ __calculate_brr(uint32_t usart_clk, uint32_t baudrate, uint16_t prescaler, bsp_u
     return (usart_clk / prescaler * (sampling == BSP_USART_SAMPLING_8_BITS ? 2 : 1) + baudrate / 2) / baudrate;
 }
 
-ret_status BSP_USART_put_char(BSP_USART_Instance *usart, uint8_t character) {
-    /* TODO This is a test implementation. Cannot use this "endless" loop in the final version */
-    while (!(usart->ISR & USART_ISR_TXE)) {};
+ret_status BSP_USART_put_char(BSP_USART_Instance *usart, uint8_t character, uint32_t timeout) {
+    uint32_t tickstart = BSP_TICK_get_ticks();
+    ret_status temp_status;
+    temp_status = BSP_UTIL_wait_flag_status(&usart->ISR, USART_ISR_TXE, USART_ISR_TXE, timeout);
+    if (temp_status != STATUS_OK) {
+        return temp_status;
+    }
+
     usart->TDR = character;
-    while (!(usart->ISR & USART_ISR_TC)) {};
-    return STATUS_OK;
+    return BSP_UTIL_wait_flag_status(&usart->ISR, USART_ISR_TC, USART_ISR_TC,
+                                     timeout - (BSP_TICK_get_ticks() - tickstart));
 }
 
 static ret_status __get_usart_clk_mux_position(BSP_USART_Instance *usart, uint8_t *position) {

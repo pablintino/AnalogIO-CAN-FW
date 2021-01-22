@@ -60,19 +60,19 @@ static void AppTaskStart(void *p_arg) {
                            BSP_IO_HIGH,
                            BSP_IO_OUT_TYPE_PP);
 
-    BSP_USART_put_char(USART1, 'T');
-    BSP_USART_put_char(USART1, 'E');
-    BSP_USART_put_char(USART1, 'S');
-    BSP_USART_put_char(USART1, 'T');
-    BSP_USART_put_char(USART1, '\r');
-    BSP_USART_put_char(USART1, '\n');
+    BSP_USART_put_char(USART1, 'T', 100U);
+    BSP_USART_put_char(USART1, 'E', 100U);
+    BSP_USART_put_char(USART1, 'S', 100U);
+    BSP_USART_put_char(USART1, 'T', 100U);
+    BSP_USART_put_char(USART1, '\r', 100U);
+    BSP_USART_put_char(USART1, '\n', 100U);
 
     while (DEF_TRUE) {                                /* Task body, always written as an infinite loop. */
 
-        BSP_USART_put_char(USART1, 'H');
+        BSP_USART_put_char(USART1, 'H', 100U);
         BSP_IO_write_pin(GPIOA, 4, 1);
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
-        BSP_USART_put_char(USART1, 'O');
+        BSP_USART_put_char(USART1, 'O', 100U);
         BSP_IO_write_pin(GPIOA, 5, 1);
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
         BSP_IO_write_pin(GPIOA, 6, 1);

@@ -110,7 +110,7 @@ typedef USART_TypeDef BSP_USART_Instance;
 
 ret_status BSP_USART_conf(BSP_USART_Instance *usart, bsp_usart_config_t *config);
 
-ret_status BSP_USART_put_char(BSP_USART_Instance *usart, uint8_t character);
+ret_status BSP_USART_put_char(BSP_USART_Instance *usart, uint8_t character, uint32_t timeout);
 
 ret_status BSP_USART_enable(BSP_USART_Instance *usart);
 ret_status BSP_USART_disable(BSP_USART_Instance *usart);
