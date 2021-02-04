@@ -45,16 +45,19 @@ ret_status BSP_USART_conf(BSP_USART_Instance *usart, bsp_usart_config_t *config)
     uint16_t brrtemp;
 
     /* Most configurations cannot be done if the USART is enabled */
-    if (usart->CR1 & USART_CR1_UE == USART_CR1_UE) {
+    if (__BSP_IS_FLAG_SET(usart->CR1, USART_CR1_UE)) {
         return STATUS_ERR;
     }
     /* Calculate USART input frequency based on the actual device frequency and the USART/RCC clock mux state */
     if (__get_usart_input_frequency(usart, &usart_frequency) != STATUS_OK) {
         return STATUS_ERR;
     }
-    /*TODO Validate prescaler values */
-    usart_prescaler = config->Prescaler != APB1_PRESCALER_1 ? USART_PRESCALERS[config->Prescaler - 1] : 1;
-    /* TODO Validate the preescaler */
+
+    /** Just validate preescaler values before using them */
+    if(!__BSP_USART_IS_VALID_PRESCALER(config->Prescaler)){
+        return STATUS_ERR;
+    }
+    usart_prescaler = config->Prescaler != BSP_USART_PRESCALER_1 ? USART_PRESCALERS[config->Prescaler - 1] : 1;
     usart->PRESC = config->Prescaler & USART_PRESC_PRESCALER;
     usart_div = __calculate_brr(usart_frequency, config->Baudrate, usart_prescaler, config->BitSampling);
     if (usart_div < 16 || usart_div > 65535) {
@@ -71,22 +74,22 @@ ret_status BSP_USART_conf(BSP_USART_Instance *usart, bsp_usart_config_t *config)
                                USART_CR1_OVER8 | USART_CR1_RE | USART_CR1_TE | USART_CR1_M | USART_CR1_PCE |
                                USART_CR1_PS,
                                (config->BitSampling & USART_CR1_OVER8) |
-                               (config->Parity & USART_CR1_PCE | USART_CR1_PS) |
+                               (config->Parity & (USART_CR1_PCE | USART_CR1_PS)) |
                                (config->Mode & (USART_CR1_RE | USART_CR1_TE)));
 
     __BSP_SET_MASKED_REG_VALUE(usart->CR2, USART_CR2_STOP, (config->StopBits & USART_CR2_STOP));
     __BSP_SET_MASKED_REG_VALUE(usart->CR3, USART_CR3_CTSE | USART_CR3_RTSE,
-                               (config->HardwareControl & USART_CR3_CTSE | USART_CR3_RTSE));
+                               config->HardwareControl & (USART_CR3_CTSE | USART_CR3_RTSE));
 
     return STATUS_OK;
 }
 
-ret_status BSP_USART_enable(BSP_USART_Instance *usart) {
-    usart->CR1 |= USART_CR1_UE;
+void BSP_USART_enable(BSP_USART_Instance *usart) {
+    __BSP_SET_MASKED_REG(usart->CR1, USART_CR1_UE);
 }
 
-ret_status BSP_USART_disable(BSP_USART_Instance *usart) {
-    usart->CR1 &= ~USART_CR1_UE;
+void BSP_USART_disable(BSP_USART_Instance *usart) {
+    __BSP_CLEAR_MASKED_REG(usart->CR1, USART_CR1_UE);
 }
 
 
@@ -131,14 +134,14 @@ __calculate_brr(uint32_t usart_clk, uint32_t baudrate, uint16_t prescaler, bsp_u
 ret_status BSP_USART_put_char(BSP_USART_Instance *usart, uint8_t character, uint32_t timeout) {
     uint32_t tickstart = BSP_TICK_get_ticks();
     ret_status temp_status;
-    temp_status = BSP_UTIL_wait_flag_status(&usart->ISR, USART_ISR_TXE, USART_ISR_TXE, timeout);
+    temp_status = BSP_UTIL_wait_flag_status_now(&usart->ISR, USART_ISR_TXE, USART_ISR_TXE, timeout);
     if (temp_status != STATUS_OK) {
         return temp_status;
     }
 
     usart->TDR = character;
-    return BSP_UTIL_wait_flag_status(&usart->ISR, USART_ISR_TC, USART_ISR_TC,
-                                     timeout - (BSP_TICK_get_ticks() - tickstart));
+    return BSP_UTIL_wait_flag_status_now(&usart->ISR, USART_ISR_TC, USART_ISR_TC,
+                                         timeout - (BSP_TICK_get_ticks() - tickstart));
 }
 
 static ret_status __get_usart_clk_mux_position(BSP_USART_Instance *usart, uint8_t *position) {

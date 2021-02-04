@@ -151,6 +151,6 @@ static void __configure_output_characteristics(BSP_IO_Port *port, bsp_io_pin_num
                                (speed & 0x3UL) << (pin_number * 2));
 
     /* Configure Push-Pull or Open Drain output mode */
-    __BSP_SET_MASKED_REG_VALUE(port->OTYPER, 0x01 << pin_number, output_type & 0x01U << pin_number);
+    __BSP_SET_MASKED_REG_VALUE(port->OTYPER, 0x01 << pin_number, (output_type & 0x01U) << pin_number);
 }
 

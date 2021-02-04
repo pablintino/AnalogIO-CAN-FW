@@ -32,6 +32,8 @@ static ret_status __configure_clocks(void);
 
 static ret_status __configure_usart(void);
 
+static ret_status __configure_i2c(void);
+
 
 void BSP_init(void) {
 
@@ -42,14 +44,50 @@ void BSP_init(void) {
 
     BSP_IRQ_init();
     BSP_CLK_enable_periph_clock(ENGPIOA);
+    BSP_CLK_enable_periph_clock(ENGPIOB);
+    BSP_CLK_enable_periph_clock(ENI2C3);
     BSP_CLK_enable_periph_clock(ENUSART1);
 
     temp_status = __configure_usart();
     if (temp_status != STATUS_OK) {
         while (1) { ; };
     }
+
+    temp_status = __configure_i2c();
+    if (temp_status != STATUS_OK) {
+        while (1) { ; };
+    }
+
     BSP_USART_enable(USART1);
+    BSP_I2C_enable(I2C3);
 }
+
+static ret_status __configure_i2c(void) {
+
+    BSP_IO_conf_af(GPIOA,
+                   BSP_IO_PIN_8,
+                   2,
+                   BSP_IO_NO_PU_PD,
+                   BSP_IO_LOW,
+                   BSP_IO_OUT_TYPE_OPEN_DRAIN);
+
+    BSP_IO_conf_af(GPIOB,
+                   BSP_IO_PIN_5,
+                   8,
+                   BSP_IO_NO_PU_PD,
+                   BSP_IO_LOW,
+                   BSP_IO_OUT_TYPE_OPEN_DRAIN);
+
+    bsp_i2c_master_config_t i2c_config;
+    i2c_config.AddressingMode = BSP_I2C_ADDRESSING_MODE_7;
+    i2c_config.AnalogFilterEnabled = true;
+    i2c_config.DigitalFilter = BSP_I2C_DIGITAL_FILTER_OFF;
+    i2c_config.SelfAddress = 0x00U;
+    i2c_config.FixedSpeed = BSP_I2C_SPEED_100;
+    i2c_config.CustomTimming = 0x00U;
+    return BSP_I2C_master_conf(I2C3, &i2c_config);
+}
+
 
 
 static ret_status __configure_usart(void) {

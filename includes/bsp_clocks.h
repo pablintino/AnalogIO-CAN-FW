@@ -127,7 +127,10 @@ enum bsp_clk_enable_clock {
     ENGPIOC = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 2), /*!< GPIO C Port Enable */
     ENGPIOB = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 1), /*!< GPIO B Port Enable */
     ENGPIOA = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 0), /*!< GPIO A Port Enable */
-    ENUSART1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB2ENR), 14)  /*!< USART 1 Enable */
+    ENUSART1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB2ENR), 14),  /*!< USART 1 Enable */
+    ENI2C1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 21),  /*!< I2C1 Enable */
+    ENI2C2 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 22),  /*!< I2C2 Enable */
+    ENI2C3 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 30)  /*!< I2C2 Enable */
 };
 
 

@@ -32,6 +32,7 @@
 #include "bsp_clocks.h"
 #include "bsp_io.h"
 #include "bsp_usart.h"
+#include "bsp_i2c.h"
 
 void BSP_init(void);
 

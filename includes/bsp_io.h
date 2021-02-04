@@ -49,7 +49,7 @@ typedef enum  {
 
 typedef enum  {
     BSP_IO_OUT_TYPE_PP = 0x00U,
-    BSP_IO_OUT_TYPE_OPEN_DRAIN = 0x0U
+    BSP_IO_OUT_TYPE_OPEN_DRAIN = 0x01U
 } bsp_port_output_type_t;
 
 typedef enum {
