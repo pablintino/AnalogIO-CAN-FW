@@ -127,6 +127,9 @@ uint32_t BSP_CLK_get_pclk2_freq(void){
     return BSP_CLK_get_hclk_freq() / ppre_divider;
 }
 
+uint32_t BSP_CLK_get_pllq_freq(void){
+    return __calculate_pllqclk_freq() ;
+}
 
 /**
  *

@@ -25,6 +25,7 @@
 
 
 #include <bsp_tick.h>
+#include <SEGGER_RTT.h>
 #include "bsp.h"
 
 
@@ -34,11 +35,15 @@ static ret_status __configure_usart(void);
 
 static ret_status __configure_i2c(void);
 
+static ret_status __configure_can(void);
+
+
 
 void BSP_init(void) {
 
     ret_status temp_status = __configure_clocks();
     if (temp_status != STATUS_OK) {
+        SEGGER_RTT_WriteString(0, "[ERR] Failed to configure system clocks\r\n");
         while (1) { ; };
     }
 
@@ -47,19 +52,33 @@ void BSP_init(void) {
     BSP_CLK_enable_periph_clock(ENGPIOB);
     BSP_CLK_enable_periph_clock(ENI2C3);
     BSP_CLK_enable_periph_clock(ENUSART1);
+    BSP_CLK_enable_periph_clock(ENFDCAN);
 
     temp_status = __configure_usart();
     if (temp_status != STATUS_OK) {
+        SEGGER_RTT_WriteString(0, "[ERR] Failed to configure USART\r\n");
         while (1) { ; };
     }
 
     temp_status = __configure_i2c();
     if (temp_status != STATUS_OK) {
+        SEGGER_RTT_WriteString(0, "[ERR] Failed to configure i2c\r\n");
         while (1) { ; };
     }
 
+    temp_status = __configure_can();
+    if (temp_status != STATUS_OK) {
+        SEGGER_RTT_WriteString(0, "[ERR] Failed to configure CAN\r\n");
+        while (1) { ; };
+    }
+    SEGGER_RTT_WriteString(0, "[INFO] Enabling USART1\r\n");
     BSP_USART_enable(USART1);
+
+    SEGGER_RTT_WriteString(0, "[INFO] Enabling I2C3\r\n");
     BSP_I2C_enable(I2C3);
+
+    SEGGER_RTT_WriteString(0, "[INFO] Enabling FDCAN1\r\n");
+    BSP_CAN_start(FDCAN1);
 }
 
 static ret_status __configure_i2c(void) {
@@ -88,6 +107,42 @@ static ret_status __configure_i2c(void) {
     return BSP_I2C_master_conf(I2C3, &i2c_config);
 }
 
+
+static ret_status __configure_can(void){
+
+
+    BSP_IO_conf_af(GPIOA,
+                   BSP_IO_PIN_11 | BSP_IO_PIN_12,
+                   9,
+                   BSP_IO_NO_PU_PD,
+                   BSP_IO_VERY_HIGH,
+                   BSP_IO_OUT_TYPE_PP);
+
+
+    bsp_can_config_t  can_config;
+    can_config.TXMode = BSP_CAN_TX_MODE_FIFO;
+    can_config.InterfaceMode = BSP_CAN_MODE_NORMAL;
+    can_config.Timing.Phase1T = 13; //11
+    can_config.Timing.Phase2T = 2; //4
+    can_config.Timing.SyncJumpWidth = 1; //4
+    can_config.Timing.Prescaler = 3; //6
+    can_config.EnableAutoretransmision = false;
+    can_config.GlobalFiltering.NonMatchingStandard = BSP_CAN_NON_MATCHING_ACCEPT_RX_0;
+    can_config.GlobalFiltering.RejectRemoteStandard = true;
+
+    BSP_CAN_conf_clock_source(FDCAN1, BSP_CAN_CLK_PCLK1);
+
+    ret_status tmp_status = BSP_CAN_conf(FDCAN1, &can_config);
+    if(tmp_status != STATUS_OK){
+        return tmp_status;
+    }
+
+    uint32_t can_baudrate;
+    BSP_CAN_get_baudrate(FDCAN1, &can_baudrate);
+    SEGGER_RTT_printf(0, "[INFO] CAN baudrate set to %u\r\n", can_baudrate);
+
+    return STATUS_OK;
+}
 
 
 static ret_status __configure_usart(void) {
@@ -143,7 +198,6 @@ static ret_status __configure_clocks(void) {
     temp_status = BSP_CLK_config_clocks_osc(&oscConfig);
     if (temp_status == STATUS_OK) {
         temp_status = BSP_CLK_config_clocks(&clockConfig);
-
     }
 
     return temp_status;

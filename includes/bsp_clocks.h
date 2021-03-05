@@ -130,7 +130,8 @@ enum bsp_clk_enable_clock {
     ENUSART1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB2ENR), 14),  /*!< USART 1 Enable */
     ENI2C1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 21),  /*!< I2C1 Enable */
     ENI2C2 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 22),  /*!< I2C2 Enable */
-    ENI2C3 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 30)  /*!< I2C2 Enable */
+    ENI2C3 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 30),  /*!< I2C2 Enable */
+    ENFDCAN = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 25)  /*!< FDCAN Enable */
 };
 
 
@@ -183,6 +184,8 @@ uint32_t BSP_CLK_get_hclk_freq(void);
 uint32_t BSP_CLK_get_pclk1_freq(void);
 
 uint32_t BSP_CLK_get_pclk2_freq(void);
+
+uint32_t BSP_CLK_get_pllq_freq(void);
 
 ret_status BSP_CLK_reset_clocks(void);
 

@@ -33,6 +33,9 @@
 #include "bsp_io.h"
 #include "bsp_usart.h"
 #include "bsp_i2c.h"
+#include "bsp_can.h"
+
+
 
 void BSP_init(void);
 

@@ -21,24 +21,5 @@
 ## SOFTWARE.
 
 
-# Add git functions
-include(git-functions)
-
-# RTOS Enable/disabled vars as cache variables
-set(ENABLE_FREERTOS_USAGE FALSE CACHE BOOL "Use FreeRTOS kernel")
-set(ENABLE_UCOS_USAGE FALSE CACHE BOOL "Use uC/OS-III kernel")
-
-# Add freertos as external lib if enabled
-if(ENABLE_FREERTOS_USAGE)
-    add_subdirectory(FreeRTOS)
-endif()
-
-# Add uC/OS-III as external lib if enabled
-if(ENABLE_UCOS_USAGE)
-    add_subdirectory(uCOS-III)
-endif()
-
-add_subdirectory(SEGGER-RTT)
-
-# Add STM32 and CMSIS libs
-add_subdirectory(STM32Cube)
+add_library(segger-rtt ${CMAKE_CURRENT_LIST_DIR}/SEGGER_RTT.c ${CMAKE_CURRENT_LIST_DIR}/SEGGER_RTT_printf.c)
+target_include_directories(segger-rtt PUBLIC ${CMAKE_CURRENT_LIST_DIR}/includes)

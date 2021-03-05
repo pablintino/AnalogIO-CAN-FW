@@ -31,6 +31,10 @@
 #include "bsp_common_utils.h"
 
 
+
+#define __BSP_I2C_MAX_TRANSFER_SIZE 255U
+
+
 /**
  * This matrix allows I2C peripheral to be configured based on pre-calculated speeds for various well known frequencies.
  * The first index indicates the peripheral speed whereas the second one represents the speed mode (standard, full or fast modes)
@@ -272,7 +276,7 @@ __start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_
     /** Peripheral allows only 255 transfers. Bigger transfers can be accomplished by manually reloading the whole peripheral
      * using the proper RELOAD bit in CR2.
      */
-    uint8_t actual_transfer_size = transfer_size > 255 ? 255 : transfer_size;
+    uint8_t actual_transfer_size = transfer_size > __BSP_I2C_MAX_TRANSFER_SIZE ? __BSP_I2C_MAX_TRANSFER_SIZE : transfer_size;
 
     __BSP_SET_MASKED_REG_VALUE(i2c->CR2,
     /** If the transfer is a write one clear RD_WRN */
@@ -292,8 +296,7 @@ __start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_
                                /** If transfer size is bigger that 255 the peripheral shouldn't end the transfer with a
                                 * STOP cause we'll reload with the remaining data
                                 */
-                               (transfer_size > 255 ? I2C_CR2_RELOAD : I2C_CR2_AUTOEND));
-
+                               (transfer_size > __BSP_I2C_MAX_TRANSFER_SIZE ? I2C_CR2_RELOAD : I2C_CR2_AUTOEND));
 
     return actual_transfer_size;
 }

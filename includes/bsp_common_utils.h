@@ -33,6 +33,7 @@
     #define BSP_UTL_COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
     #define __BSP_SET_MASKED_REG_VALUE(REG, MASK, VALUE) (REG) = (((REG) & ~(MASK)) | (VALUE))
+    #define __BSP_SET_REG_VALUE(REG, VALUE) (REG) = (VALUE)
     #define __BSP_CLEAR_MASKED_REG(REG, MASK) REG &= (~MASK)
     #define __BSP_SET_MASKED_REG(REG, MASK) REG |= (MASK)
     #define __BSP_IS_FLAG_SET(REG, FLAG) (((REG) & (FLAG)) == FLAG)
