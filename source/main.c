@@ -117,11 +117,11 @@ static  void  AppTaskCanTX (void  *p_arg)
 
     uint32_t test_tmp = test_n;
     while (DEF_TRUE) {
-        OSTimeDly(10, OS_OPT_TIME_PERIODIC, &err);
+        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
 
-        /*if(BSP_CAN_add_tx_message(FDCAN1, &test, &data) != STATUS_OK){
+        if(BSP_CAN_add_tx_message(FDCAN1, &test, &data) != STATUS_OK){
             SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
-        }*/
+        }
         if(test_n!= test_tmp){
             test_tmp = test_n;
             SEGGER_RTT_printf(0, "[INFO] >> %u\r\n", test_n);
@@ -192,6 +192,8 @@ static void AppTaskStart(void *p_arg) {
 
 
     BSP_CAN_config_irq(FDCAN1, BSP_CAN_IRQ_TYPE_RF0NE, can_rx_handler);
+
+
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
     BSP_IO_conf_output_pin(GPIOA,

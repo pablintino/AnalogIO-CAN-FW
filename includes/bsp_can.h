@@ -34,25 +34,16 @@
 #include "stm32g4xx.h"
 
 
-typedef struct {
-    uint8_t Phase1T;
-    uint8_t Phase2T;
-    uint8_t SyncJumpWidth;
-    uint16_t Prescaler;
-} bsp_i2c_can_timming_config_t;
-
 
 typedef enum {
     BSP_CAN_MODE_NORMAL = 0x00U,
     BSP_CAN_MODE_BM = 0x01U
 } bsp_can_mode_source;
 
-
 typedef enum {
     BSP_CAN_TX_MODE_FIFO = 0x00U,
     BSP_CAN_TX_MODE_QUEUE = FDCAN_TXBC_TFQM
 } bsp_can_tx_mode;
-
 
 typedef enum {
     BSP_CAN_NON_MATCHING_ACCEPT_RX_0 = 0x00U,
@@ -60,24 +51,21 @@ typedef enum {
     BSP_CAN_NON_MATCHING_REJECT = 0x02U
 } bsp_can_non_matching_filter_type;
 
-
-enum bsp_can_clock_source {
+typedef enum {
     BSP_CAN_CLK_HSE = 0x00U,
     BSP_CAN_CLK_PLLQ = 0x01U,
     BSP_CAN_CLK_PCLK1 = 0x02U
-};
+} bsp_can_clock_source;
 
-enum bsp_can_rx_queue {
+typedef enum {
     BSP_CAN_RX_QUEUE_O = 0x00U,
     BSP_CAN_RX_QUEUE_1 = 0x01U
-};
-
+} bsp_can_rx_queue;
 
 typedef struct {
     bool RejectRemoteStandard;
     bsp_can_non_matching_filter_type NonMatchingStandard;
 } bsp_can_rx_global_filtering;
-
 
 typedef struct
 {
@@ -151,14 +139,20 @@ typedef enum{
 typedef struct
 {
     bsp_can_standard_filter_type Type;
-    uint32_t Config;
+    bsp_can_standard_filter_config Config;
     uint16_t StandardID1;
     uint16_t StandardID2;
 
 } bsp_can_standard_filter_t;
 
 typedef struct {
+    uint8_t Phase1T;
+    uint8_t Phase2T;
+    uint8_t SyncJumpWidth;
+    uint16_t Prescaler;
+} bsp_i2c_can_timming_config_t;
 
+typedef struct {
     bsp_i2c_can_timming_config_t Timing;
     bool EnableAutoretransmision;
     bsp_can_mode_source InterfaceMode;
@@ -171,13 +165,12 @@ typedef FDCAN_GlobalTypeDef BSP_CAN_Instance;
 typedef void (*bsp_isr_handler)(BSP_CAN_Instance *can, uint32_t group_flags);
 
 ret_status BSP_CAN_conf(BSP_CAN_Instance *can, bsp_can_config_t *config);
-ret_status BSP_CAN_conf_clock_source(BSP_CAN_Instance *can, enum bsp_can_clock_source clock_source);
+ret_status BSP_CAN_conf_clock_source(BSP_CAN_Instance *can, bsp_can_clock_source clock_source);
 ret_status BSP_CAN_config_irq(BSP_CAN_Instance *can, bsp_can_irq_type irq, bsp_isr_handler handler);
 ret_status BSP_CAN_start(BSP_CAN_Instance *can);
 ret_status BSP_CAN_add_standard_filter(BSP_CAN_Instance *can, bsp_can_standard_filter_t *filter, uint8_t index);
 ret_status BSP_CAN_add_tx_message(BSP_CAN_Instance *can, bsp_can_tx_metadata *pTxHeader, uint8_t *pTxData);
-ret_status BSP_CAN_get_rx_message(BSP_CAN_Instance *can, enum bsp_can_rx_queue queue, bsp_can_rx_metadata_t *rx_metadata, uint8_t *rx_data);
-
+ret_status BSP_CAN_get_rx_message(BSP_CAN_Instance *can, bsp_can_rx_queue queue, bsp_can_rx_metadata_t *rx_metadata, uint8_t *rx_data);
 ret_status BSP_CAN_get_baudrate(BSP_CAN_Instance *can, uint32_t *baudrate);
 
 

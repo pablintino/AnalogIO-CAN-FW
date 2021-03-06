@@ -137,6 +137,16 @@ static ret_status __configure_can(void){
         return tmp_status;
     }
 
+    bsp_can_standard_filter_t filter_1;
+    filter_1.StandardID1 = 123;
+    filter_1.StandardID2 = 321;
+    filter_1.Type = BSP_CAN_STD_FILTER_TYPE_RANGE;
+    filter_1.Config = BSP_CAN_STD_FILTER_CONFIG_PRIORITIZE_STORE_RX0;
+    tmp_status = BSP_CAN_add_standard_filter(FDCAN1, &filter_1, 0);
+    if(tmp_status != STATUS_OK){
+        return tmp_status;
+    }
+
     uint32_t can_baudrate;
     BSP_CAN_get_baudrate(FDCAN1, &can_baudrate);
     SEGGER_RTT_printf(0, "[INFO] CAN baudrate set to %u\r\n", can_baudrate);

@@ -231,7 +231,7 @@ static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, bsp_i2c_master
 
 
 static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, uint32_t **ccipr) {
-    *ccipr = RCC->CCIPR;
+    *ccipr = &RCC->CCIPR;
     if (i2c == I2C1) {
         *position = RCC_CCIPR_I2C1SEL_Pos;
     } else if (i2c == I2C2) {
