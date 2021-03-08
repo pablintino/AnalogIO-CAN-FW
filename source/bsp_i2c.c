@@ -31,7 +31,6 @@
 #include "bsp_common_utils.h"
 
 
-
 #define __BSP_I2C_MAX_TRANSFER_SIZE 255U
 
 
@@ -52,7 +51,7 @@ const uint32_t __TIMING_REGISTER_CONFIG_VALUES[7][3] = {{0x2000090EU, 0x0000020B
 
 static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *freq);
 
-static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, uint32_t **ccipr);
+static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, volatile uint32_t **ccipr);
 
 static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, bsp_i2c_master_config_t *config);
 
@@ -125,11 +124,10 @@ void BSP_I2C_disable(BSP_I2C_Instance *i2c) {
 ret_status
 BSP_I2C_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, uint16_t size, bool is_write,
                         uint32_t timeout) {
-    ret_status status;
     uint32_t tickstart = BSP_TICK_get_ticks();
     uint8_t *pBuffPtr = pData;
 
-    status = BSP_UTIL_wait_flag_status(&i2c->ISR, I2C_ISR_BUSY, 0x00U, tickstart, 25U);
+    ret_status status = BSP_UTIL_wait_flag_status(&i2c->ISR, I2C_ISR_BUSY, 0x00U, tickstart, 25U);
     if (status != STATUS_OK) {
         return status;
     }
@@ -230,7 +228,7 @@ static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, bsp_i2c_master
 }
 
 
-static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, uint32_t **ccipr) {
+static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, volatile uint32_t **ccipr) {
     *ccipr = &RCC->CCIPR;
     if (i2c == I2C1) {
         *position = RCC_CCIPR_I2C1SEL_Pos;
@@ -251,17 +249,17 @@ static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *pos
 
 
 static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *freq) {
-    uint8_t position = 0;
-    uint32_t *ccipr;
+    uint8_t position;
+    volatile uint32_t *ccipr;
     if (__get_i2c_clk_mux_position(i2c, &position, &ccipr) != STATUS_OK) {
         return STATUS_ERR;
     }
 
-    if (((*ccipr) & (0x03U << position)) == (BSP_I2C_CLK_HSI << position)) {
+    if (((*ccipr) & (0x03U << position)) == (uint32_t) (BSP_I2C_CLK_HSI << position)) {
         *freq = BSP_CLK_HSI_VALUE;
-    } else if (((*ccipr) & (0x03U << position)) == (BSP_I2C_CLK_PCLK << position)) {
+    } else if (((*ccipr) & (0x03U << position)) == (uint32_t) (BSP_I2C_CLK_PCLK << position)) {
         *freq = BSP_CLK_get_pclk1_freq();
-    } else if (((*ccipr) & (0x03U << position)) == (BSP_I2C_CLK_SYSCLK << position)) {
+    } else if (((*ccipr) & (0x03U << position)) == (uint32_t) (BSP_I2C_CLK_SYSCLK << position)) {
         *freq = BSP_CLK_get_sysclk_freq();
     } else {
         return STATUS_ERR;
@@ -276,7 +274,8 @@ __start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_
     /** Peripheral allows only 255 transfers. Bigger transfers can be accomplished by manually reloading the whole peripheral
      * using the proper RELOAD bit in CR2.
      */
-    uint8_t actual_transfer_size = transfer_size > __BSP_I2C_MAX_TRANSFER_SIZE ? __BSP_I2C_MAX_TRANSFER_SIZE : transfer_size;
+    uint8_t actual_transfer_size =
+            transfer_size > __BSP_I2C_MAX_TRANSFER_SIZE ? __BSP_I2C_MAX_TRANSFER_SIZE : transfer_size;
 
     __BSP_SET_MASKED_REG_VALUE(i2c->CR2,
     /** If the transfer is a write one clear RD_WRN */
@@ -304,10 +303,9 @@ __start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_
 
 static ret_status
 __wait_for_isr_flag_or_nack(BSP_I2C_Instance *i2c, uint32_t flag, uint32_t timeout, uint32_t start_tick) {
-    ret_status status;
     while (!__BSP_IS_FLAG_SET(i2c->ISR, flag)) {
         /* Just check if the other party has sent us a NACK cause that means the transfer has been aborted */
-        status = __is_nack_condition_present(i2c, timeout, start_tick);
+        ret_status status = __is_nack_condition_present(i2c, timeout, start_tick);
         if (status != STATUS_OK) {
             /* NACK received when waiting for the STOP. The transfer has failed */
             return status;
@@ -322,10 +320,9 @@ __wait_for_isr_flag_or_nack(BSP_I2C_Instance *i2c, uint32_t flag, uint32_t timeo
 
 static ret_status
 __wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick, uint32_t pending_bytes) {
-    ret_status status;
     while (!__BSP_IS_FLAG_SET(i2c->ISR, I2C_ISR_RXNE)) {
         /* Check if a NACK is detected */
-        status = __is_nack_condition_present(i2c, timeout, start_tick);
+        ret_status status = __is_nack_condition_present(i2c, timeout, start_tick);
         if (status != STATUS_OK) {
             return status;
         }
@@ -361,11 +358,10 @@ __wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick
 
 
 static ret_status __is_nack_condition_present(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick) {
-    ret_status status;
     /* Check if a NACK condition has been detected */
     if (__BSP_IS_FLAG_SET(i2c->ISR, I2C_ISR_NACKF)) {
         /* If a NACK arrives STOPF should be flagged by HW. Just wait for it */
-        status = BSP_UTIL_wait_flag_status(&i2c->ISR, I2C_ISR_STOPF, I2C_ISR_STOPF, start_tick, timeout);
+        ret_status status = BSP_UTIL_wait_flag_status(&i2c->ISR, I2C_ISR_STOPF, I2C_ISR_STOPF, start_tick, timeout);
         if (status != STATUS_OK) {
             return status;
         }

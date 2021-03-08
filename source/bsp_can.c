@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 Pablo Rodriguez Nava, @pablintino
+ * Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -48,6 +48,8 @@
 static const uint8_t __CAN_DLC_TO_BYTE_NUMBER[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 static const uint8_t __CAN_CLK_DIVIDERS[] = {1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30};
 
+static const uint32_t __CAN_ISR_GROUP_MASK[] = {0x00000007U, 0x00000038U, 0x000001C0U, 0x00001E00U, 0x0000E000U,
+                                                0x00030000U, 0x00FC0000U};
 
 typedef struct {
     void (*IsrVectors[24])(BSP_CAN_Instance *can, uint32_t group_flags);
@@ -134,20 +136,23 @@ static void
 __bsp_copy_message_from_ram(volatile __bsp_fdcan_ram_rx_fifo_element_t *message, bsp_can_rx_metadata_t *rx_metadata,
                             uint8_t *rx_data);
 
-static ret_status __get_can_input_frequency(BSP_CAN_Instance *can, uint32_t *freq);
-
-static void __subscribe_irqs(BSP_CAN_Instance *can);
+static ret_status __get_can_input_frequency(uint32_t *freq);
 
 static inline __bsp_can_irqs_state *__bsp_can_get_instance_state(BSP_CAN_Instance *can);
 
 static inline __bsp_fdcan_ram_t *__bsp_can_get_instance_base_address(BSP_CAN_Instance *can);
 
+static inline void __bsp_can_ensure_isr_line_active(BSP_CAN_Instance *can);
+
+static inline ret_status __bsp_can_conf_validate_isr_group(bsp_can_isr_group isr_group);
 
 ret_status BSP_CAN_conf(BSP_CAN_Instance *can, bsp_can_config_t *config) {
 
-    uint32_t start_tick = BSP_TICK_get_ticks();
-    __bsp_fdcan_ram_t *instance_ram = __bsp_can_get_instance_base_address(can);
+    if (can == NULL || config == NULL) {
+        return STATUS_ERR;
+    }
 
+    uint32_t start_tick = BSP_TICK_get_ticks();
 
     /*Request initialization mode of the CAN peripheral */
     __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_INIT);
@@ -202,6 +207,12 @@ ret_status BSP_CAN_conf(BSP_CAN_Instance *can, bsp_can_config_t *config) {
 
     __bsp_can_configure_global_filtering(can, config);
 
+    /*Retrieve the RAM section of the passed CAN instance to clear it */
+    __bsp_fdcan_ram_t *instance_ram = __bsp_can_get_instance_base_address(can);
+    if (instance_ram == NULL) {
+        return STATUS_ERR;
+    }
+
     /* Flush the allocated Message RAM area */
     for (uint32_t *raw_ram_ptr = (uint32_t *) instance_ram;
          raw_ram_ptr < (uint32_t *) (instance_ram + 1); raw_ram_ptr++) {
@@ -252,10 +263,10 @@ ret_status BSP_CAN_add_standard_filter(BSP_CAN_Instance *can, bsp_can_standard_f
 }
 
 
-ret_status BSP_CAN_add_tx_message(BSP_CAN_Instance *can, bsp_can_tx_metadata *pTxHeader, uint8_t *pTxData) {
+ret_status BSP_CAN_add_tx_message(BSP_CAN_Instance *can, bsp_can_tx_metadata *tx_metadata, uint8_t *tx_data) {
 
-    __bsp_fdcan_ram_t *instance_ram = __bsp_can_get_instance_base_address(can);
-    if (instance_ram == NULL) {
+    /* Simple validation to avoid NULL pointers */
+    if (can == NULL || tx_metadata == NULL || tx_data == NULL) {
         return STATUS_ERR;
     }
 
@@ -267,8 +278,14 @@ ret_status BSP_CAN_add_tx_message(BSP_CAN_Instance *can, bsp_can_tx_metadata *pT
         return STATUS_ERR;
     }
 
+    /* Retrieve the RAM section mapped to the FDCAN peripheral */
+    __bsp_fdcan_ram_t *instance_ram = __bsp_can_get_instance_base_address(can);
+    if (instance_ram == NULL) {
+        return STATUS_ERR;
+    }
+
     /* Write Tx element header to the message RAM */
-    __bsp_copy_message_to_ram(pTxHeader, pTxData, &instance_ram->TXFIFOQ[tx_index]);
+    __bsp_copy_message_to_ram(tx_metadata, tx_data, &instance_ram->TXFIFOQ[tx_index]);
 
     /* Activate the corresponding transmission request */
     __BSP_SET_REG_VALUE(can->TXBAR, ((uint32_t) 1 << tx_index));
@@ -280,6 +297,11 @@ ret_status BSP_CAN_add_tx_message(BSP_CAN_Instance *can, bsp_can_tx_metadata *pT
 ret_status
 BSP_CAN_get_rx_message(BSP_CAN_Instance *can, bsp_can_rx_queue queue, bsp_can_rx_metadata_t *rx_metadata,
                        uint8_t *rx_data) {
+
+    /* Simple validation to avoid NULL pointers */
+    if (can == NULL || rx_metadata == NULL || rx_data == NULL) {
+        return STATUS_ERR;
+    }
 
     volatile __bsp_fdcan_ram_rx_fifo_element_t *message;
     __bsp_fdcan_ram_t *instance_ram = __bsp_can_get_instance_base_address(can);
@@ -317,6 +339,10 @@ BSP_CAN_get_rx_message(BSP_CAN_Instance *can, bsp_can_rx_queue queue, bsp_can_rx
 
 
 ret_status BSP_CAN_start(BSP_CAN_Instance *can) {
+    if (can == NULL) {
+        return STATUS_ERR;
+    }
+
     __BSP_CLEAR_MASKED_REG(can->CCCR, FDCAN_CCCR_INIT);
     return STATUS_OK;
 }
@@ -330,8 +356,12 @@ ret_status BSP_CAN_conf_clock_source(BSP_CAN_Instance *can, bsp_can_clock_source
 
 ret_status BSP_CAN_get_baudrate(BSP_CAN_Instance *can, uint32_t *baudrate) {
 
+    if (can == NULL || baudrate == NULL) {
+        return STATUS_ERR;
+    }
+
     uint32_t freq;
-    ret_status tmp_status = __get_can_input_frequency(can, &freq);
+    ret_status tmp_status = __get_can_input_frequency(&freq);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
@@ -346,31 +376,118 @@ ret_status BSP_CAN_get_baudrate(BSP_CAN_Instance *can, uint32_t *baudrate) {
 }
 
 
-ret_status BSP_CAN_config_irq(BSP_CAN_Instance *can, bsp_can_irq_type irq, bsp_isr_handler handler) {
+ret_status BSP_CAN_conf_irq_lines(BSP_CAN_Instance *can, bsp_can_isr_group isr_group, bsp_can_isr_line isr_line) {
 
-    if (irq >= 24 || handler == NULL || can == NULL) {
+    if (can == NULL || (isr_line != BSP_CAN_ISR_LINE_0 && isr_line != BSP_CAN_ISR_LINE_1) ||
+        __bsp_can_conf_validate_isr_group(isr_group) != STATUS_OK) {
+        return STATUS_ERR;
+    }
+
+    if (isr_line == BSP_CAN_ISR_LINE_0) {
+        __BSP_CLEAR_MASKED_REG(can->ILS, isr_group);
+    } else {
+        __BSP_SET_MASKED_REG(can->ILS, isr_group);
+    };
+
+    __bsp_can_ensure_isr_line_active(can);
+
+    return STATUS_OK;
+
+}
+
+
+ret_status BSP_CAN_conf_irq(BSP_CAN_Instance *can, bsp_can_irq_type irq, bsp_isr_handler handler) {
+
+    if (irq > FDCAN_IE_ARAE_Pos || handler == NULL || can == NULL) {
         return STATUS_ERR;
     }
 
     __bsp_can_irqs_state *instance_state = __bsp_can_get_instance_state(can);
 
-    if (!__BSP_IS_FLAG_SET(can->IE, (1U << irq))) {
-        /** TODO: Currently using only IRQ Line 0 only */
-        if (!__BSP_IS_FLAG_SET(can->ILE, FDCAN_ILE_EINT0)) {
-            can->ILE |= FDCAN_ILE_EINT0;
-            __BSP_SET_MASKED_REG(can->ILE, FDCAN_ILE_EINT0);
+    __BSP_SET_MASKED_REG(can->IE, (1U << irq));
+
+    instance_state->IsrVectors[irq] = handler;
+
+    __bsp_can_ensure_isr_line_active(can);
+
+    return STATUS_OK;
+}
+
+ret_status BSP_CAN_enable_irqs(BSP_CAN_Instance *can) {
+
+    if (can == NULL) {
+        return STATUS_ERR;
+    }
+
+#if defined(FDCAN2)
+    if (can == FDCAN2)
+  {
+
+     bool irq_enabled;
+        BSP_IRQ_is_enabled(FDCAN2_IT0_IRQn, &irq_enabled);
+        if(!irq_enabled){
+            BSP_IRQ_set_handler(FDCAN2_IT0_IRQn, __irq_handler_fdcan2_it0);
+            BSP_IRQ_enable_irq(FDCAN2_IT0_IRQn);
         }
 
-        can->IE |= (1 << irq);
-        instance_state->IsrVectors[irq] = handler;
-        __subscribe_irqs(can);
+        BSP_IRQ_is_enabled(FDCAN2_IT1_IRQn, &irq_enabled);
+        if(!irq_enabled){
+            BSP_IRQ_set_handler(FDCAN2_IT1_IRQn, __irq_handler_fdcan2_it1);
+            BSP_IRQ_enable_irq(FDCAN2_IT1_IRQn);
+        }
+  }
+#endif
+#if defined(FDCAN3)
+    if (can == FDCAN3)
+  {
+
+     bool irq_enabled;
+        BSP_IRQ_is_enabled(FDCAN3_IT0_IRQn, &irq_enabled);
+        if(!irq_enabled){
+            BSP_IRQ_set_handler(FDCAN3_IT0_IRQn, __irq_handler_fdcan3_it0);
+            BSP_IRQ_enable_irq(FDCAN3_IT0_IRQn);
+        }
+
+        BSP_IRQ_is_enabled(FDCAN3_IT1_IRQn, &irq_enabled);
+        if(!irq_enabled){
+            BSP_IRQ_set_handler(FDCAN3_IT1_IRQn, __irq_handler_fdcan3_it1);
+            BSP_IRQ_enable_irq(FDCAN3_IT1_IRQn);
+        }
+  }
+#endif
+    if (can == FDCAN1) {
+
+        bool irq_enabled;
+        BSP_IRQ_is_enabled(FDCAN1_IT0_IRQn, &irq_enabled);
+        if (!irq_enabled) {
+            BSP_IRQ_set_handler(FDCAN1_IT0_IRQn, __irq_handler_fdcan1_it0);
+            BSP_IRQ_enable_irq(FDCAN1_IT0_IRQn);
+        }
+
+        BSP_IRQ_is_enabled(FDCAN1_IT1_IRQn, &irq_enabled);
+        if (!irq_enabled) {
+            BSP_IRQ_set_handler(FDCAN1_IT1_IRQn, __irq_handler_fdcan1_it1);
+            BSP_IRQ_enable_irq(FDCAN1_IT1_IRQn);
+        }
     }
 
     return STATUS_OK;
 }
 
+static inline void __bsp_can_ensure_isr_line_active(BSP_CAN_Instance *can) {
 
-static ret_status __get_can_input_frequency(BSP_CAN_Instance *can, uint32_t *freq) {
+    for (uint8_t ils_bit = 0; ils_bit <= FDCAN_ILS_PERR_Pos; ils_bit++) {
+        if (__CAN_ISR_GROUP_MASK[ils_bit] & can->IE) {
+            if ((can->ILS & (1 << ils_bit)) && (!__BSP_IS_FLAG_SET(can->ILE, FDCAN_ILE_EINT1))) {
+                __BSP_SET_MASKED_REG(can->ILE, FDCAN_ILE_EINT1);
+            } else if (!(can->ILS & (1 << ils_bit)) && (!__BSP_IS_FLAG_SET(can->ILE, FDCAN_ILE_EINT0))) {
+                __BSP_SET_MASKED_REG(can->ILE, FDCAN_ILE_EINT0);
+            }
+        }
+    }
+}
+
+static ret_status __get_can_input_frequency(uint32_t *freq) {
 
     if ((RCC->CCIPR & (0x03U << RCC_CCIPR_FDCANSEL_Pos)) == (BSP_CAN_CLK_HSE << RCC_CCIPR_FDCANSEL_Pos)) {
         *freq = BSP_HSE_VALUE;
@@ -396,9 +513,14 @@ static void __bsp_can_configure_global_filtering(BSP_CAN_Instance *can, bsp_can_
 
 static void __bsp_copy_message_to_ram(bsp_can_tx_metadata *pTxHeader, uint8_t *pTxData,
                                       volatile __bsp_fdcan_ram_tx_fifo_element_t *message_ram) {
+    /* If ID is larger than 11 bits the message is sent using extended 29 bits IDs */
+    uint32_t extended_id_xtd =
+            (pTxHeader->ID & 0xFFFFF800) ? FDCAN_ELEMENT_MASK_XTD : 0x00U;
 
     /* Write Tx element header to the message RAM */
-    message_ram->HeaderWord1 = (pTxHeader->IsRTR ? (1 << 30) : 0x00000000U) | (pTxHeader->ID << 18U);
+    message_ram->HeaderWord1 =
+            (pTxHeader->IsRTR ? (1 << 30) : 0x00000000U) | (pTxHeader->ID << (extended_id_xtd ? 0 : 18U)) |
+            extended_id_xtd;
     message_ram->HeaderWord2 =
             (pTxHeader->MessageMarker << 24U) | (pTxHeader->StoreTxEvents ? (1 << 23) : 0x00000000U) |
             (pTxHeader->DataLength << 16);
@@ -443,36 +565,6 @@ __bsp_copy_message_from_ram(volatile __bsp_fdcan_ram_rx_fifo_element_t *message,
 }
 
 
-static void __subscribe_irqs(BSP_CAN_Instance *can) {
-
-#if defined(FDCAN2)
-    if (can == FDCAN2)
-  {
-    BSP_IRQ_set_handler(FDCAN2_IT0_IRQn, __irq_handler_fdcan2_it0);
-    BSP_IRQ_set_handler(FDCAN2_IT1_IRQn, __irq_handler_fdcan2_it0);
-    BSP_IRQ_enable_irq(FDCAN2_IT0_IRQn);
-    BSP_IRQ_enable_irq(FDCAN2_IT1_IRQn);
-  }
-#endif
-#if defined(FDCAN3)
-    if (can == FDCAN3)
-  {
-    BSP_IRQ_set_handler(FDCAN3_IT0_IRQn, __irq_handler_fdcan3_it0);
-    BSP_IRQ_set_handler(FDCAN3_IT1_IRQn, __irq_handler_fdcan3_it0);
-    BSP_IRQ_enable_irq(FDCAN3_IT0_IRQn);
-    BSP_IRQ_enable_irq(FDCAN3_IT1_IRQn);
-
-  }
-#endif
-    if (can == FDCAN1) {
-        BSP_IRQ_set_handler(FDCAN1_IT0_IRQn, __irq_handler_fdcan1_it0);
-        BSP_IRQ_set_handler(FDCAN1_IT1_IRQn, __irq_handler_fdcan1_it1);
-        BSP_IRQ_enable_irq(FDCAN1_IT0_IRQn);
-        BSP_IRQ_enable_irq(FDCAN1_IT1_IRQn);
-    }
-}
-
-
 static inline __bsp_can_irqs_state *__bsp_can_get_instance_state(BSP_CAN_Instance *can) {
 #if defined(FDCAN2)
     if (can == FDCAN2)
@@ -512,6 +604,20 @@ static inline __bsp_fdcan_ram_t *__bsp_can_get_instance_base_address(BSP_CAN_Ins
   }
 #endif
     return NULL;
+}
+
+
+static inline ret_status __bsp_can_conf_validate_isr_group(bsp_can_isr_group isr_group) {
+    return (
+                   isr_group != BSP_CAN_ISR_GROUP_RXFIFO0 &&
+                   isr_group != BSP_CAN_ISR_GROUP_RXFIFO1 &&
+                   isr_group != BSP_CAN_ISR_GROUP_SMSG &&
+                   isr_group != BSP_CAN_ISR_GROUP_TFERR &&
+                   isr_group != BSP_CAN_ISR_GROUP_MISC &&
+                   isr_group != BSP_CAN_ISR_GROUP_BERR &&
+                   isr_group != BSP_CAN_ISR_GROUP_PERR
+
+           ) ? STATUS_ERR : STATUS_OK;
 }
 
 

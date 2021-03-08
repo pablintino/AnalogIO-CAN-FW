@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 Pablo Rodriguez Nava, @pablintino
+ * Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
  *
  **/
 
+#include <stdbool.h>
 #include "bsp_irq_manager.h"
 
 #define  MCU_IRQ_VECTOR_SIZE                                 102
@@ -273,6 +274,15 @@ ret_status BSP_IRQ_enable_irq(IRQn_Type irq_id) {
 
     NVIC_EnableIRQ(irq_id);
     return STATUS_OK;
+}
+
+
+ret_status BSP_IRQ_is_enabled(IRQn_Type irq_id, bool *status){
+    if(irq_id >= 0){
+        *status = NVIC_GetEnableIRQ(irq_id) != 0;
+        return STATUS_OK;
+    }
+    return STATUS_ERR;
 }
 
 ret_status BSP_IRQ_disable_irq(IRQn_Type irq_id) {

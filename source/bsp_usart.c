@@ -109,11 +109,11 @@ static ret_status __get_usart_input_frequency(BSP_USART_Instance *usart, uint32_
         return STATUS_ERR;
     }
 
-    if ((RCC->CCIPR & (0x03U << position)) == (BSP_USART_CLK_HSI << position)) {
+    if ((RCC->CCIPR & (0x03U << position)) == (uint32_t) (BSP_USART_CLK_HSI << position)) {
         *freq = BSP_CLK_HSI_VALUE;
-    } else if ((RCC->CCIPR & (0x03U << position)) == (BSP_USART_CLK_LSE << position)) {
+    } else if ((RCC->CCIPR & (0x03U << position)) == (uint32_t) (BSP_USART_CLK_LSE << position)) {
         *freq = BSP_CLK_LSE_VALUE;
-    } else if ((RCC->CCIPR & (0x03U << position)) == (BSP_USART_CLK_SYSCLK << position)) {
+    } else if ((RCC->CCIPR & (0x03U << position)) == (uint32_t) (BSP_USART_CLK_SYSCLK << position)) {
         *freq = BSP_CLK_get_sysclk_freq();
     } else {
         /* PCLK... Need to check the correct bus for each USART */

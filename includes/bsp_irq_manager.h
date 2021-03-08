@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 Pablo Rodriguez Nava, @pablintino
+ * Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,9 @@
 #define BSP_IRQ_MANAGER_H
 
 
-#include  <cpu.h>
-#include  "os.h"
+#include <cpu.h>
+#include <stdbool.h>
+#include "os.h"
 #include "bsp_types.h"
 #include "stm32g4xx.h"
 
@@ -42,5 +43,7 @@ ret_status BSP_IRQ_set_handler(IRQn_Type irq_id, CPU_FNCT_VOID isr);
 ret_status BSP_IRQ_enable_irq(IRQn_Type irq_id);
 
 ret_status BSP_IRQ_disable_irq(IRQn_Type irq_id);
+
+ret_status BSP_IRQ_is_enabled(IRQn_Type irq_id, bool *status);
 
 #endif //BSP_IRQ_MANAGER_H

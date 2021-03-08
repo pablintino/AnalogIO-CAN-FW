@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2020 Pablo Rodriguez Nava, @pablintino
+ * Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,6 @@ static ret_status __configure_usart(void);
 static ret_status __configure_i2c(void);
 
 static ret_status __configure_can(void);
-
 
 
 void BSP_init(void) {
@@ -108,7 +107,7 @@ static ret_status __configure_i2c(void) {
 }
 
 
-static ret_status __configure_can(void){
+static ret_status __configure_can(void) {
 
 
     BSP_IO_conf_af(GPIOA,
@@ -119,13 +118,13 @@ static ret_status __configure_can(void){
                    BSP_IO_OUT_TYPE_PP);
 
 
-    bsp_can_config_t  can_config;
+    bsp_can_config_t can_config;
     can_config.TXMode = BSP_CAN_TX_MODE_FIFO;
     can_config.InterfaceMode = BSP_CAN_MODE_NORMAL;
-    can_config.Timing.Phase1T = 13; //11
-    can_config.Timing.Phase2T = 2; //4
-    can_config.Timing.SyncJumpWidth = 1; //4
-    can_config.Timing.Prescaler = 3; //6
+    can_config.Timing.Phase1T = 13; // 1mbps
+    can_config.Timing.Phase2T = 2;
+    can_config.Timing.SyncJumpWidth = 1;
+    can_config.Timing.Prescaler = 3;
     can_config.EnableAutoretransmision = false;
     can_config.GlobalFiltering.NonMatchingStandard = BSP_CAN_NON_MATCHING_ACCEPT_RX_0;
     can_config.GlobalFiltering.RejectRemoteStandard = true;
@@ -133,7 +132,7 @@ static ret_status __configure_can(void){
     BSP_CAN_conf_clock_source(FDCAN1, BSP_CAN_CLK_PCLK1);
 
     ret_status tmp_status = BSP_CAN_conf(FDCAN1, &can_config);
-    if(tmp_status != STATUS_OK){
+    if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
 
@@ -143,7 +142,7 @@ static ret_status __configure_can(void){
     filter_1.Type = BSP_CAN_STD_FILTER_TYPE_RANGE;
     filter_1.Config = BSP_CAN_STD_FILTER_CONFIG_PRIORITIZE_STORE_RX0;
     tmp_status = BSP_CAN_add_standard_filter(FDCAN1, &filter_1, 0);
-    if(tmp_status != STATUS_OK){
+    if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
 
@@ -151,7 +150,12 @@ static ret_status __configure_can(void){
     BSP_CAN_get_baudrate(FDCAN1, &can_baudrate);
     SEGGER_RTT_printf(0, "[INFO] CAN baudrate set to %u\r\n", can_baudrate);
 
-    return STATUS_OK;
+    tmp_status = BSP_CAN_conf_irq_lines(FDCAN1, BSP_CAN_ISR_GROUP_RXFIFO0, BSP_CAN_ISR_LINE_1);
+    if (tmp_status != STATUS_OK) {
+        return tmp_status;
+    }
+
+    return BSP_CAN_enable_irqs(FDCAN1);
 }
 
 
