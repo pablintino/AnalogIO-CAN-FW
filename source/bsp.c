@@ -77,7 +77,7 @@ void BSP_init(void) {
     BSP_I2C_enable(I2C3);
 
     SEGGER_RTT_WriteString(0, "[INFO] Enabling FDCAN1\r\n");
-    BSP_CAN_start(FDCAN1);
+    bcan_start(FDCAN1);
 }
 
 static ret_status __configure_i2c(void) {
@@ -118,44 +118,44 @@ static ret_status __configure_can(void) {
                    BSP_IO_OUT_TYPE_PP);
 
 
-    bsp_can_config_t can_config;
-    can_config.TXMode = BSP_CAN_TX_MODE_FIFO;
-    can_config.InterfaceMode = BSP_CAN_MODE_NORMAL;
-    can_config.Timing.Phase1T = 13; // 1mbps
-    can_config.Timing.Phase2T = 2;
-    can_config.Timing.SyncJumpWidth = 1;
-    can_config.Timing.Prescaler = 3;
-    can_config.EnableAutoretransmision = false;
-    can_config.GlobalFiltering.NonMatchingStandard = BSP_CAN_NON_MATCHING_ACCEPT_RX_0;
-    can_config.GlobalFiltering.RejectRemoteStandard = true;
+    bcan_config_t can_config;
+    can_config.tx_mode = BSP_CAN_TX_MODE_FIFO;
+    can_config.mode = BSP_CAN_MODE_NORMAL;
+    can_config.timing.phase1 = 13; // 1mbps
+    can_config.timing.phase2 = 2;
+    can_config.timing.sync_jump_width = 1;
+    can_config.timing.prescaler = 3;
+    can_config.auto_retransmission = false;
+    can_config.global_filters.non_matching_standard_action = BSP_CAN_NON_MATCHING_ACCEPT_RX_0;
+    can_config.global_filters.reject_remote_standard = true;
 
-    BSP_CAN_conf_clock_source(FDCAN1, BSP_CAN_CLK_PCLK1);
+    bcan_config_clk_source(FDCAN1, BSP_CAN_CLK_PCLK1);
 
-    ret_status tmp_status = BSP_CAN_conf(FDCAN1, &can_config);
+    ret_status tmp_status = bcan_config(FDCAN1, &can_config);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
 
-    bsp_can_standard_filter_t filter_1;
-    filter_1.StandardID1 = 123;
-    filter_1.StandardID2 = 321;
-    filter_1.Type = BSP_CAN_STD_FILTER_TYPE_RANGE;
-    filter_1.Config = BSP_CAN_STD_FILTER_CONFIG_PRIORITIZE_STORE_RX0;
-    tmp_status = BSP_CAN_add_standard_filter(FDCAN1, &filter_1, 0);
+    bcan_standard_filter_t filter_1;
+    filter_1.standard_id1 = 123;
+    filter_1.standard_id2 = 321;
+    filter_1.type = BSP_CAN_STD_FILTER_TYPE_RANGE;
+    filter_1.action = BSP_CAN_STD_FILTER_ACTION_PRIORITIZE_STORE_RX0;
+    tmp_status = bcan_add_standard_filter(FDCAN1, &filter_1, 0);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
 
     uint32_t can_baudrate;
-    BSP_CAN_get_baudrate(FDCAN1, &can_baudrate);
+    bcan_get_baudrate(FDCAN1, &can_baudrate);
     SEGGER_RTT_printf(0, "[INFO] CAN baudrate set to %u\r\n", can_baudrate);
 
-    tmp_status = BSP_CAN_conf_irq_lines(FDCAN1, BSP_CAN_ISR_GROUP_RXFIFO0, BSP_CAN_ISR_LINE_1);
+    tmp_status = bcan_config_irq_line(FDCAN1, BSP_CAN_ISR_GROUP_RXFIFO0, BSP_CAN_ISR_LINE_1);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
 
-    return BSP_CAN_enable_irqs(FDCAN1);
+    return bcan_enable_irqs(FDCAN1);
 }
 
 

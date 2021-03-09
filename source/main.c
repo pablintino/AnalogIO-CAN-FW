@@ -99,12 +99,12 @@ static  void  AppTaskCanTX (void  *p_arg)
     (void)p_arg;
 
 
-    bsp_can_tx_metadata test;
-    test.ID = 0x7ff;
-    test.IsRTR = false;
-    test.DataLength= 0x02;
-    test.StoreTxEvents = false;
-    test.MessageMarker = 0x00;
+    bcan_tx_metadata_t test;
+    test.id = 0x7ff;
+    test.is_rtr = false;
+    test.size_b= 0x02;
+    test.store_tx_events = false;
+    test.message_marker = 0x00;
     uint8_t data[8];
     data[0] = 0x01;
     data[1] = 0x02;
@@ -119,7 +119,7 @@ static  void  AppTaskCanTX (void  *p_arg)
     while (DEF_TRUE) {
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
 
-        if(BSP_CAN_add_tx_message(FDCAN1, &test, data) != STATUS_OK){
+        if(bcan_add_tx_message(FDCAN1, &test, data) != STATUS_OK){
             SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
         }
         if(test_n!= test_tmp){
@@ -131,10 +131,10 @@ static  void  AppTaskCanTX (void  *p_arg)
 }
 
 
-void can_rx_handler(BSP_CAN_Instance *can, uint32_t group_flags){
-    bsp_can_rx_metadata_t rx_metadata;
+void can_rx_handler(bcan_instance_t *can, uint32_t group_flags){
+    bcan_rx_metadata_t rx_metadata;
     uint8_t rx_data[64];
-    if(BSP_CAN_get_rx_message(can, BSP_CAN_RX_QUEUE_O, &rx_metadata, rx_data) == STATUS_OK){
+    if(bcan_get_rx_message(can, BSP_CAN_RX_QUEUE_O, &rx_metadata, rx_data) == STATUS_OK){
         test_n++;
     }
 }
@@ -190,7 +190,7 @@ static void AppTaskStart(void *p_arg) {
     BSP_init();
 
 
-    BSP_CAN_conf_irq(FDCAN1, BSP_CAN_IRQ_TYPE_RF0NE, can_rx_handler);
+    bcan_config_irq(FDCAN1, BSP_CAN_IRQ_TYPE_RF0NE, can_rx_handler);
 
 
 
