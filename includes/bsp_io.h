@@ -80,17 +80,17 @@ typedef GPIO_TypeDef BSP_IO_Port;
 #define BSP_IO_IS_PIN_VALID(PIN) (PIN < BSP_IO_PORT_LENGTH)
 
 void
-BSP_IO_conf_output_pin(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
+bio_conf_output_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
 
-void BSP_IO_conf_input_pin(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed);
+void bio_config_input_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed);
 
-void BSP_IO_conf_af(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t af_function, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
+void bio_config_af_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t af_function, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
 
-void BSP_IO_toggle_pin(BSP_IO_Port *port, uint8_t pin_number);
+void bio_toggle_port(BSP_IO_Port *port, uint8_t pin_number);
 
-ret_status BSP_IO_write_pin(BSP_IO_Port *port, uint8_t pin_number, bool value);
+ret_status bio_write_port(BSP_IO_Port *port, uint8_t pin_number, bool value);
 
-uint8_t BSP_IO_read_pin(BSP_IO_Port *port, uint8_t pin_number);
+uint8_t bio_read_port(BSP_IO_Port *port, uint8_t pin_number);
 
 
 #endif //BSP_IO_H

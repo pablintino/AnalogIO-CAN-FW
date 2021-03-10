@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- **/
+ */
 
 
 #include "bsp_can.h"
@@ -29,62 +29,14 @@
 #include "bsp_common_utils.h"
 #include "bsp_clocks.h"
 #include "bsp_irq_manager.h"
+#include "internal/bsp_can_internal.h"
 
-
-#define FDCAN_ELEMENT_MASK_RTR   ((uint32_t)0x20000000U) /* Remote Transmission Request */
-#define FDCAN_ELEMENT_MASK_XTD   ((uint32_t)0x40000000U) /* Extended Identifier         */
-#define FDCAN_ELEMENT_MASK_ESI   ((uint32_t)0x80000000U) /* Error State Indicator       */
-#define FDCAN_ELEMENT_MASK_TS    ((uint32_t)0x0000FFFFU) /* Timestamp                   */
-#define FDCAN_ELEMENT_MASK_DLC   ((uint32_t)0x000F0000U) /* Data Length Code            */
-#define FDCAN_ELEMENT_MASK_BRS   ((uint32_t)0x00100000U) /* Bit Rate Switch             */
-#define FDCAN_ELEMENT_MASK_FDF   ((uint32_t)0x00200000U) /* FD Format                   */
-#define FDCAN_ELEMENT_MASK_EFC   ((uint32_t)0x00800000U) /* Event FIFO Control          */
-#define FDCAN_ELEMENT_MASK_MM    ((uint32_t)0xFF000000U) /* Message Marker              */
-#define FDCAN_ELEMENT_MASK_FIDX  ((uint32_t)0x7F000000U) /* Filter Index                */
-#define FDCAN_ELEMENT_MASK_ANMF  ((uint32_t)0x80000000U) /* Accepted Non-matching Frame */
-#define FDCAN_ELEMENT_MASK_STDID ((uint32_t)0x1FFC0000U) /* Standard Identifier         */
-#define FDCAN_ELEMENT_MASK_EXTID ((uint32_t)0x1FFFFFFFU) /* Extended Identifier         */
 
 static const uint8_t __CAN_DLC_TO_BYTE_NUMBER[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 static const uint8_t __CAN_CLK_DIVIDERS[] = {1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30};
 
 static const uint32_t __CAN_ISR_GROUP_MASK[] = {0x00000007U, 0x00000038U, 0x000001C0U, 0x00001E00U, 0x0000E000U,
                                                 0x00030000U, 0x00FC0000U};
-
-typedef struct {
-    void (*IsrVectors[24])(bcan_instance_t *can, uint32_t group_flags);
-} __bsp_can_irqs_state;
-
-struct __bsp_fdcan_ram_extended_filter_s {
-    __IO32 W1;
-    __IO32 W2;
-};
-
-struct __bsp_fdcan_ram_tx_event_s {
-    __IO32 W1;
-    __IO32 W2;
-};
-
-struct __bsp_fdcan_ram_rx_fifo_element_s {
-    __IO32 HeaderWord1;
-    __IO32 HeaderWord2;
-    __IO32 Data[16];
-};
-
-struct __bsp_fdcan_ram_tx_fifo_element_s {
-    __IO32 HeaderWord1;
-    __IO32 HeaderWord2;
-    __IO32 Data[16];
-};
-
-struct __bsp_fdcan_ram_s {
-    __IO32 StandardFilters[28];
-    volatile struct __bsp_fdcan_ram_extended_filter_s ExtendedFilters[8];
-    volatile struct __bsp_fdcan_ram_rx_fifo_element_s RXFIFO0[3];
-    volatile struct __bsp_fdcan_ram_rx_fifo_element_s RXFIFO1[3];
-    volatile struct __bsp_fdcan_ram_tx_event_s TXEvents[3];
-    volatile struct __bsp_fdcan_ram_tx_fifo_element_s TXFIFOQ[3];
-};
 
 
 static void __bsp_can_irq_handler(bcan_instance_t *can);
@@ -99,7 +51,7 @@ static void __irq_handler_fdcan2_it1(void){
     __bsp_can_irq_handler(FDCAN2);
 }
 
-static __bsp_can_irqs_state __bsp_can_internal_states[2U];
+static struct __bcan_irqs_state_s __bsp_can_internal_states[2U];
 
 #elif FDCAN3
 
@@ -111,42 +63,47 @@ static void __irq_handler_fdcan3_it1(void){
     __bsp_can_irq_handler(FDCAN3);
 }
 
-static void __bsp_can_irqs_state __bsp_can_internal_states[3U];
+static struct __bcan_irqs_state_s __bsp_can_internal_states[3U];
 
 #else
 
-static void __irq_handler_fdcan1_it0(void) {
+static void __irq_handler_fdcan1_it0(void)
+{
     __bsp_can_irq_handler(FDCAN1);
 }
 
-static void __irq_handler_fdcan1_it1(void) {
+static void __irq_handler_fdcan1_it1(void)
+{
     __bsp_can_irq_handler(FDCAN1);
 }
 
-static __bsp_can_irqs_state __bsp_can_internal_states[1U];
+static struct __bcan_irqs_state_s __bsp_can_internal_states[1U];
 #endif
 
 
 static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bcan_config_t *config);
 
 static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader, const uint8_t *pTxData,
-                                      volatile struct __bsp_fdcan_ram_tx_fifo_element_s *message_ram);
+                                      volatile struct __bcan_ram_tx_fifo_element_s *message_ram);
 
 static void
-__bsp_copy_message_from_ram(volatile struct __bsp_fdcan_ram_rx_fifo_element_s *message, bcan_rx_metadata_t *rx_metadata,
+__bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *message, bcan_rx_metadata_t *rx_metadata,
                             uint8_t *rx_data);
 
 static ret_status __get_can_input_frequency(uint32_t *freq);
 
-static inline __bsp_can_irqs_state *__bsp_can_get_instance_state(bcan_instance_t *can);
+static inline struct __bcan_irqs_state_s *__bsp_can_get_instance_state(bcan_instance_t *can);
 
-static inline struct __bsp_fdcan_ram_s *__bsp_can_get_instance_base_address(bcan_instance_t *can);
+static inline struct __bcan_ram_s *__bsp_can_get_instance_base_address(bcan_instance_t *can);
 
 static inline void __bsp_can_ensure_isr_line_active(bcan_instance_t *can);
 
 static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group);
 
-ret_status bcan_config(bcan_instance_t *can, const bcan_config_t *config) {
+
+ret_status
+bcan_config(bcan_instance_t *can, const bcan_config_t *config)
+{
 
     if (can == NULL || config == NULL) {
         return STATUS_ERR;
@@ -208,7 +165,7 @@ ret_status bcan_config(bcan_instance_t *can, const bcan_config_t *config) {
     __bsp_can_configure_global_filtering(can, config);
 
     /*Retrieve the RAM section of the passed CAN instance to clear it */
-    struct __bsp_fdcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
+    struct __bcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
     if (instance_ram == NULL) {
         return STATUS_ERR;
     }
@@ -223,10 +180,12 @@ ret_status bcan_config(bcan_instance_t *can, const bcan_config_t *config) {
 }
 
 
-ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index) {
+ret_status
+bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index)
+{
 
     /* Obtain the portion of RAM mapped to the FDCAN selected instance */
-    struct __bsp_fdcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
+    struct __bcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
     if (instance_ram == NULL) {
         return STATUS_ERR;
     }
@@ -239,22 +198,22 @@ ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_fi
     uint8_t number_of_filters = ((can->RXGFC & FDCAN_RXGFC_LSS) >> FDCAN_RXGFC_LSS_Pos);
 
     /* Check that we don't get out of bounds by exceeding the total number of filters */
-    if (number_of_filters >= sizeof(instance_ram->StandardFilters) / sizeof(instance_ram->StandardFilters[0])) {
+    if (number_of_filters >= sizeof(instance_ram->standard_filters) / sizeof(instance_ram->standard_filters[0])) {
         return STATUS_ERR;
     }
 
     /* If we already have filters we may need to reorder them */
     if (number_of_filters > 0) {
         for (uint8_t fidx = number_of_filters; fidx > index; fidx--) {
-            instance_ram->StandardFilters[fidx] = instance_ram->StandardFilters[fidx - 1];
+            instance_ram->standard_filters[fidx] = instance_ram->standard_filters[fidx - 1];
         }
     }
 
     /* Add the filter itself */
-    instance_ram->StandardFilters[index] = ((filter->type << BSP_CAN_STD_FILTER_TYPE_Pos) |
-                                            (filter->action << BSP_CAN_STD_FILTER_CONFIG_Pos) |
-                                            (filter->standard_id1 << 16) |
-                                            (filter->standard_id2));
+    instance_ram->standard_filters[index] = ((filter->type << BSP_CAN_STD_FILTER_TYPE_Pos) |
+                                             (filter->action << BSP_CAN_STD_FILTER_CONFIG_Pos) |
+                                             (filter->standard_id1 << 16) |
+                                             (filter->standard_id2));
 
     /* Update the number of active filters in filters global register */
     __BSP_SET_MASKED_REG_VALUE(can->RXGFC, FDCAN_RXGFC_LSS, ((++number_of_filters) << FDCAN_RXGFC_LSS_Pos));
@@ -263,7 +222,9 @@ ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_fi
 }
 
 
-ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data) {
+ret_status
+bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data)
+{
 
     /* Simple validation to avoid NULL pointers */
     if (can == NULL || tx_metadata == NULL || tx_data == NULL) {
@@ -279,13 +240,13 @@ ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *t
     }
 
     /* Retrieve the RAM section mapped to the FDCAN peripheral */
-    struct __bsp_fdcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
+    struct __bcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
     if (instance_ram == NULL) {
         return STATUS_ERR;
     }
 
     /* Write Tx element header to the message RAM */
-    __bsp_copy_message_to_ram(tx_metadata, tx_data, &instance_ram->TXFIFOQ[tx_index]);
+    __bsp_copy_message_to_ram(tx_metadata, tx_data, &instance_ram->tx_fifoq[tx_index]);
 
     /* Activate the corresponding transmission request */
     __BSP_SET_REG_VALUE(can->TXBAR, ((uint32_t) 1 << tx_index));
@@ -296,15 +257,16 @@ ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *t
 
 ret_status
 bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_metadata_t *rx_metadata,
-                    uint8_t *rx_data) {
+                    uint8_t *rx_data)
+{
 
     /* Simple validation to avoid NULL pointers */
     if (can == NULL || rx_metadata == NULL || rx_data == NULL) {
         return STATUS_ERR;
     }
 
-    volatile struct __bsp_fdcan_ram_rx_fifo_element_s *message;
-    struct __bsp_fdcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
+    volatile struct __bcan_ram_rx_fifo_element_s *message;
+    struct __bcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
     uint8_t fifo_index;
 
 
@@ -313,13 +275,13 @@ bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_me
             return STATUS_ERR;
         }
         fifo_index = (can->RXF0S & FDCAN_RXF0S_F0GI) >> FDCAN_RXF0S_F0GI_Pos;
-        message = &instance_ram->RXFIFO0[fifo_index];
+        message = &instance_ram->rx_fifo0[fifo_index];
     } else if (queue == BSP_CAN_RX_QUEUE_1) {
         if ((can->RXF1S & FDCAN_RXF1S_F1FL) == 0) {
             return STATUS_ERR;
         }
         fifo_index = (can->RXF1S & FDCAN_RXF1S_F1GI) >> FDCAN_RXF1S_F1GI_Pos;
-        message = &instance_ram->RXFIFO1[fifo_index];
+        message = &instance_ram->rx_fifo1[fifo_index];
     } else {
         return STATUS_ERR;
     }
@@ -338,7 +300,15 @@ bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_me
 }
 
 
-ret_status bcan_start(bcan_instance_t *can) {
+/** @brief Starts the given CAN peripheral getting the peripheral out of the software initialization state to one of the
+ * possible final states. Check RM0440 to see all the possible final states.
+ *
+ *  @param can The instance of the peripheral to be started.
+ *  @return the result of the operation. STATUS_OK if no error has occurred, other otherwise.
+ */
+ret_status
+bcan_start(bcan_instance_t *can)
+{
     if (can == NULL) {
         return STATUS_ERR;
     }
@@ -348,13 +318,17 @@ ret_status bcan_start(bcan_instance_t *can) {
 }
 
 
-ret_status bcan_config_clk_source(bcan_instance_t *can, enum bcan_clock_source_e clock_source) {
+ret_status
+bcan_config_clk_source(bcan_instance_t *can, enum bcan_clock_source_e clock_source)
+{
     __BSP_SET_MASKED_REG_VALUE(RCC->CCIPR, 0x03 << RCC_CCIPR_FDCANSEL_Pos, clock_source << RCC_CCIPR_FDCANSEL_Pos);
     return STATUS_OK;
 }
 
 
-ret_status bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate) {
+ret_status
+bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate)
+{
 
     if (can == NULL || baudrate == NULL) {
         return STATUS_ERR;
@@ -376,7 +350,9 @@ ret_status bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate) {
 }
 
 
-ret_status bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line) {
+ret_status
+bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line)
+{
 
     if (can == NULL || (isr_line != BSP_CAN_ISR_LINE_0 && isr_line != BSP_CAN_ISR_LINE_1) ||
         __bsp_can_conf_validate_isr_group(isr_group) != STATUS_OK) {
@@ -396,13 +372,15 @@ ret_status bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_
 }
 
 
-ret_status bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler handler) {
+ret_status
+bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler handler)
+{
 
     if (irq > FDCAN_IE_ARAE_Pos || handler == NULL || can == NULL) {
         return STATUS_ERR;
     }
 
-    __bsp_can_irqs_state *instance_state = __bsp_can_get_instance_state(can);
+    struct __bcan_irqs_state_s *instance_state = __bsp_can_get_instance_state(can);
 
     __BSP_SET_MASKED_REG(can->IE, (1U << irq));
 
@@ -413,7 +391,9 @@ ret_status bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_
     return STATUS_OK;
 }
 
-ret_status bcan_enable_irqs(bcan_instance_t *can) {
+ret_status
+bcan_enable_irqs(bcan_instance_t *can)
+{
 
     if (can == NULL) {
         return STATUS_ERR;
@@ -474,7 +454,8 @@ ret_status bcan_enable_irqs(bcan_instance_t *can) {
     return STATUS_OK;
 }
 
-static inline void __bsp_can_ensure_isr_line_active(bcan_instance_t *can) {
+static inline void __bsp_can_ensure_isr_line_active(bcan_instance_t *can)
+{
 
     for (uint8_t ils_bit = 0; ils_bit <= FDCAN_ILS_PERR_Pos; ils_bit++) {
         if (__CAN_ISR_GROUP_MASK[ils_bit] & can->IE) {
@@ -487,7 +468,8 @@ static inline void __bsp_can_ensure_isr_line_active(bcan_instance_t *can) {
     }
 }
 
-static ret_status __get_can_input_frequency(uint32_t *freq) {
+static ret_status __get_can_input_frequency(uint32_t *freq)
+{
 
     if ((RCC->CCIPR & (0x03U << RCC_CCIPR_FDCANSEL_Pos)) == (BSP_CAN_CLK_HSE << RCC_CCIPR_FDCANSEL_Pos)) {
         *freq = BSP_HSE_VALUE;
@@ -502,7 +484,8 @@ static ret_status __get_can_input_frequency(uint32_t *freq) {
 }
 
 
-static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bcan_config_t *config) {
+static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bcan_config_t *config)
+{
 
     __BSP_SET_MASKED_REG_VALUE(can->RXGFC, FDCAN_RXGFC_RRFS | FDCAN_RXGFC_ANFS,
                                (config->global_filters.reject_remote_standard ? FDCAN_RXGFC_RRFS : 0x00U) |
@@ -512,60 +495,63 @@ static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bca
 
 
 static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader, const uint8_t *pTxData,
-                                      volatile struct __bsp_fdcan_ram_tx_fifo_element_s *message_ram) {
+                                      volatile struct __bcan_ram_tx_fifo_element_s *message_ram)
+{
     /* If ID is larger than 11 bits the message is sent using extended 29 bits IDs */
     uint32_t extended_id_xtd =
             (pTxHeader->id & 0xFFFFF800) ? FDCAN_ELEMENT_MASK_XTD : 0x00U;
 
     /* Write Tx element header to the message RAM */
-    message_ram->HeaderWord1 =
+    message_ram->header_word1 =
             (pTxHeader->is_rtr ? (1 << 30) : 0x00000000U) | (pTxHeader->id << (extended_id_xtd ? 0 : 18U)) |
             extended_id_xtd;
-    message_ram->HeaderWord2 =
+    message_ram->header_word2 =
             (pTxHeader->message_marker << 24U) | (pTxHeader->store_tx_events ? (1 << 23) : 0x00000000U) |
             (pTxHeader->size_b << 16);
 
     uint8_t element_counter = 0;
     /* Write Tx payload to the message RAM */
     for (uint32_t byte_n = 0; byte_n < __CAN_DLC_TO_BYTE_NUMBER[pTxHeader->size_b]; byte_n += 4U) {
-        message_ram->Data[element_counter] = ((pTxData[byte_n + 3U] << 24U) |
-                                              (pTxData[byte_n + 2U] << 16U) |
-                                              (pTxData[byte_n + 1U] << 8U) | pTxData[byte_n]);
+        message_ram->message_payload[element_counter] = ((pTxData[byte_n + 3U] << 24U) |
+                                                         (pTxData[byte_n + 2U] << 16U) |
+                                                         (pTxData[byte_n + 1U] << 8U) | pTxData[byte_n]);
         element_counter++;
     }
 }
 
 
 static void
-__bsp_copy_message_from_ram(volatile struct __bsp_fdcan_ram_rx_fifo_element_s *message, bcan_rx_metadata_t *rx_metadata,
-                            uint8_t *rx_data) {
+__bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *message, bcan_rx_metadata_t *rx_metadata,
+                            uint8_t *rx_data)
+{
 
     /* Retrieve Identifier */
-    if ((message->HeaderWord1 & FDCAN_ELEMENT_MASK_XTD) != FDCAN_ELEMENT_MASK_XTD) /* Standard ID element */
+    if ((message->header_word1 & FDCAN_ELEMENT_MASK_XTD) != FDCAN_ELEMENT_MASK_XTD) /* Standard ID element */
     {
-        rx_metadata->id = ((message->HeaderWord1 & FDCAN_ELEMENT_MASK_STDID) >> 18U);
+        rx_metadata->id = ((message->header_word1 & FDCAN_ELEMENT_MASK_STDID) >> 18U);
     } else /* Extended ID element */
     {
-        rx_metadata->id = (message->HeaderWord1 & FDCAN_ELEMENT_MASK_EXTID);
+        rx_metadata->id = (message->header_word1 & FDCAN_ELEMENT_MASK_EXTID);
     }
 
     /* Retrieve RxFrameType */
-    rx_metadata->is_rtr = ((message->HeaderWord1 & FDCAN_ELEMENT_MASK_RTR) == FDCAN_ELEMENT_MASK_RTR);
+    rx_metadata->is_rtr = ((message->header_word1 & FDCAN_ELEMENT_MASK_RTR) == FDCAN_ELEMENT_MASK_RTR);
 
-    rx_metadata->timestamp = (message->HeaderWord2 & FDCAN_ELEMENT_MASK_TS);
-    rx_metadata->size_b = (message->HeaderWord2 & FDCAN_ELEMENT_MASK_DLC) >> 16;
-    rx_metadata->matched_filter_index = ((message->HeaderWord2 & FDCAN_ELEMENT_MASK_FIDX) >> 24U);
-    rx_metadata->non_matching_element = ((message->HeaderWord2 & FDCAN_ELEMENT_MASK_ANMF) == FDCAN_ELEMENT_MASK_ANMF);
+    rx_metadata->timestamp = (message->header_word2 & FDCAN_ELEMENT_MASK_TS);
+    rx_metadata->size_b = (message->header_word2 & FDCAN_ELEMENT_MASK_DLC) >> 16;
+    rx_metadata->matched_filter_index = ((message->header_word2 & FDCAN_ELEMENT_MASK_FIDX) >> 24U);
+    rx_metadata->non_matching_element = ((message->header_word2 & FDCAN_ELEMENT_MASK_ANMF) == FDCAN_ELEMENT_MASK_ANMF);
 
 
-    uint8_t *pData = (uint8_t *) &message->Data;
+    uint8_t *pData = (uint8_t *) &message->message_payload;
     for (uint32_t byte_n = 0; byte_n < __CAN_DLC_TO_BYTE_NUMBER[rx_metadata->size_b]; byte_n++) {
         rx_data[byte_n] = pData[byte_n];
     }
 }
 
 
-static inline __bsp_can_irqs_state *__bsp_can_get_instance_state(bcan_instance_t *can) {
+static inline struct __bcan_irqs_state_s *__bsp_can_get_instance_state(bcan_instance_t *can)
+{
 #if defined(FDCAN2)
     if (can == FDCAN2)
       {
@@ -585,10 +571,11 @@ static inline __bsp_can_irqs_state *__bsp_can_get_instance_state(bcan_instance_t
 }
 
 
-static inline struct __bsp_fdcan_ram_s *__bsp_can_get_instance_base_address(bcan_instance_t *can) {
+static inline struct __bcan_ram_s *__bsp_can_get_instance_base_address(bcan_instance_t *can)
+{
 
     if (can == FDCAN1) {
-        return (struct __bsp_fdcan_ram_s *) SRAMCAN_BASE;
+        return (struct __bcan_ram_s *) SRAMCAN_BASE;
     }
 
 #if defined(FDCAN2)
@@ -607,7 +594,8 @@ static inline struct __bsp_fdcan_ram_s *__bsp_can_get_instance_base_address(bcan
 }
 
 
-static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group) {
+static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group)
+{
     return (
                    isr_group != BSP_CAN_ISR_GROUP_RXFIFO0 &&
                    isr_group != BSP_CAN_ISR_GROUP_RXFIFO1 &&
@@ -621,9 +609,10 @@ static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e
 }
 
 
-static void __bsp_can_irq_handler(bcan_instance_t *can) {
+static void __bsp_can_irq_handler(bcan_instance_t *can)
+{
 
-    __bsp_can_irqs_state *can_instance_state = __bsp_can_get_instance_state(can);
+    struct __bcan_irqs_state_s *can_instance_state = __bsp_can_get_instance_state(can);
     if (can_instance_state != NULL) {
 
         uint32_t ir_tmp = can->IR;

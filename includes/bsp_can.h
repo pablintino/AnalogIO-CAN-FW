@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
@@ -21,9 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- **/
+ */
 
 
+
+/**
+ * @file bsp_can.h
+ * @brief FDCAN peripheral driver header file that exposes all public definitions and functions needed to operate with
+ * the STM32G4XX advanced FDCAN peripheral.
+ */
 #ifndef BSP_CAN_H
 #define BSP_CAN_H
 
@@ -186,26 +192,36 @@ typedef FDCAN_GlobalTypeDef bcan_instance_t;
 
 typedef void (*bcan_isr_handler)(bcan_instance_t *can, uint32_t group_flags);
 
-ret_status bcan_config(bcan_instance_t *can, const bcan_config_t *config);
+ret_status
+bcan_config(bcan_instance_t *can, const bcan_config_t *config);
 
-ret_status bcan_config_clk_source(bcan_instance_t *can, enum bcan_clock_source_e clock_source);
+ret_status
+bcan_config_clk_source(bcan_instance_t *can, enum bcan_clock_source_e clock_source);
 
-ret_status bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler handler);
+ret_status
+bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler handler);
 
-ret_status bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line);
+ret_status
+bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line);
 
-ret_status bcan_enable_irqs(bcan_instance_t *can);
+ret_status
+bcan_enable_irqs(bcan_instance_t *can);
 
-ret_status bcan_start(bcan_instance_t *can);
+ret_status
+bcan_start(bcan_instance_t *can);
 
-ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index);
+ret_status
+bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index);
 
-ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data);
+ret_status
+bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data);
 
-ret_status bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue,
-                               bcan_rx_metadata_t *rx_metadata, uint8_t *rx_data);
+ret_status
+bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue,
+                    bcan_rx_metadata_t *rx_metadata, uint8_t *rx_data);
 
-ret_status bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate);
+ret_status
+bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate);
 
 
 #endif //BSP_CAN_H

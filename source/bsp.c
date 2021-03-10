@@ -82,19 +82,19 @@ void BSP_init(void) {
 
 static ret_status __configure_i2c(void) {
 
-    BSP_IO_conf_af(GPIOA,
-                   BSP_IO_PIN_8,
-                   2,
-                   BSP_IO_NO_PU_PD,
-                   BSP_IO_LOW,
-                   BSP_IO_OUT_TYPE_OPEN_DRAIN);
+    bio_config_af_port(GPIOA,
+                       BSP_IO_PIN_8,
+                       2,
+                       BSP_IO_NO_PU_PD,
+                       BSP_IO_LOW,
+                       BSP_IO_OUT_TYPE_OPEN_DRAIN);
 
-    BSP_IO_conf_af(GPIOB,
-                   BSP_IO_PIN_5,
-                   8,
-                   BSP_IO_NO_PU_PD,
-                   BSP_IO_LOW,
-                   BSP_IO_OUT_TYPE_OPEN_DRAIN);
+    bio_config_af_port(GPIOB,
+                       BSP_IO_PIN_5,
+                       8,
+                       BSP_IO_NO_PU_PD,
+                       BSP_IO_LOW,
+                       BSP_IO_OUT_TYPE_OPEN_DRAIN);
 
     bsp_i2c_master_config_t i2c_config;
     i2c_config.AddressingMode = BSP_I2C_ADDRESSING_MODE_7;
@@ -110,12 +110,12 @@ static ret_status __configure_i2c(void) {
 static ret_status __configure_can(void) {
 
 
-    BSP_IO_conf_af(GPIOA,
-                   BSP_IO_PIN_11 | BSP_IO_PIN_12,
-                   9,
-                   BSP_IO_NO_PU_PD,
-                   BSP_IO_VERY_HIGH,
-                   BSP_IO_OUT_TYPE_PP);
+    bio_config_af_port(GPIOA,
+                       BSP_IO_PIN_11 | BSP_IO_PIN_12,
+                       9,
+                       BSP_IO_NO_PU_PD,
+                       BSP_IO_VERY_HIGH,
+                       BSP_IO_OUT_TYPE_PP);
 
 
     bcan_config_t can_config;
@@ -163,12 +163,12 @@ static ret_status __configure_usart(void) {
 
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
-    BSP_IO_conf_af(GPIOA,
-                   BSP_IO_PIN_9 | BSP_IO_PIN_10,
-                   7,
-                   BSP_IO_PU,
-                   BSP_IO_LOW,
-                   BSP_IO_OUT_TYPE_PP);
+    bio_config_af_port(GPIOA,
+                       BSP_IO_PIN_9 | BSP_IO_PIN_10,
+                       7,
+                       BSP_IO_PU,
+                       BSP_IO_LOW,
+                       BSP_IO_OUT_TYPE_PP);
 
     bsp_usart_config_t usart_config;
     usart_config.HardwareControl = BSP_USART_HW_CONTROL_NONE;

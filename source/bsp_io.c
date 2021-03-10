@@ -45,26 +45,26 @@ __configure_io_ports(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_i
                      bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
 
 void
-BSP_IO_conf_output_pin(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down,
-                       bsp_port_speed_t speed,
-                       bsp_port_output_type_t output_type) {
+bio_conf_output_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down,
+                     bsp_port_speed_t speed,
+                     bsp_port_output_type_t output_type) {
     __configure_io_ports(port, pin_number, OUTPUT, 0U, pull_up_down, speed, output_type);
 }
 
 void
-BSP_IO_conf_input_pin(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down,
+bio_config_input_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down,
                       bsp_port_speed_t speed) {
     __configure_io_ports(port, pin_number, INPUT, 0U, pull_up_down, speed, BSP_IO_OUT_TYPE_PP);
 }
 
 
-void BSP_IO_conf_af(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t af_function, bsp_port_pp_pd_t pull_up_down,
-                    bsp_port_speed_t speed, bsp_port_output_type_t output_type) {
+void bio_config_af_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t af_function, bsp_port_pp_pd_t pull_up_down,
+                        bsp_port_speed_t speed, bsp_port_output_type_t output_type) {
     __configure_io_ports(port, pin_number, ALTERNATE, af_function, pull_up_down, speed, output_type);
 }
 
 
-void BSP_IO_toggle_pin(BSP_IO_Port *port, uint8_t pin_number) {
+void bio_toggle_port(BSP_IO_Port *port, uint8_t pin_number) {
     if (BSP_IO_IS_PIN_VALID(pin_number)) {
         uint16_t pin_bin = 1 << pin_number;
         port->BSRR = (port->ODR & pin_bin) != 0x00U ? (uint32_t) pin_bin << 16ul : (uint32_t) pin_bin;
@@ -72,7 +72,7 @@ void BSP_IO_toggle_pin(BSP_IO_Port *port, uint8_t pin_number) {
     }
 }
 
-ret_status BSP_IO_write_pin(BSP_IO_Port *port, uint8_t pin_number, bool value) {
+ret_status bio_write_port(BSP_IO_Port *port, uint8_t pin_number, bool value) {
 
     if (!BSP_IO_IS_PIN_VALID(pin_number)) {
         return STATUS_ERR;
@@ -86,7 +86,7 @@ ret_status BSP_IO_write_pin(BSP_IO_Port *port, uint8_t pin_number, bool value) {
     return STATUS_OK;
 }
 
-uint8_t BSP_IO_read_pin(BSP_IO_Port *port, uint8_t pin_number) {
+uint8_t bio_read_port(BSP_IO_Port *port, uint8_t pin_number) {
     uint8_t res = 0;
     if (BSP_IO_IS_PIN_VALID(pin_number)) {
         res = (uint8_t) ((port->IDR & (uint32_t) (1 << pin_number)) >> pin_number);

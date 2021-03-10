@@ -49,7 +49,7 @@ static  void  AppTaskObj0 (void  *p_arg)
 
     SEGGER_RTT_WriteString(0, "SEGGER Real-Time-Terminal Sample\r\n");
 
-    BSP_IO_write_pin(GPIOA, 5, 1);
+    bio_write_port(GPIOA, 5, 1);
 
     OSTimeDly(500, OS_OPT_TIME_PERIODIC, &err);
 
@@ -74,17 +74,17 @@ static  void  AppTaskObj0 (void  *p_arg)
         BSP_IO_toggle_pin(GPIOA, 5);
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
         BSP_USART_put_char(USART1, 'O', 100U);
-        BSP_IO_toggle_pin(GPIOA, 5);
+        bio_toggle_port(GPIOA, 5);
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
     }*/
 
     while (DEF_TRUE) {
         if(aRxBuffer[0]==0x75U && aRxBuffer[1]==0x00U){
             //BSP_USART_put_char(USART1, 'H', 100U);
-            BSP_IO_toggle_pin(GPIOA, 4);
+            bio_toggle_port(GPIOA, 4);
             OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
         }else{
-            BSP_IO_toggle_pin(GPIOA, 6);
+            bio_toggle_port(GPIOA, 6);
             OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
         }
 
@@ -195,10 +195,10 @@ static void AppTaskStart(void *p_arg) {
 
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
-    BSP_IO_conf_output_pin(GPIOA,
-                           BSP_IO_PIN_4 | BSP_IO_PIN_5 | BSP_IO_PIN_6, BSP_IO_PU,
-                           BSP_IO_HIGH,
-                           BSP_IO_OUT_TYPE_PP);
+    bio_conf_output_port(GPIOA,
+                         BSP_IO_PIN_4 | BSP_IO_PIN_5 | BSP_IO_PIN_6, BSP_IO_PU,
+                         BSP_IO_HIGH,
+                         BSP_IO_OUT_TYPE_PP);
 
     OSTaskCreate(&AppTaskObj0TCB,
                  "Kernel Objects Task 0",
