@@ -249,7 +249,7 @@ ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc) {
 
     /* Get the actual configured frequency and call TICK_config to reconfigure SysTick to the current frequency */
     uint32_t final_freq = BSP_CLK_get_hclk_freq();
-    BSP_TCK_config(final_freq);
+    btick_config(final_freq);
 
     /* Just validate if the desired frequency has been achieved */
     return target_hclk_freq == final_freq ? STATUS_OK : STATUS_ERR;

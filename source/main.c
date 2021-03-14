@@ -60,8 +60,8 @@ static  void  AppTaskObj0 (void  *p_arg)
 
     //i2c_transfer7(I2C3, 0x90U, &aTxBuffer, 1, &aRxBuffer, 2);
 
-    BSP_I2C_master_transfer(I2C3, 0x90U, aTxBuffer, 1, true, 500);
-    BSP_I2C_master_transfer(I2C3, 0x90U, aRxBuffer, 2, false, 500);
+    bi2c_master_transfer(I2C3, 0x90U, aTxBuffer, 1, true, 500);
+    bi2c_master_transfer(I2C3, 0x90U, aRxBuffer, 2, false, 500);
     OSTimeDly(500, OS_OPT_TIME_PERIODIC, &err);
 
 
@@ -71,21 +71,21 @@ static  void  AppTaskObj0 (void  *p_arg)
     BSP_USART_put_char(USART1, 'S', 100U);
     BSP_USART_put_char(USART1, 'T', 100U);
     BSP_USART_put_char(USART1, '\r', 100U);
-    BSP_USART_put_char(USART1, '\n', 100U);
+    busart_put_char(USART1, '\n', 100U);
 */
     /*for (int i =0 ; i < 5;i++) {
 
         BSP_USART_put_char(USART1, 'H', 100U);
         BSP_IO_toggle_pin(GPIOA, 5);
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
-        BSP_USART_put_char(USART1, 'O', 100U);
+        busart_put_char(USART1, 'O', 100U);
         bio_toggle_port(GPIOA, 5);
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
     }*/
 
     while (DEF_TRUE) {
         if(aRxBuffer[0]==0x75U && aRxBuffer[1]==0x00U){
-            //BSP_USART_put_char(USART1, 'H', 100U);
+            //busart_put_char(USART1, 'H', 100U);
             bio_toggle_port(GPIOA, 4);
             OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
         }else{
@@ -139,7 +139,7 @@ static  void  AppTaskCanTX (void  *p_arg)
 void can_rx_handler(bcan_instance_t *can, uint32_t group_flags){
     bcan_rx_metadata_t rx_metadata;
     uint8_t rx_data[64];
-    if(bcan_get_rx_message(can, BSP_CAN_RX_QUEUE_O, &rx_metadata, rx_data) == STATUS_OK){
+    if(bcan_get_rx_message(can, BCAN_RX_QUEUE_O, &rx_metadata, rx_data) == STATUS_OK){
         test_n++;
     }
 }
@@ -195,7 +195,7 @@ static void AppTaskStart(void *p_arg) {
     BSP_init();
 
 
-    bcan_config_irq(FDCAN1, BSP_CAN_IRQ_TYPE_RF0NE, can_rx_handler);
+    bcan_config_irq(FDCAN1, BCAN_IRQ_TYPE_RF0NE, can_rx_handler);
 
 
 

@@ -81,6 +81,36 @@ static inline void __bsp_can_ensure_isr_line_active(bcan_instance_t *can);
 static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group);
 
 
+/**
+ *
+ * @param can The FDCAN peripheral instance to configure.
+ * @param config The structure containing the configuration details.
+ * @return the result of the operation. ::STATUS_OK if no error has occurred, other otherwise.
+ *
+ * This function puts the given FDCAN peripheral into "SW Initialization" state (as described in RM0440 chapter 44.3.2)
+ *  in order to write protected bits of CCCR, TXBC and NBTP. <br>
+ *
+ * The current implementation does the following changes to registers in order to apply the given configuration:
+ *     1. Set CCCR INIT bit to indicate that we are going to enter into initialization state. Wait until is set.
+ *     2. Set CCCR CCE bit to unlock protected bits of the FDCAN registers. Wait until is set.
+ *     3. Set CCCR DAR bit based on bcan_config_t::auto_retransmission value.
+ *     4. Disable CAN FD and bitrate switching functionality. Protocol exception handling is disabled too since its
+ *     functionality is implemented in HW for FD operation only. This version of the BSP does not support those
+ *     functionalities.
+ *     5. Set CCCR MON bit based on bcan_config_t::mode value. If mode is ::BCAN_MODE_BM bus
+ *     monitor mode is enabled by writing a 1 to this bit.
+ *     6. Configure peripheral nominal timing by writing NSJW, NBRP, NTSEG1 and NTSEG2 fields of NBTP register with
+ *     the values provided by bcan_config_t::timing. The values given in that structure are
+ *     supposed to be based on "one" index notation but registers are zero based, so all values are written subtracted
+ *     by one.
+ *     7. Set TXBC TFQM bit based on bcan_config_t::auto_retransmission::tx_mode. If tx_mode is set to be
+ *     ::BCAN_TX_MODE_QUEUE transmission FIFO works like a priority queue as described in chapter 44.4.4
+ *     "Message RAM, Tx Queue" of RM0440.
+ *     8. The whole SRAM associated to the FDCAN instance is wiped by writing zeroes to it.
+ *
+ *     After configuring the given FDCAN instance the peripheral remains in "SW initialization" state. To put the
+ *     instance in normal mode ::bcan_start should be called.
+ */
 ret_status
 bcan_config(bcan_instance_t *can, const bcan_config_t *config)
 {
@@ -89,7 +119,7 @@ bcan_config(bcan_instance_t *can, const bcan_config_t *config)
         return STATUS_ERR;
     }
 
-    uint32_t start_tick = BSP_TICK_get_ticks();
+    uint32_t start_tick = btick_get_ticks();
 
     /*Request initialization mode of the CAN peripheral */
     __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_INIT);
@@ -112,14 +142,11 @@ bcan_config(bcan_instance_t *can, const bcan_config_t *config)
         __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_DAR);
     }
 
-    /* TODO: Now only Classic CAN is supported: Disable FDCAN operation and baudrate switching (used only in FD operation) */
-    __BSP_CLEAR_MASKED_REG(can->CCCR, FDCAN_CCCR_FDOE | FDCAN_CCCR_BRSE);
-
-    /* Disable protocol exceptions by default */
-    __BSP_CLEAR_MASKED_REG(can->CCCR, FDCAN_CCCR_PXHD);
+    /* TODO: Now only Classic CAN is supported: Disable FDCAN operation, baudrate switching and exception handling (used only in FD operation) */
+    __BSP_CLEAR_MASKED_REG(can->CCCR, FDCAN_CCCR_FDOE | FDCAN_CCCR_BRSE | FDCAN_CCCR_PXHD);
 
     /* If monitor mode has been selected just turn it on */
-    if (config->mode == BSP_CAN_MODE_BM) {
+    if (config->mode == BCAN_MODE_BM) {
         __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_MON);
     } else {
         __BSP_CLEAR_MASKED_REG(can->CCCR, FDCAN_CCCR_MON);
@@ -250,13 +277,13 @@ bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_me
     uint8_t fifo_index;
 
 
-    if (queue == BSP_CAN_RX_QUEUE_O) {
+    if (queue == BCAN_RX_QUEUE_O) {
         if ((can->RXF0S & FDCAN_RXF0S_F0FL) == 0) {
             return STATUS_ERR;
         }
         fifo_index = (can->RXF0S & FDCAN_RXF0S_F0GI) >> FDCAN_RXF0S_F0GI_Pos;
         message = &instance_ram->rx_fifo0[fifo_index];
-    } else if (queue == BSP_CAN_RX_QUEUE_1) {
+    } else if (queue == BCAN_RX_QUEUE_1) {
         if ((can->RXF1S & FDCAN_RXF1S_F1FL) == 0) {
             return STATUS_ERR;
         }
@@ -270,7 +297,7 @@ bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_me
     __bsp_copy_message_from_ram(message, rx_metadata, rx_data);
 
     /* Just tell the underlying HW that we have read the message */
-    if (queue == BSP_CAN_RX_QUEUE_O) {
+    if (queue == BCAN_RX_QUEUE_O) {
         can->RXF0A = fifo_index & FDCAN_RXF0A_F0AI;
     } else {
         can->RXF1A = fifo_index & FDCAN_RXF1A_F1AI;
@@ -284,7 +311,7 @@ bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_me
  * possible final states. Check RM0440 to see all the possible final states.
  *
  *  @param can The instance of the peripheral to be started.
- *  @return the result of the operation. STATUS_OK if no error has occurred, other otherwise.
+ *  @return the result of the operation. ::STATUS_OK if no error has occurred, other otherwise.
  */
 ret_status
 bcan_start(bcan_instance_t *can)
@@ -299,9 +326,9 @@ bcan_start(bcan_instance_t *can)
 
 
 ret_status
-bcan_config_clk_source(bcan_instance_t *can, enum bcan_clock_source_e clock_source)
+bcan_config_clk_source(enum bcan_clock_source_e clock_source)
 {
-    __BSP_SET_MASKED_REG_VALUE(RCC->CCIPR, 0x03 << RCC_CCIPR_FDCANSEL_Pos, clock_source << RCC_CCIPR_FDCANSEL_Pos);
+    __BSP_SET_MASKED_REG_VALUE(RCC->CCIPR, RCC_CCIPR_FDCANSEL, clock_source << RCC_CCIPR_FDCANSEL_Pos);
     return STATUS_OK;
 }
 
@@ -334,12 +361,12 @@ ret_status
 bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line)
 {
 
-    if (can == NULL || (isr_line != BSP_CAN_ISR_LINE_0 && isr_line != BSP_CAN_ISR_LINE_1) ||
+    if (can == NULL || (isr_line != BCAN_ISR_LINE_0 && isr_line != BCAN_ISR_LINE_1) ||
         __bsp_can_conf_validate_isr_group(isr_group) != STATUS_OK) {
         return STATUS_ERR;
     }
 
-    if (isr_line == BSP_CAN_ISR_LINE_0) {
+    if (isr_line == BCAN_ISR_LINE_0) {
         __BSP_CLEAR_MASKED_REG(can->ILS, isr_group);
     } else {
         __BSP_SET_MASKED_REG(can->ILS, isr_group);
@@ -451,11 +478,11 @@ static inline void __bsp_can_ensure_isr_line_active(bcan_instance_t *can)
 static ret_status __get_can_input_frequency(uint32_t *freq)
 {
 
-    if ((RCC->CCIPR & (0x03U << RCC_CCIPR_FDCANSEL_Pos)) == (BSP_CAN_CLK_HSE << RCC_CCIPR_FDCANSEL_Pos)) {
+    if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_HSE << RCC_CCIPR_FDCANSEL_Pos)) {
         *freq = BSP_HSE_VALUE;
-    } else if ((RCC->CCIPR & (0x03U << RCC_CCIPR_FDCANSEL_Pos)) == (BSP_CAN_CLK_PLLQ << RCC_CCIPR_FDCANSEL_Pos)) {
+    } else if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_PLLQ << RCC_CCIPR_FDCANSEL_Pos)) {
         *freq = BSP_CLK_get_pllq_freq();
-    } else if ((RCC->CCIPR & (0x03U << RCC_CCIPR_FDCANSEL_Pos)) == (BSP_CAN_CLK_PCLK1 << RCC_CCIPR_FDCANSEL_Pos)) {
+    } else if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_PCLK1 << RCC_CCIPR_FDCANSEL_Pos)) {
         *freq = BSP_CLK_get_pclk1_freq();
     } else {
         return STATUS_ERR;
@@ -577,13 +604,13 @@ static inline struct __bcan_ram_s *__bsp_can_get_instance_base_address(bcan_inst
 static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group)
 {
     return (
-                   isr_group != BSP_CAN_ISR_GROUP_RXFIFO0 &&
-                   isr_group != BSP_CAN_ISR_GROUP_RXFIFO1 &&
-                   isr_group != BSP_CAN_ISR_GROUP_SMSG &&
-                   isr_group != BSP_CAN_ISR_GROUP_TFERR &&
-                   isr_group != BSP_CAN_ISR_GROUP_MISC &&
-                   isr_group != BSP_CAN_ISR_GROUP_BERR &&
-                   isr_group != BSP_CAN_ISR_GROUP_PERR
+                   isr_group != BCAN_ISR_GROUP_RXFIFO0 &&
+                   isr_group != BCAN_ISR_GROUP_RXFIFO1 &&
+                   isr_group != BCAN_ISR_GROUP_SMSG &&
+                   isr_group != BCAN_ISR_GROUP_TFERR &&
+                   isr_group != BCAN_ISR_GROUP_MISC &&
+                   isr_group != BCAN_ISR_GROUP_BERR &&
+                           isr_group != BCAN_ISR_GROUP_PERR
 
            ) ? STATUS_ERR : STATUS_OK;
 }

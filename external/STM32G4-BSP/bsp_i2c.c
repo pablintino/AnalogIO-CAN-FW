@@ -33,7 +33,7 @@ static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *fre
 
 static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, volatile uint32_t **ccipr);
 
-static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, bsp_i2c_master_config_t *config);
+static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, const bsp_i2c_master_config_t *config);
 
 static uint8_t
 __start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_size, bool write_transfer,
@@ -50,7 +50,8 @@ static ret_status __is_nack_condition_present(BSP_I2C_Instance *i2c, uint32_t ti
 static void __clean_txd_txis_flag(BSP_I2C_Instance *hi2c);
 
 
-ret_status BSP_I2C_master_conf(BSP_I2C_Instance *i2c, bsp_i2c_master_config_t *config) {
+ret_status bi2c_master_config(BSP_I2C_Instance *i2c, const bsp_i2c_master_config_t *config)
+{
 
     /* Most configurations cannot be done if the I2C peripheral is enabled */
     if (__BSP_IS_FLAG_SET(i2c->CR1, I2C_CR1_PE)) {
@@ -64,22 +65,22 @@ ret_status BSP_I2C_master_conf(BSP_I2C_Instance *i2c, bsp_i2c_master_config_t *c
 
     /** Before changed our own address disable OA1 register enable as said in datasheet*/
     __BSP_CLEAR_MASKED_REG(i2c->OAR1, I2C_OAR1_OA1EN);
-    if (config->AddressingMode == BSP_I2C_ADDRESSING_MODE_7) {
-        i2c->OAR1 = (I2C_OAR1_OA1EN | (config->SelfAddress & I2C_OAR1_OA1));
+    if (config->addressing_mode == BSP_I2C_ADDRESSING_MODE_7) {
+        i2c->OAR1 = (I2C_OAR1_OA1EN | (config->self_address & I2C_OAR1_OA1));
     } else {
-        i2c->OAR1 = (I2C_OAR1_OA1MODE | I2C_OAR1_OA1EN | config->SelfAddress);
+        i2c->OAR1 = (I2C_OAR1_OA1MODE | I2C_OAR1_OA1EN | config->self_address);
     }
 
-    __BSP_SET_MASKED_REG_VALUE(i2c->CR2, I2C_CR2_ADD10, (config->AddressingMode & I2C_CR2_ADD10));
+    __BSP_SET_MASKED_REG_VALUE(i2c->CR2, I2C_CR2_ADD10, (config->addressing_mode & I2C_CR2_ADD10));
 
     /** Master should do clock stretching always. General call disabled when acting as master too */
     __BSP_CLEAR_MASKED_REG(i2c->CR1, I2C_CR1_NOSTRETCH | I2C_CR1_GCEN);
     __BSP_SET_MASKED_REG(i2c->CR2, I2C_CR2_AUTOEND | I2C_CR2_NACK);
 
-    __BSP_SET_MASKED_REG_VALUE(i2c->CR1, I2C_CR1_DNF | I2C_CR1_ANFOFF, config->DigitalFilter & I2C_CR1_DNF);
+    __BSP_SET_MASKED_REG_VALUE(i2c->CR1, I2C_CR1_DNF | I2C_CR1_ANFOFF, config->digital_filter & I2C_CR1_DNF);
 
     /** Enable analog analog SDA/SCL filter if needed */
-    if (config->AnalogFilterEnabled) {
+    if (config->analog_filter) {
         __BSP_CLEAR_MASKED_REG(i2c->CR1, I2C_CR1_ANFOFF);
     } else {
         __BSP_SET_MASKED_REG(i2c->CR1, I2C_CR1_ANFOFF);
@@ -91,20 +92,23 @@ ret_status BSP_I2C_master_conf(BSP_I2C_Instance *i2c, bsp_i2c_master_config_t *c
 }
 
 
-void BSP_I2C_enable(BSP_I2C_Instance *i2c) {
+void bi2c_enable(BSP_I2C_Instance *i2c)
+{
     __BSP_SET_MASKED_REG(i2c->CR1, I2C_CR1_PE);
 }
 
 
-void BSP_I2C_disable(BSP_I2C_Instance *i2c) {
+void bi2c_disable(BSP_I2C_Instance *i2c)
+{
     __BSP_CLEAR_MASKED_REG(i2c->CR1, I2C_CR1_PE);
 }
 
 
 ret_status
-BSP_I2C_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, uint16_t size, bool is_write,
-                        uint32_t timeout) {
-    uint32_t tickstart = BSP_TICK_get_ticks();
+bi2c_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, uint16_t size, bool is_write,
+                     uint32_t timeout)
+{
+    uint32_t tickstart = btick_get_ticks();
     uint8_t *pBuffPtr = pData;
 
     ret_status status = BSP_UTIL_wait_flag_status(&i2c->ISR, I2C_ISR_BUSY, 0x00U, tickstart, 25U);
@@ -169,33 +173,34 @@ BSP_I2C_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData,
 }
 
 
-static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, bsp_i2c_master_config_t *config) {
+static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, const bsp_i2c_master_config_t *config)
+{
     uint32_t freq = 0;
 
-    if (config->FixedSpeed == BSP_I2C_SPEED_NONE) {
-        i2c->TIMINGR = config->CustomTimming;
-    } else if ((config->FixedSpeed != BSP_I2C_SPEED_NONE) && __get_i2c_input_frequency(i2c, &freq) != STATUS_ERR) {
+    if (config->fixed_speed == BSP_I2C_SPEED_NONE) {
+        i2c->TIMINGR = config->custom_timming;
+    } else if ((config->fixed_speed != BSP_I2C_SPEED_NONE) && __get_i2c_input_frequency(i2c, &freq) != STATUS_ERR) {
         switch (freq) {
             case 8000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[0][(config->FixedSpeed - 1) & 0x03U];
+                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[0][(config->fixed_speed - 1) & 0x03U];
                 break;
             case 16000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[1][(config->FixedSpeed - 1) & 0x03U];
+                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[1][(config->fixed_speed - 1) & 0x03U];
                 break;
             case 24000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[2][(config->FixedSpeed - 1) & 0x03U];
+                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[2][(config->fixed_speed - 1) & 0x03U];
                 break;
             case 48000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[3][(config->FixedSpeed - 1) & 0x03U];
+                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[3][(config->fixed_speed - 1) & 0x03U];
                 break;
             case 96000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[4][(config->FixedSpeed - 1) & 0x03U];
+                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[4][(config->fixed_speed - 1) & 0x03U];
                 break;
             case 128000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[5][(config->FixedSpeed - 1) & 0x03U];
+                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[5][(config->fixed_speed - 1) & 0x03U];
                 break;
             case 170000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[6][(config->FixedSpeed - 1) & 0x03U];
+                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[6][(config->fixed_speed - 1) & 0x03U];
                 break;
             default:
                 return STATUS_ERR;
@@ -208,7 +213,8 @@ static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, bsp_i2c_master
 }
 
 
-static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, volatile uint32_t **ccipr) {
+static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, volatile uint32_t **ccipr)
+{
     *ccipr = &RCC->CCIPR;
     if (i2c == I2C1) {
         *position = RCC_CCIPR_I2C1SEL_Pos;
@@ -228,7 +234,8 @@ static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *pos
 }
 
 
-static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *freq) {
+static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *freq)
+{
     uint8_t position;
     volatile uint32_t *ccipr;
     if (__get_i2c_clk_mux_position(i2c, &position, &ccipr) != STATUS_OK) {
@@ -250,7 +257,8 @@ static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *fre
 
 static uint8_t
 __start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_size, bool write_transfer,
-                     bool is_reload_transfer) {
+                     bool is_reload_transfer)
+{
     /** Peripheral allows only 255 transfers. Bigger transfers can be accomplished by manually reloading the whole peripheral
      * using the proper RELOAD bit in CR2.
      */
@@ -282,14 +290,15 @@ __start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_
 
 
 static ret_status
-__wait_for_isr_flag_or_nack(BSP_I2C_Instance *i2c, uint32_t flag, uint32_t timeout, uint32_t start_tick) {
+__wait_for_isr_flag_or_nack(BSP_I2C_Instance *i2c, uint32_t flag, uint32_t timeout, uint32_t start_tick)
+{
     while (!__BSP_IS_FLAG_SET(i2c->ISR, flag)) {
         /* Just check if the other party has sent us a NACK cause that means the transfer has been aborted */
         ret_status status = __is_nack_condition_present(i2c, timeout, start_tick);
         if (status != STATUS_OK) {
             /* NACK received when waiting for the STOP. The transfer has failed */
             return status;
-        } else if (((BSP_TICK_get_ticks() - start_tick) > timeout) || (start_tick == 0U)) {
+        } else if (((btick_get_ticks() - start_tick) > timeout) || (start_tick == 0U)) {
             /* Timeout waiting for the given flag to be set */
             return STATUS_TMT;
         }
@@ -299,7 +308,8 @@ __wait_for_isr_flag_or_nack(BSP_I2C_Instance *i2c, uint32_t flag, uint32_t timeo
 
 
 static ret_status
-__wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick, uint32_t pending_bytes) {
+__wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick, uint32_t pending_bytes)
+{
     while (!__BSP_IS_FLAG_SET(i2c->ISR, I2C_ISR_RXNE)) {
         /* Check if a NACK is detected */
         ret_status status = __is_nack_condition_present(i2c, timeout, start_tick);
@@ -329,7 +339,7 @@ __wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick
         }
 
         /* Check for the timeout */
-        if (((BSP_TICK_get_ticks() - start_tick) > timeout) || (timeout == 0U)) {
+        if (((btick_get_ticks() - start_tick) > timeout) || (timeout == 0U)) {
             return STATUS_TMT;
         }
     }
@@ -337,7 +347,8 @@ __wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick
 }
 
 
-static ret_status __is_nack_condition_present(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick) {
+static ret_status __is_nack_condition_present(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick)
+{
     /* Check if a NACK condition has been detected */
     if (__BSP_IS_FLAG_SET(i2c->ISR, I2C_ISR_NACKF)) {
         /* If a NACK arrives STOPF should be flagged by HW. Just wait for it */
@@ -359,7 +370,8 @@ static ret_status __is_nack_condition_present(BSP_I2C_Instance *i2c, uint32_t ti
 }
 
 
-static void __clean_txd_txis_flag(BSP_I2C_Instance *hi2c) {
+static void __clean_txd_txis_flag(BSP_I2C_Instance *hi2c)
+{
     /* If a pending TXIS flag is set */
     /* Write a dummy data in TXDR to clear it */
     if (__BSP_IS_FLAG_SET(hi2c->ISR, I2C_ISR_TXIS)) {

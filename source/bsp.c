@@ -51,10 +51,10 @@ void BSP_init(void) {
         while (1) { ; };
     }
     SEGGER_RTT_WriteString(0, "[INFO] Enabling USART1\r\n");
-    BSP_USART_enable(USART1);
+    busart_enable(USART1);
 
     SEGGER_RTT_WriteString(0, "[INFO] Enabling I2C3\r\n");
-    BSP_I2C_enable(I2C3);
+    bi2c_enable(I2C3);
 
     SEGGER_RTT_WriteString(0, "[INFO] Enabling FDCAN1\r\n");
     bcan_start(FDCAN1);
@@ -77,13 +77,13 @@ static ret_status __configure_i2c(void) {
                        BSP_IO_OUT_TYPE_OPEN_DRAIN);
 
     bsp_i2c_master_config_t i2c_config;
-    i2c_config.AddressingMode = BSP_I2C_ADDRESSING_MODE_7;
-    i2c_config.AnalogFilterEnabled = true;
-    i2c_config.DigitalFilter = BSP_I2C_DIGITAL_FILTER_OFF;
-    i2c_config.SelfAddress = 0x00U;
-    i2c_config.FixedSpeed = BSP_I2C_SPEED_100;
-    i2c_config.CustomTimming = 0x00U;
-    return BSP_I2C_master_conf(I2C3, &i2c_config);
+    i2c_config.addressing_mode = BSP_I2C_ADDRESSING_MODE_7;
+    i2c_config.analog_filter = true;
+    i2c_config.digital_filter = BSP_I2C_DIGITAL_FILTER_OFF;
+    i2c_config.self_address = 0x00U;
+    i2c_config.fixed_speed = BSP_I2C_SPEED_100;
+    i2c_config.custom_timming = 0x00U;
+    return bi2c_master_config(I2C3, &i2c_config);
 }
 
 
@@ -99,17 +99,17 @@ static ret_status __configure_can(void) {
 
 
     bcan_config_t can_config;
-    can_config.tx_mode = BSP_CAN_TX_MODE_FIFO;
-    can_config.mode = BSP_CAN_MODE_NORMAL;
+    can_config.tx_mode = BCAN_TX_MODE_FIFO;
+    can_config.mode = BCAN_MODE_NORMAL;
     can_config.timing.phase1 = 13; // 1mbps
     can_config.timing.phase2 = 2;
     can_config.timing.sync_jump_width = 1;
     can_config.timing.prescaler = 3;
     can_config.auto_retransmission = false;
-    can_config.global_filters.non_matching_standard_action = BSP_CAN_NON_MATCHING_ACCEPT_RX_0;
+    can_config.global_filters.non_matching_standard_action = BCAN_NON_MATCHING_ACCEPT_RX_0;
     can_config.global_filters.reject_remote_standard = true;
 
-    bcan_config_clk_source(FDCAN1, BSP_CAN_CLK_PCLK1);
+    bcan_config_clk_source(BCAN_CLK_PCLK1);
 
     ret_status tmp_status = bcan_config(FDCAN1, &can_config);
     if (tmp_status != STATUS_OK) {
@@ -119,8 +119,8 @@ static ret_status __configure_can(void) {
     bcan_standard_filter_t filter_1;
     filter_1.standard_id1 = 123;
     filter_1.standard_id2 = 321;
-    filter_1.type = BSP_CAN_STD_FILTER_TYPE_RANGE;
-    filter_1.action = BSP_CAN_STD_FILTER_ACTION_PRIORITIZE_STORE_RX0;
+    filter_1.type = BCAN_STD_FILTER_TYPE_RANGE;
+    filter_1.action = BCAN_STD_FILTER_ACTION_PRIORITIZE_STORE_RX0;
     tmp_status = bcan_add_standard_filter(FDCAN1, &filter_1, 0);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
@@ -130,7 +130,7 @@ static ret_status __configure_can(void) {
     bcan_get_baudrate(FDCAN1, &can_baudrate);
     SEGGER_RTT_printf(0, "[INFO] CAN baudrate set to %u\r\n", can_baudrate);
 
-    tmp_status = bcan_config_irq_line(FDCAN1, BSP_CAN_ISR_GROUP_RXFIFO0, BSP_CAN_ISR_LINE_1);
+    tmp_status = bcan_config_irq_line(FDCAN1, BCAN_ISR_GROUP_RXFIFO0, BCAN_ISR_LINE_1);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
@@ -151,15 +151,15 @@ static ret_status __configure_usart(void) {
                        BSP_IO_OUT_TYPE_PP);
 
     bsp_usart_config_t usart_config;
-    usart_config.HardwareControl = BSP_USART_HW_CONTROL_NONE;
-    usart_config.StopBits = BSP_USART_STOP_BITS_1;
-    usart_config.Baudrate = 115200;
+    usart_config.hardware_control = BSP_USART_HW_CONTROL_NONE;
+    usart_config.stop_bits = BSP_USART_STOP_BITS_1;
+    usart_config.baudrate = 115200;
     usart_config.Mode = BSP_USART_MODE_TX;
-    usart_config.Parity = BSP_USART_PARITY_NONE;
-    usart_config.Prescaler = BSP_USART_PRESCALER_2;
-    usart_config.BitLengh = BSP_USART_BIT_LENGTH_8;
-    usart_config.BitSampling = BSP_USART_SAMPLING_16_BITS;
-    return BSP_USART_conf(USART1, &usart_config);
+    usart_config.parity = BSP_USART_PARITY_NONE;
+    usart_config.prescaler = BSP_USART_PRESCALER_2;
+    usart_config.bit_lengh = BSP_USART_BIT_LENGTH_8;
+    usart_config.bit_sampling = BSP_USART_SAMPLING_16_BITS;
+    return busart_config(USART1, &usart_config);
 
 
 }
@@ -168,7 +168,7 @@ static ret_status __configure_clocks(void) {
 
     ret_status temp_status;
 
-    BSP_TCK_config(BSP_CLK_get_hclk_freq());
+    btick_config(BSP_CLK_get_hclk_freq());
 
     bsp_clk_osc_config_t oscConfig;
     oscConfig.ClockType = BSP_CLK_CLOCK_TYPE_PLL | BSP_CLK_CLOCK_TYPE_HSE;

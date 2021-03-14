@@ -14,8 +14,7 @@
 #include "stm32g4xx.h"
 
 
-
-typedef enum {
+enum bi2c_digital_filter {
     BSP_I2C_DIGITAL_FILTER_OFF = 0,
     BSP_I2C_DIGITAL_FILTER_1 = 0x01U << I2C_CR1_DNF_Pos,
     BSP_I2C_DIGITAL_FILTER_2 = 0x02U << I2C_CR1_DNF_Pos,
@@ -33,46 +32,50 @@ typedef enum {
     BSP_I2C_DIGITAL_FILTER_14 = 0x0EU << I2C_CR1_DNF_Pos,
     BSP_I2C_DIGITAL_FILTER_15 = 0x0FU << I2C_CR1_DNF_Pos,
 
-} bsp_i2c_digital_filter;
+};
 
-typedef enum {
+
+enum bi2c_clock_source {
     BSP_I2C_CLK_PCLK = 0x00U,
     BSP_I2C_CLK_SYSCLK = 0x01U,
     BSP_I2C_CLK_HSI = 0x02U
-} bsp_i2c_clock_source;
+};
 
 
-typedef enum {
+enum bi2c_speed_source {
     BSP_I2C_SPEED_NONE = 0x00U,
     BSP_I2C_SPEED_100 = 0x01U,
     BSP_I2C_SPEED_400 = 0x02U,
     BSP_I2C_SPEED_1000 = 0x03U
-} bsp_i2c_speed_source;
+};
 
-typedef enum {
+
+enum bi2c_addressing_mode {
     BSP_I2C_ADDRESSING_MODE_7 = 0,
     BSP_I2C_ADDRESSING_MODE_10 = I2C_CR2_ADD10,
-} bsp_i2c_addressing_mode;
+};
 
 typedef struct {
-    bsp_i2c_addressing_mode AddressingMode;
-    bool AnalogFilterEnabled;
-    bsp_i2c_digital_filter DigitalFilter;
-    uint32_t SelfAddress;
-    bsp_i2c_speed_source FixedSpeed;
-    uint32_t CustomTimming;
+    enum bi2c_addressing_mode addressing_mode;
+    bool analog_filter;
+    enum bi2c_digital_filter digital_filter;
+    uint32_t self_address;
+    enum bi2c_speed_source fixed_speed;
+    uint32_t custom_timming;
 } bsp_i2c_master_config_t;
 
 
 typedef I2C_TypeDef BSP_I2C_Instance;
 
 
-ret_status BSP_I2C_master_conf(BSP_I2C_Instance *i2c, bsp_i2c_master_config_t *config);
-ret_status
-BSP_I2C_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, uint16_t size, bool is_write,
-                        uint32_t timeout);
+ret_status bi2c_master_config(BSP_I2C_Instance *i2c, const bsp_i2c_master_config_t *config);
 
-void BSP_I2C_enable(BSP_I2C_Instance *i2c);
-void BSP_I2C_disable(BSP_I2C_Instance *i2c);
+ret_status
+bi2c_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, uint16_t size, bool is_write,
+                     uint32_t timeout);
+
+void bi2c_enable(BSP_I2C_Instance *i2c);
+
+void bi2c_disable(BSP_I2C_Instance *i2c);
 
 #endif //BSP_I2C_H

@@ -15,7 +15,7 @@
 #define BSP_SYSTICK_RATE 1000U
 
 
-uint32_t BSP_TICK_get_ticks(void);
-void BSP_TCK_config(uint32_t sys_frequency);
+uint32_t btick_get_ticks(void);
+ret_status btick_config(uint32_t sys_frequency);
 
 #endif //BSP_TICK_H

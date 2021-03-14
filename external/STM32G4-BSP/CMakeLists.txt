@@ -22,6 +22,7 @@
 
 add_library(
         stm32g4-bsp
+        bsp_adc.c
         bsp_can.c
         bsp_clocks.c
         bsp_common_utils.c
