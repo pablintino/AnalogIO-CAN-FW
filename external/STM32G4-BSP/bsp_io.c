@@ -1,31 +1,11 @@
-/**
- * MIT License
- *
- * Copyright (c) 2020 Pablo Rodriguez Nava, @pablintino
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- **/
+/* Copyright (C) Pablo Rodriguez Nava - All Rights Reserved
+ *       * Unauthorized copying of this file, via any medium is strictly prohibited
+ *       * Proprietary and confidential
+ * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
+ */
 
-
-#include <bsp_common_utils.h>
-#include "bsp_io.h"
+#include "includes/bsp_common_utils.h"
+#include "includes/bsp_io.h"
 
 
 /* internal type */
@@ -128,7 +108,7 @@ __configure_io_ports(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_i
                                                    BSP_IO_OUT_TYPE_PP);
             }
 
-            /* Setup alternate MUX */
+            /* TODO: REVIEW THIS COMMENTED CODE Setup alternate MUX */
             /*_BSP_SET_MASKED_REG_VALUE(port->AFR[pin_n >> 3U], 0x0FU << (pin_n * 4),
                                        io_type == ALTERNATE ? (af_function & 0x0FU) << (pin_n * 4) : 0x00U);*/
             uint32_t temp;

@@ -1,6 +1,6 @@
 ## MIT License
 ## 
-## Copyright (c) 2020 Pablo Rodriguez Nava, @pablintino
+## Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
 ##
 ## Permission is hereby granted, free of charge, to any person obtaining a copy
 ## of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,23 @@
 ## OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ## SOFTWARE.
 
+add_library(
+        stm32g4-bsp
+        bsp_can.c
+        bsp_clocks.c
+        bsp_common_utils.c
+        bsp_i2c.c
+        bsp_io.c
+        bsp_irq_manager.c
+        bsp_tick.c
+        bsp_usart.c
+)
 
-# Add git functions
-include(git-functions)
+## TODO Create some abstraction to remove ucos3
+target_link_libraries(stm32g4-bsp cmsis ucos3-kernel)
 
-# RTOS Enable/disabled vars as cache variables
-set(ENABLE_FREERTOS_USAGE FALSE CACHE BOOL "Use FreeRTOS kernel")
-set(ENABLE_UCOS_USAGE FALSE CACHE BOOL "Use uC/OS-III kernel")
-
-# Add freertos as external lib if enabled
-if(ENABLE_FREERTOS_USAGE)
-    add_subdirectory(FreeRTOS)
-endif()
-
-# Add uC/OS-III as external lib if enabled
-if(ENABLE_UCOS_USAGE)
-    add_subdirectory(uCOS-III)
-endif()
-
-add_subdirectory(SEGGER-RTT)
-
-# Add STM32 and CMSIS libs
-add_subdirectory(STM32Cube)
-add_subdirectory(STM32G4-BSP)
+target_include_directories(
+        stm32g4-bsp
+        PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/includes
+)

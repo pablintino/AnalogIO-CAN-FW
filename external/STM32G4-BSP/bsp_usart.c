@@ -1,33 +1,14 @@
-/**
- * MIT License
- *
- * Copyright (c) 2020 Pablo Rodriguez Nava, @pablintino
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- **/
+/* Copyright (C) Pablo Rodriguez Nava - All Rights Reserved
+ *       * Unauthorized copying of this file, via any medium is strictly prohibited
+ *       * Proprietary and confidential
+ * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
+ */
 
 
-#include <bsp_tick.h>
-#include "bsp_usart.h"
-#include "bsp_common_utils.h"
-#include "bsp_clocks.h"
+#include "includes/bsp_tick.h"
+#include "includes/bsp_usart.h"
+#include "includes/bsp_common_utils.h"
+#include "includes/bsp_clocks.h"
 
 
 const uint16_t USART_PRESCALERS[] = {2, 4, 6, 8, 10, 12, 16, 32, 64, 128, 256};
@@ -37,6 +18,20 @@ static uint32_t __calculate_brr(uint32_t usart_clk, uint32_t baudrate, uint16_t 
 static ret_status __get_usart_clk_mux_position(BSP_USART_Instance *usart, uint8_t *position);
 
 static ret_status __get_usart_input_frequency(BSP_USART_Instance *usart, uint32_t *freq);
+
+
+static inline
+bool __is_valid_prescaler(bsp_usart_prescaler prescaler) {
+    return ((prescaler) == BSP_USART_PRESCALER_1) || ((prescaler) == BSP_USART_PRESCALER_2) ||
+           ((prescaler) == BSP_USART_PRESCALER_4) || \
+                                                ((prescaler) == BSP_USART_PRESCALER_6) ||
+           ((prescaler) == BSP_USART_PRESCALER_8) || ((prescaler) == BSP_USART_PRESCALER_10) || \
+                                                ((prescaler) == BSP_USART_PRESCALER_12) ||
+           ((prescaler) == BSP_USART_PRESCALER_16) || ((prescaler) == BSP_USART_PRESCALER_32) || \
+                                                ((prescaler) == BSP_USART_PRESCALER_64) ||
+           ((prescaler) == BSP_USART_PRESCALER_128) || ((prescaler) == BSP_USART_PRESCALER_256);
+}
+
 
 ret_status BSP_USART_conf(BSP_USART_Instance *usart, bsp_usart_config_t *config) {
     uint32_t usart_frequency = 0;
@@ -54,7 +49,7 @@ ret_status BSP_USART_conf(BSP_USART_Instance *usart, bsp_usart_config_t *config)
     }
 
     /** Just validate preescaler values before using them */
-    if(!__BSP_USART_IS_VALID_PRESCALER(config->Prescaler)){
+    if (!__is_valid_prescaler(config->Prescaler)) {
         return STATUS_ERR;
     }
     usart_prescaler = config->Prescaler != BSP_USART_PRESCALER_1 ? USART_PRESCALERS[config->Prescaler - 1] : 1;

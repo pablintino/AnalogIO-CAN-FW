@@ -4,13 +4,18 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#ifndef VERSION_NUM_H
-#define VERSION_NUM_H
+
+#ifndef BSP_TICK_H
+#define BSP_TICK_H
 
 
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 0
+#include "bsp_types.h"
+
+/* SysTick overflow rate set to 1 ms */
+#define BSP_SYSTICK_RATE 1000U
 
 
-#endif // VERSION_NUM_H
+uint32_t BSP_TICK_get_ticks(void);
+void BSP_TCK_config(uint32_t sys_frequency);
 
+#endif //BSP_TICK_H

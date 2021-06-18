@@ -4,13 +4,11 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#ifndef VERSION_NUM_H
-#define VERSION_NUM_H
+#ifndef BSP_CONFIG_H
+#define BSP_CONFIG_H
+
+/* Indicates the usage of an external crystal oscillator */
+#define BSP_HSE_VALUE (24000000UL)
 
 
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 0
-
-
-#endif // VERSION_NUM_H
-
+#endif  //BSP_CONFIG_H

@@ -4,13 +4,17 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#ifndef VERSION_NUM_H
-#define VERSION_NUM_H
+#ifndef BSP_TYPES_H
+#define BSP_TYPES_H
+
+#include <stdint.h>
+
+typedef enum {
+    STATUS_OK = 1U,
+    STATUS_ERR = 2U,
+    STATUS_TMT = 3U
+} ret_status;
 
 
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 0
 
-
-#endif // VERSION_NUM_H
-
+#endif //BSP_TYPES_H

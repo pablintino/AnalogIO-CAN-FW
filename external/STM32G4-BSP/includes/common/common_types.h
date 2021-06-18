@@ -4,13 +4,13 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#ifndef VERSION_NUM_H
-#define VERSION_NUM_H
+
+#ifndef FW_COMMON_TYPES_H
+#define FW_COMMON_TYPES_H
 
 
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 0
+#define __IO32 volatile uint32_t
+#define __REG32_T(ADDR) (*(volatile uint32_t*) (ADDR))
 
 
-#endif // VERSION_NUM_H
-
+#endif //FW_COMMON_TYPES_H
