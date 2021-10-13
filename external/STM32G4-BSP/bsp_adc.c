@@ -1,26 +1,7 @@
-/*
- * MIT License
- *
- * Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
+/* Copyright (C) Pablo Rodriguez Nava - All Rights Reserved
+ *       * Unauthorized copying of this file, via any medium is strictly prohibited
+ *       * Proprietary and confidential
+ * Written by Pablo Rodriguez Nava <info@pablintino.com>, October 2021
  */
 
 #include <stddef.h>
@@ -38,10 +19,10 @@ static inline ret_status __badc_get_sequencer_position(const badc_instance_t *ad
 
 static ret_status __bcan_enable_regulator(badc_instance_t *adc, uint32_t tick_start);
 
-static void __badc_config_channel_sampling_time(badc_instance_t *adc, uint8_t channel_number, enum badc_sampling_time_e sampling_time);
+static void __badc_config_channel_sampling_time(badc_instance_t *adc, uint8_t channel_number,
+                                                enum badc_sampling_time_e sampling_time);
 
-ret_status badc_config(badc_instance_t *adc, const badc_config_t *config)
-{
+ret_status badc_config(badc_instance_t *adc, const badc_config_t *config) {
 
     if (adc == NULL || config == NULL) {
         return STATUS_ERR;
@@ -92,8 +73,7 @@ ret_status badc_config(badc_instance_t *adc, const badc_config_t *config)
 }
 
 
-ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t *config)
-{
+ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t *config) {
 
     if (adc == NULL || config == NULL) {
         return STATUS_ERR;
@@ -115,7 +95,7 @@ ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t
     __BSP_SET_MASKED_REG_VALUE(adc->DIFSEL, 1U << config->channel_number,
                                (config->differential ? 1U : 0) << config->channel_number);
 
-    if(config->differential){
+    if (config->differential) {
         __badc_config_channel_sampling_time(adc, config->channel_number + 1, config->sampling_time);
     }
 
@@ -124,8 +104,8 @@ ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t
 }
 
 
-static void __badc_config_channel_sampling_time(badc_instance_t *adc, uint8_t channel_number, enum badc_sampling_time_e sampling_time)
-{/* Configure sampling time */
+static void __badc_config_channel_sampling_time(badc_instance_t *adc, uint8_t channel_number,
+                                                enum badc_sampling_time_e sampling_time) {/* Configure sampling time */
     uint8_t channel_sample_time_bit =
             (channel_number > 9 ? channel_number - 10 : channel_number) * 3;
     if (channel_number > 9) {
@@ -137,14 +117,12 @@ static void __badc_config_channel_sampling_time(badc_instance_t *adc, uint8_t ch
     }
 }
 
-static inline bool __badc_is_adc_in_power_down_mode(const badc_instance_t *adc)
-{
+static inline bool __badc_is_adc_in_power_down_mode(const badc_instance_t *adc) {
     return __BSP_IS_FLAG_SET(adc->CR, ADC_CR_DEEPPWD) != 0;
 }
 
 
-static ret_status __bcan_enable_regulator(badc_instance_t *adc, uint32_t tick_start)
-{
+static ret_status __bcan_enable_regulator(badc_instance_t *adc, uint32_t tick_start) {
 
     const uint32_t disabled_bits =
             ADC_CR_ADCAL | ADC_CR_ADSTP | ADC_CR_JADSTART | ADC_CR_ADSTART | ADC_CR_ADDIS | ADC_CR_ADEN;
@@ -159,8 +137,7 @@ static ret_status __bcan_enable_regulator(badc_instance_t *adc, uint32_t tick_st
 }
 
 
-static ret_status __badc_exit_power_down(badc_instance_t *adc, uint32_t tick_start)
-{
+static ret_status __badc_exit_power_down(badc_instance_t *adc, uint32_t tick_start) {
 
     const uint32_t disabled_bits =
             ADC_CR_ADCAL | ADC_CR_JADSTP | ADC_CR_ADSTP | ADC_CR_JADSTART | ADC_CR_ADSTART | ADC_CR_ADDIS | ADC_CR_ADEN;
@@ -175,8 +152,7 @@ static ret_status __badc_exit_power_down(badc_instance_t *adc, uint32_t tick_sta
 }
 
 static inline ret_status __badc_get_sequencer_position(const badc_instance_t *adc, uint8_t sequence_number,
-                                                       volatile uint32_t **sequencer_register, uint8_t *offset)
-{
+                                                       volatile uint32_t **sequencer_register, uint8_t *offset) {
 
     if (adc == NULL || sequence_number <= 0 || sequence_number > 16 || sequencer_register == NULL || offset == NULL) {
         return STATUS_ERR;
