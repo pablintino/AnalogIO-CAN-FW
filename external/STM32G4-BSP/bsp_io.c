@@ -44,6 +44,11 @@ void bio_config_af_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t
 }
 
 
+void bio_config_analog_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down) {
+    __configure_io_ports(port, pin_number, ANALOG, 0U, pull_up_down, 0U, 0U);
+}
+
+
 void bio_toggle_port(BSP_IO_Port *port, uint8_t pin_number) {
     if (BSP_IO_IS_PIN_VALID(pin_number)) {
         uint16_t pin_bin = 1 << pin_number;

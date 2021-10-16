@@ -7,14 +7,14 @@
 #include <stddef.h>
 #include <bsp_tick.h>
 #include "bsp_common_utils.h"
-#include "bsp_adc.h"
+#include "includes/bsp_adc.h"
 
 
 static ret_status __badc_exit_power_down(badc_instance_t *adc, uint32_t tick_start);
 
 static inline bool __badc_is_adc_in_power_down_mode(const badc_instance_t *adc);
 
-static inline ret_status __badc_get_sequencer_position(const badc_instance_t *adc, uint8_t sequence_number,
+static inline ret_status __badc_get_sequencer_position(badc_instance_t *adc, uint8_t sequence_number,
                                                        volatile uint32_t **sequencer_register, uint8_t *offset);
 
 static ret_status __bcan_enable_regulator(badc_instance_t *adc, uint32_t tick_start);
@@ -80,7 +80,7 @@ ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t
     }
 
     volatile uint32_t *sequencer_register;
-    uint8_t offset;
+    uint8_t offset = 0;
     /* Configure the channel conversion sequence */
     ret_status tmp_status = __badc_get_sequencer_position(adc, config->sequencer, &sequencer_register, &offset);
     if (tmp_status != STATUS_OK) {
@@ -101,6 +101,46 @@ ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t
 
     return STATUS_OK;
 
+}
+
+ret_status badc_disable(badc_instance_t *adc){
+    if(!__BSP_IS_FLAG_SET(adc->CR, ADC_CR_ADEN)) {
+        /* Already disabled */
+        return STATUS_OK;
+    }
+
+    if((adc->CR & (ADC_CR_JADSTART | ADC_CR_ADSTART | ADC_CR_ADEN)) != ADC_CR_ADEN){
+        /* Cannot disable if a there is an ongoing conversion or the ADC is not enabled*/
+        return STATUS_ERR;
+    }
+
+    __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADDIS);
+    return BSP_UTIL_wait_flag_status_now(&adc->CR, ADC_CR_ADDIS, 0U, 25u);
+}
+
+ret_status badc_calibrate(badc_instance_t *adc, bool differential){
+
+    ret_status status = badc_disable(adc);
+    if(status != STATUS_OK){
+        return status;
+    }
+
+    __BSP_SET_MASKED_REG_VALUE(adc->CR, ADC_CR_ADCAL | ADC_CR_ADCALDIF, ADC_CR_ADCAL | ((ADC_CR_ADCALDIF * differential) & ADC_CR_ADCALDIF));
+    /* TODO This timeout depends on system freq and ADC clk source. Calculate it properly */
+    return BSP_UTIL_wait_flag_status_now(&adc->CR, ADC_CR_ADCAL, 0U, 1000U);
+}
+
+ret_status badc_config_clk_source(badc_instance_t *adc, enum badc_clock_source clock_source)
+{
+    if(adc == ADC1 || adc == ADC2){
+        __BSP_SET_MASKED_REG_VALUE(RCC->CCIPR, RCC_CCIPR_ADC12SEL, clock_source << RCC_CCIPR_ADC12SEL_Pos);
+    }
+#if defined(ADC3) || defined(ADC4) || defined(ADC5)
+    else{
+        __BSP_SET_MASKED_REG_VALUE(RCC->CCIPR, RCC_CCIPR_ADC345SEL, clock_source << RCC_CCIPR_ADC345SEL_Pos);
+    }
+#endif
+    return STATUS_OK;
 }
 
 
@@ -151,7 +191,7 @@ static ret_status __badc_exit_power_down(badc_instance_t *adc, uint32_t tick_sta
     return BSP_UTIL_wait_flag_status(&adc->CR, ADC_CR_DEEPPWD, 0U, tick_start, 25u);
 }
 
-static inline ret_status __badc_get_sequencer_position(const badc_instance_t *adc, uint8_t sequence_number,
+static inline ret_status __badc_get_sequencer_position(badc_instance_t *adc, uint8_t sequence_number,
                                                        volatile uint32_t **sequencer_register, uint8_t *offset) {
 
     if (adc == NULL || sequence_number <= 0 || sequence_number > 16 || sequencer_register == NULL || offset == NULL) {
@@ -160,7 +200,7 @@ static inline ret_status __badc_get_sequencer_position(const badc_instance_t *ad
 
     if (sequence_number >= 1 && sequence_number < 5) {
         *sequencer_register = &adc->SQR1;
-
+        *offset = sequence_number * 6;
     } else if (sequence_number >= 5 && sequence_number < 10) {
         *sequencer_register = &adc->SQR2;
         *offset = (sequence_number - 5) * 6;

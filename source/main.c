@@ -192,7 +192,7 @@ static void AppTaskStart(void *p_arg) {
 
     OS_ERR err;
     SEGGER_RTT_printf(0, "### Analog-IO SW Version %s@pablintino ###\r\n", completeVersion);
-    BSP_init();
+    board_init();
 
 
     bcan_config_irq(FDCAN1, BCAN_IRQ_TYPE_RF0NE, can_rx_handler);

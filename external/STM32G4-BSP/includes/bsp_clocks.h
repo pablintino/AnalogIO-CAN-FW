@@ -83,7 +83,6 @@
                                 ((VALUE) == BSP_CLK_AHB_PRESCALER_512))
 
 
-
 enum bsp_clk_apb1_prescaler {
     APB1_PRESCALER_1 = RCC_CFGR_PPRE1_DIV1, /*!< APB1 CLK is SYSCLK */
     APB1_PRESCALER_2 = RCC_CFGR_PPRE1_DIV2, /*!< APB1 CLK is SYSCLK/2 */
@@ -112,7 +111,9 @@ enum bsp_clk_enable_clock {
     ENI2C1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 21),  /*!< I2C1 Enable */
     ENI2C2 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 22),  /*!< I2C2 Enable */
     ENI2C3 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 30),  /*!< I2C2 Enable */
-    ENFDCAN = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 25)  /*!< FDCAN Enable */
+    ENFDCAN = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 25),  /*!< FDCAN Enable */
+    ENADC12 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 13),  /*!< ADC 1 and 2 Enable */
+    ENADC345 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 14)  /*!< ADC 3, 4 and 5 Enable */
 };
 
 

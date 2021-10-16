@@ -4,8 +4,7 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#include "bsp.h"
-#include "bsp_tick.h"
+#include "board.h"
 
 #include <SEGGER_RTT.h>
 
@@ -17,8 +16,12 @@ static ret_status __configure_i2c(void);
 
 static ret_status __configure_can(void);
 
+static ret_status __configure_adc(void);
 
-void BSP_init(void) {
+static uint32_t __get_system_ticks(ret_status *status);
+
+
+void board_init(void) {
 
     ret_status temp_status = __configure_clocks();
     if (temp_status != STATUS_OK) {
@@ -26,12 +29,14 @@ void BSP_init(void) {
         while (1) { ; };
     }
 
+
     BSP_IRQ_init();
     BSP_CLK_enable_periph_clock(ENGPIOA);
     BSP_CLK_enable_periph_clock(ENGPIOB);
     BSP_CLK_enable_periph_clock(ENI2C3);
     BSP_CLK_enable_periph_clock(ENUSART1);
     BSP_CLK_enable_periph_clock(ENFDCAN);
+    BSP_CLK_enable_periph_clock(ENADC12);
 
     temp_status = __configure_usart();
     if (temp_status != STATUS_OK) {
@@ -50,6 +55,13 @@ void BSP_init(void) {
         SEGGER_RTT_WriteString(0, "[ERR] Failed to configure CAN\r\n");
         while (1) { ; };
     }
+
+    temp_status = __configure_adc();
+    if (temp_status != STATUS_OK) {
+        SEGGER_RTT_WriteString(0, "[ERR] Failed to configure ADC\r\n");
+        //while (1) { ; };
+    }
+
     SEGGER_RTT_WriteString(0, "[INFO] Enabling USART1\r\n");
     busart_enable(USART1);
 
@@ -86,6 +98,38 @@ static ret_status __configure_i2c(void) {
     return bi2c_master_config(I2C3, &i2c_config);
 }
 
+static ret_status __configure_adc(void){
+
+    bio_config_analog_port(GPIOA, BSP_IO_PIN_3, BSP_IO_NO_PU_PD);
+    badc_config_clk_source(ADC1, BADC_CLK_SYSCLK);
+
+    badc_config_t adc_config;
+    adc_config.mode = BADC_MODE_NORMAL;
+    adc_config.resolution = BADC_RESOLUTON_12_BITS;
+
+    ret_status status = badc_config(ADC1, &adc_config);
+    if(status != STATUS_OK){
+        return status;
+    }
+
+    badc_config_channel_t adc_channel_config;
+    adc_channel_config.channel_number = 4;
+    adc_channel_config.differential = false;
+    adc_channel_config.sampling_time = BADC_SAMPLING_TIME_2_5;
+    adc_channel_config.sequencer = 1;
+    status = badc_config_channel(ADC1, &adc_channel_config);
+    if(status != STATUS_OK){
+        return status;
+    }
+
+    status = badc_calibrate(ADC1, false);
+    if(status != STATUS_OK){
+        return status;
+    }
+
+    return status;
+
+}
 
 static ret_status __configure_can(void) {
 
@@ -195,4 +239,11 @@ static ret_status __configure_clocks(void) {
     }
 
     return temp_status;
+}
+
+static uint32_t __get_system_ticks(ret_status *status){
+    OS_ERR err;
+    uint32_t ticks = OSTimeGet(&err);
+    *status = err ? STATUS_ERR : STATUS_OK;
+    return ticks;
 }

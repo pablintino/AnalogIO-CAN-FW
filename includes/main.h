@@ -7,7 +7,7 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 
-#include "bsp.h"
+#include "board.h"
 #include "cpu.h"
 #include "cpu_core.h"
 #include "os.h"

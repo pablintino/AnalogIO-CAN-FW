@@ -12,5 +12,7 @@
 #define __IO32 volatile uint32_t
 #define __REG32_T(ADDR) (*(volatile uint32_t*) (ADDR))
 
+typedef void (*bsp_cmn_void_cb)();
+
 
 #endif //FW_COMMON_TYPES_H

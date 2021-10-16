@@ -65,13 +65,20 @@ bio_conf_output_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_p
 
 void bio_config_input_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed);
 
-void bio_config_af_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t af_function, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
+void
+bio_config_analog_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down);
 
-void bio_toggle_port(BSP_IO_Port *port, uint8_t pin_number);
+void
+bio_config_af_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t af_function, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
 
-ret_status bio_write_port(BSP_IO_Port *port, uint8_t pin_number, bool value);
+void
+bio_toggle_port(BSP_IO_Port *port, uint8_t pin_number);
 
-uint8_t bio_read_port(BSP_IO_Port *port, uint8_t pin_number);
+ret_status
+bio_write_port(BSP_IO_Port *port, uint8_t pin_number, bool value);
+
+uint8_t
+bio_read_port(BSP_IO_Port *port, uint8_t pin_number);
 
 
 #endif //BSP_IO_H

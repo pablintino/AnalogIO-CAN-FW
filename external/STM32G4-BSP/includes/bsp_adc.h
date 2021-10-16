@@ -1,26 +1,7 @@
-/*
- * MIT License
- *
- * Copyright (c) 2021 Pablo Rodriguez Nava, @pablintino
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
+/* Copyright (C) Pablo Rodriguez Nava - All Rights Reserved
+ *       * Unauthorized copying of this file, via any medium is strictly prohibited
+ *       * Proprietary and confidential
+ * Written by Pablo Rodriguez Nava <info@pablintino.com>, October 2021
  */
 
 
@@ -59,6 +40,12 @@ enum badc_sampling_time_e {
     BADC_SAMPLING_TIME_640_5 = 0x07,
 };
 
+enum badc_clock_source {
+    BADC_CLK_NONE = 0x00U,
+    BADC_CLK_PLLP = 0x01U,
+    BADC_CLK_SYSCLK = 0x02U,
+};
+
 typedef struct badc_config_t {
     enum badc_mode_e mode;
     uint8_t discontinuous_channels;
@@ -82,5 +69,10 @@ ret_status badc_config(badc_instance_t *adc, const badc_config_t *config);
 
 ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t *config);
 
+ret_status badc_config_clk_source(badc_instance_t *adc, enum badc_clock_source clock_source);
+
+ret_status badc_disable(badc_instance_t *adc);
+
+ret_status badc_calibrate(badc_instance_t *adc, bool differential);
 
 #endif //BSP_ADC_H
