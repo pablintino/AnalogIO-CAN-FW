@@ -23,7 +23,7 @@ uint32_t btick_get_ticks(void){
 }
 
 ret_status btick_config(uint32_t sys_frequency){
-    if(sys_frequency >= 0){
+    if(sys_frequency <= 0){
         return STATUS_ERR;
     }
     SysTick_Config(sys_frequency / (uint32_t) BSP_SYSTICK_RATE);
