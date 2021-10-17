@@ -4,7 +4,7 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, October 2021
  */
 
-#include "includes/bsp_adc.h"
+#include "bsp_adc.h"
 #include "bsp_common_utils.h"
 #include <bsp_tick.h>
 #include <stddef.h>
@@ -163,7 +163,6 @@ ret_status badc_disable(badc_instance_t *adc)
 
 ret_status badc_calibrate(badc_instance_t *adc, bool differential)
 {
-
     ret_status status = badc_disable(adc);
     if (status != STATUS_OK) {
         return status;
@@ -186,6 +185,39 @@ ret_status badc_config_clk_source(badc_instance_t *adc, enum badc_clock_source c
     }
 #endif
     return STATUS_OK;
+}
+
+ret_status badc_start_conversion(badc_instance_t *adc)
+{
+
+    /* Cannot continue if conversion is ongoing or ADC is not enabled */
+    if ((adc->CR & (ADC_CR_JADSTART | ADC_CR_ADSTART | ADC_CR_ADEN)) != ADC_CR_ADEN) {
+        return STATUS_ERR;
+    }
+
+    __BSP_CLEAR_MASKED_REG(adc->ISR, ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR);
+
+    __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADSTART);
+}
+
+ret_status badc_wait_conversion(badc_instance_t *adc, uint32_t timeout)
+{
+    /* If ADC not enabled just return error */
+    if (!__BSP_IS_FLAG_SET(adc->CR, ADC_CR_ADEN)) {
+        return STATUS_ERR;
+    }
+
+    ret_status status = BSP_UTIL_wait_flag_status_now(&adc->ISR, ADC_ISR_EOC, ADC_ISR_EOC, timeout);
+    if (status == STATUS_OK) {
+        __BSP_CLEAR_MASKED_REG(adc->ISR, ADC_ISR_EOC);
+    }
+    return status;
+}
+
+uint16_t badc_get_conversion(badc_instance_t *adc)
+{
+
+    return adc->DR;
 }
 
 static void __badc_config_channel_sampling_time(badc_instance_t *adc,

@@ -103,35 +103,24 @@ static  void  AppTaskCanTX (void  *p_arg)
 
     (void)p_arg;
 
-
     bcan_tx_metadata_t test;
     test.id = 0x7ff;
     test.is_rtr = false;
-    test.size_b= 0x02;
+    test.size_b= 2;
     test.store_tx_events = false;
     test.message_marker = 0x00;
-    uint8_t data[8];
-    data[0] = 0x01;
-    data[1] = 0x02;
-    data[2] = 0x02;
-    data[3] = 0x02;
-    data[4] = 0x02;
-    data[5] = 0x02;
-    data[6] = 0x02;
-    data[7] = 0x02;
 
-    uint32_t test_tmp = test_n;
     while (DEF_TRUE) {
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
 
-        if(bcan_add_tx_message(FDCAN1, &test, data) != STATUS_OK){
-            SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
+        badc_start_conversion(ADC1);
+        ret_status status = badc_wait_conversion(ADC1, 1000u);
+        if(status == STATUS_OK){
+            uint16_t conversion_value = badc_get_conversion(ADC1);
+            if(bcan_add_tx_message(FDCAN1, &test, &conversion_value) != STATUS_OK){
+                SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
+            }
         }
-        if(test_n!= test_tmp){
-            test_tmp = test_n;
-            SEGGER_RTT_printf(0, "[INFO] >> %u\r\n", test_n);
-        }
-
     }
 }
 

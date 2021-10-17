@@ -64,4 +64,10 @@ ret_status badc_disable(badc_instance_t *adc);
 
 ret_status badc_calibrate(badc_instance_t *adc, bool differential);
 
+ret_status badc_start_conversion(badc_instance_t *adc);
+
+uint16_t badc_get_conversion(badc_instance_t *adc);
+
+ret_status badc_wait_conversion(badc_instance_t *adc, uint32_t timeout);
+
 #endif // BSP_ADC_H
