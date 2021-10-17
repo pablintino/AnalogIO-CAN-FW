@@ -18,17 +18,16 @@ static ret_status __configure_can(void);
 
 static ret_status __configure_adc(void);
 
-static uint32_t __get_system_ticks(ret_status *status);
-
-
-void board_init(void) {
+void board_init(void)
+{
 
     ret_status temp_status = __configure_clocks();
     if (temp_status != STATUS_OK) {
         SEGGER_RTT_WriteString(0, "[ERR] Failed to configure system clocks\r\n");
-        while (1) { ; };
+        while (1) {
+            ;
+        };
     }
-
 
     BSP_IRQ_init();
     BSP_CLK_enable_periph_clock(ENGPIOA);
@@ -41,25 +40,31 @@ void board_init(void) {
     temp_status = __configure_usart();
     if (temp_status != STATUS_OK) {
         SEGGER_RTT_WriteString(0, "[ERR] Failed to configure USART\r\n");
-        while (1) { ; };
+        while (1) {
+            ;
+        };
     }
 
     temp_status = __configure_i2c();
     if (temp_status != STATUS_OK) {
         SEGGER_RTT_WriteString(0, "[ERR] Failed to configure i2c\r\n");
-        while (1) { ; };
+        while (1) {
+            ;
+        };
     }
 
     temp_status = __configure_can();
     if (temp_status != STATUS_OK) {
         SEGGER_RTT_WriteString(0, "[ERR] Failed to configure CAN\r\n");
-        while (1) { ; };
+        while (1) {
+            ;
+        };
     }
 
     temp_status = __configure_adc();
     if (temp_status != STATUS_OK) {
         SEGGER_RTT_WriteString(0, "[ERR] Failed to configure ADC\r\n");
-        //while (1) { ; };
+        // while (1) { ; };
     }
 
     SEGGER_RTT_WriteString(0, "[INFO] Enabling USART1\r\n");
@@ -70,23 +75,18 @@ void board_init(void) {
 
     SEGGER_RTT_WriteString(0, "[INFO] Enabling FDCAN1\r\n");
     bcan_start(FDCAN1);
+
+    /* TODO Just here for consistency, but ADC can be enable just with the first conversion too */
+    SEGGER_RTT_WriteString(0, "[INFO] Enabling ADC1\r\n");
+    badc_enable(ADC1);
 }
 
-static ret_status __configure_i2c(void) {
+static ret_status __configure_i2c(void)
+{
 
-    bio_config_af_port(GPIOA,
-                       BSP_IO_PIN_8,
-                       2,
-                       BSP_IO_NO_PU_PD,
-                       BSP_IO_LOW,
-                       BSP_IO_OUT_TYPE_OPEN_DRAIN);
+    bio_config_af_port(GPIOA, BSP_IO_PIN_8, 2, BSP_IO_NO_PU_PD, BSP_IO_LOW, BSP_IO_OUT_TYPE_OPEN_DRAIN);
 
-    bio_config_af_port(GPIOB,
-                       BSP_IO_PIN_5,
-                       8,
-                       BSP_IO_NO_PU_PD,
-                       BSP_IO_LOW,
-                       BSP_IO_OUT_TYPE_OPEN_DRAIN);
+    bio_config_af_port(GPIOB, BSP_IO_PIN_5, 8, BSP_IO_NO_PU_PD, BSP_IO_LOW, BSP_IO_OUT_TYPE_OPEN_DRAIN);
 
     bsp_i2c_master_config_t i2c_config;
     i2c_config.addressing_mode = BSP_I2C_ADDRESSING_MODE_7;
@@ -98,7 +98,8 @@ static ret_status __configure_i2c(void) {
     return bi2c_master_config(I2C3, &i2c_config);
 }
 
-static ret_status __configure_adc(void){
+static ret_status __configure_adc(void)
+{
 
     bio_config_analog_port(GPIOA, BSP_IO_PIN_3, BSP_IO_NO_PU_PD);
     badc_config_clk_source(ADC1, BADC_CLK_SYSCLK);
@@ -108,39 +109,32 @@ static ret_status __configure_adc(void){
     adc_config.resolution = BADC_RESOLUTON_12_BITS;
 
     ret_status status = badc_config(ADC1, &adc_config);
-    if(status != STATUS_OK){
+    if (status != STATUS_OK) {
         return status;
     }
 
-    badc_config_channel_t adc_channel_config;
-    adc_channel_config.channel_number = 4;
-    adc_channel_config.differential = false;
-    adc_channel_config.sampling_time = BADC_SAMPLING_TIME_2_5;
-    adc_channel_config.sequencer = 1;
-    status = badc_config_channel(ADC1, &adc_channel_config);
-    if(status != STATUS_OK){
+    badc_config_channel_t adc_channel_configs[1];
+    adc_channel_configs[0].channel_number = 4;
+    adc_channel_configs[0].differential = false;
+    adc_channel_configs[0].sampling_time = BADC_SAMPLING_TIME_2_5;
+    status = badc_config_channels(
+        ADC1, &adc_channel_configs[0], sizeof(adc_channel_configs) / sizeof(badc_config_channel_t));
+    if (status != STATUS_OK) {
         return status;
     }
 
     status = badc_calibrate(ADC1, false);
-    if(status != STATUS_OK){
+    if (status != STATUS_OK) {
         return status;
     }
 
     return status;
-
 }
 
-static ret_status __configure_can(void) {
+static ret_status __configure_can(void)
+{
 
-
-    bio_config_af_port(GPIOA,
-                       BSP_IO_PIN_11 | BSP_IO_PIN_12,
-                       9,
-                       BSP_IO_NO_PU_PD,
-                       BSP_IO_VERY_HIGH,
-                       BSP_IO_OUT_TYPE_PP);
-
+    bio_config_af_port(GPIOA, BSP_IO_PIN_11 | BSP_IO_PIN_12, 9, BSP_IO_NO_PU_PD, BSP_IO_VERY_HIGH, BSP_IO_OUT_TYPE_PP);
 
     bcan_config_t can_config;
     can_config.tx_mode = BCAN_TX_MODE_FIFO;
@@ -182,17 +176,11 @@ static ret_status __configure_can(void) {
     return bcan_enable_irqs(FDCAN1);
 }
 
-
-static ret_status __configure_usart(void) {
-
+static ret_status __configure_usart(void)
+{
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
-    bio_config_af_port(GPIOA,
-                       BSP_IO_PIN_9 | BSP_IO_PIN_10,
-                       7,
-                       BSP_IO_PU,
-                       BSP_IO_LOW,
-                       BSP_IO_OUT_TYPE_PP);
+    bio_config_af_port(GPIOA, BSP_IO_PIN_9 | BSP_IO_PIN_10, 7, BSP_IO_PU, BSP_IO_LOW, BSP_IO_OUT_TYPE_PP);
 
     bsp_usart_config_t usart_config;
     usart_config.hardware_control = BSP_USART_HW_CONTROL_NONE;
@@ -204,11 +192,10 @@ static ret_status __configure_usart(void) {
     usart_config.bit_lengh = BSP_USART_BIT_LENGTH_8;
     usart_config.bit_sampling = BSP_USART_SAMPLING_16_BITS;
     return busart_config(USART1, &usart_config);
-
-
 }
 
-static ret_status __configure_clocks(void) {
+static ret_status __configure_clocks(void)
+{
 
     ret_status temp_status;
 
@@ -239,11 +226,4 @@ static ret_status __configure_clocks(void) {
     }
 
     return temp_status;
-}
-
-static uint32_t __get_system_ticks(ret_status *status){
-    OS_ERR err;
-    uint32_t ticks = OSTimeGet(&err);
-    *status = err ? STATUS_ERR : STATUS_OK;
-    return ticks;
 }

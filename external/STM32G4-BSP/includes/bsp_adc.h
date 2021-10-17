@@ -46,7 +46,6 @@ typedef struct badc_config_t {
 
 typedef struct badc_config_channel_t {
     uint8_t channel_number;
-    uint8_t sequencer;
     enum badc_sampling_time_e sampling_time;
     bool differential;
 } badc_config_channel_t;
@@ -55,9 +54,11 @@ typedef ADC_TypeDef badc_instance_t;
 
 ret_status badc_config(badc_instance_t *adc, const badc_config_t *config);
 
-ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t *config);
+ret_status badc_config_channels(badc_instance_t *adc, const badc_config_channel_t *channels, uint8_t size);
 
 ret_status badc_config_clk_source(badc_instance_t *adc, enum badc_clock_source clock_source);
+
+ret_status badc_enable(badc_instance_t *adc);
 
 ret_status badc_disable(badc_instance_t *adc);
 

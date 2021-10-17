@@ -73,34 +73,75 @@ ret_status badc_config(badc_instance_t *adc, const badc_config_t *config)
     return tmp_status;
 }
 
-ret_status badc_config_channel(badc_instance_t *adc, const badc_config_channel_t *config)
+ret_status badc_config_channels(badc_instance_t *adc, const badc_config_channel_t *channels, uint8_t size)
 {
 
-    if (adc == NULL || config == NULL) {
+    if (adc == NULL || channels == NULL || size > 16 || size == 0) {
         return STATUS_ERR;
     }
 
-    volatile uint32_t *sequencer_register;
-    uint8_t offset = 0;
-    /* Configure the channel conversion sequence */
-    ret_status tmp_status = __badc_get_sequencer_position(adc, config->sequencer, &sequencer_register, &offset);
-    if (tmp_status != STATUS_OK) {
-        return tmp_status;
+    for (uint8_t chan_index = 0; chan_index < size; chan_index++) {
+
+        const badc_config_channel_t *chan_config = (const badc_config_channel_t *)(channels + chan_index);
+
+        uint8_t offset = 0;
+        volatile uint32_t *sequencer_register;
+        /* Configure the channel conversion sequence. Channel rank is based on the order on the config array */
+        ret_status tmp_status = __badc_get_sequencer_position(adc, chan_index + 1, &sequencer_register, &offset);
+        if (tmp_status != STATUS_OK) {
+            return tmp_status;
+        }
+
+        __BSP_SET_MASKED_REG_VALUE(*sequencer_register, 0x1F << offset, chan_config->channel_number << offset);
+
+        /* Configure sample time */
+        __badc_config_channel_sampling_time(adc, chan_config->channel_number, chan_config->sampling_time);
+
+        __BSP_SET_MASKED_REG_VALUE(adc->DIFSEL,
+                                   1U << chan_config->channel_number,
+                                   (chan_config->differential ? 1U : 0) << chan_config->channel_number);
+
+        if (chan_config->differential) {
+            __badc_config_channel_sampling_time(adc, chan_config->channel_number + 1, chan_config->sampling_time);
+        }
     }
 
-    __BSP_SET_MASKED_REG_VALUE(*sequencer_register, 0x1F << offset, config->channel_number << offset);
-
-    /* Configure sample time */
-    __badc_config_channel_sampling_time(adc, config->channel_number, config->sampling_time);
-
-    __BSP_SET_MASKED_REG_VALUE(
-        adc->DIFSEL, 1U << config->channel_number, (config->differential ? 1U : 0) << config->channel_number);
-
-    if (config->differential) {
-        __badc_config_channel_sampling_time(adc, config->channel_number + 1, config->sampling_time);
-    }
+    /* Tell the HW the size of the conversion group */
+    __BSP_SET_MASKED_REG_VALUE(adc->SQR1, ADC_SQR1_L, (size - 1) & ADC_SQR1_L);
 
     return STATUS_OK;
+}
+
+ret_status badc_enable(badc_instance_t *adc)
+{
+    /* Check if already enabled */
+    if (__BSP_IS_FLAG_SET(adc->CR, ADC_CR_ADEN)) {
+        return STATUS_OK;
+    }
+
+    /* To enable the ADC ADCAL=0, JADSTART=0, ADSTART=0, ADSTP=0, ADDIS=0 and ADEN=0 and ADVREGEN=1 */
+    if ((adc->CR & (ADC_CR_ADCAL | ADC_CR_JADSTART | ADC_CR_ADSTART | ADC_CR_ADSTP | ADC_CR_ADDIS | ADC_CR_ADEN |
+                    ADC_CR_ADVREGEN)) != ADC_CR_ADVREGEN) {
+        return STATUS_ERR;
+    }
+
+    /* It seems that the calibration can interfere in the enabled bit if calibration was done just before enabling.
+     * We'll try to enable 3 times */
+    ret_status status = STATUS_ERR;
+    for (uint8_t retries = 0; retries < 3; retries++) {
+        if (!__BSP_IS_FLAG_SET(adc->CR, ADC_CR_ADEN)) {
+            __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADEN);
+        }
+
+        /* TODO: Fine tune this timeout */
+        status = BSP_UTIL_wait_flag_status_now(&adc->CR, ADC_CR_ADEN, ADC_CR_ADEN, 25u);
+        /* If OK we are done */
+        if (status == STATUS_OK) {
+            break;
+        }
+    }
+
+    return status;
 }
 
 ret_status badc_disable(badc_instance_t *adc)
@@ -115,6 +156,7 @@ ret_status badc_disable(badc_instance_t *adc)
         return STATUS_ERR;
     }
 
+    /* Disabling ADC is done by setting ADDIS, not clearing the ADEN one */
     __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADDIS);
     return BSP_UTIL_wait_flag_status_now(&adc->CR, ADC_CR_ADDIS, 0U, 25u);
 }
