@@ -4,14 +4,12 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-
 #ifndef BSP_USART_H
 #define BSP_USART_H
 
-
-#include <stdbool.h>
 #include "bsp_types.h"
 #include "stm32g4xx.h"
+#include <stdbool.h>
 
 enum busart_bit_length_e {
     BSP_USART_BIT_LENGTH_7 = USART_CR1_M1,
@@ -45,7 +43,6 @@ enum busart_hardware_control_e {
     BSP_USART_HW_CONTROL_CTS_RTS = USART_CR3_CTSE | USART_CR3_RTSE
 };
 
-
 enum bsp_usart_clock_source {
     BSP_USART_CLK_PCLK = 0x00U,
     BSP_USART_CLK_SYSCLK = 0x01U,
@@ -53,10 +50,7 @@ enum bsp_usart_clock_source {
     BSP_USART_CLK_LSE = 0x03U
 };
 
-enum busart_sampling_e {
-    BSP_USART_SAMPLING_16_BITS = 0x00U,
-    BSP_USART_SAMPLING_8_BITS = USART_CR1_OVER8
-};
+enum busart_sampling_e { BSP_USART_SAMPLING_16_BITS = 0x00U, BSP_USART_SAMPLING_8_BITS = USART_CR1_OVER8 };
 
 typedef enum {
     BSP_USART_PRESCALER_1 = 0x00U,
@@ -84,9 +78,7 @@ typedef struct bsp_usart_config_t {
     bsp_usart_prescaler prescaler;
 } bsp_usart_config_t;
 
-
 typedef USART_TypeDef BSP_USART_Instance;
-
 
 ret_status busart_config(BSP_USART_Instance *usart, const bsp_usart_config_t *config);
 
@@ -98,5 +90,4 @@ void busart_disable(BSP_USART_Instance *usart);
 
 ret_status busart_config_clk_source(BSP_USART_Instance *usart, enum bsp_usart_clock_source clock_source);
 
-
-#endif //BSP_USART_H
+#endif // BSP_USART_H

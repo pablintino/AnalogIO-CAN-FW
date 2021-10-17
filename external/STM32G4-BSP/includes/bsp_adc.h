@@ -4,15 +4,12 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, October 2021
  */
 
-
 #ifndef BSP_ADC_H
 #define BSP_ADC_H
 
-
-#include <stdbool.h>
-#include "stm32g4xx.h"
 #include "bsp_types.h"
-
+#include "stm32g4xx.h"
+#include <stdbool.h>
 
 enum badc_resolution_e {
     BADC_RESOLUTON_12_BITS = 0x00U,
@@ -21,13 +18,7 @@ enum badc_resolution_e {
     BADC_RESOLUTON_6_BITS = ADC_CFGR_RES
 };
 
-
-enum badc_mode_e {
-    BADC_MODE_NORMAL = 0x00U,
-    BADC_MODE_CONTINUOUS = 0x01U,
-    BADC_MODE_DISCONTINUOUS = 0x02U
-};
-
+enum badc_mode_e { BADC_MODE_NORMAL = 0x00U, BADC_MODE_CONTINUOUS = 0x01U, BADC_MODE_DISCONTINUOUS = 0x02U };
 
 enum badc_sampling_time_e {
     BADC_SAMPLING_TIME_2_5 = 0x00,
@@ -53,7 +44,6 @@ typedef struct badc_config_t {
     bool preserve_overruns;
 } badc_config_t;
 
-
 typedef struct badc_config_channel_t {
     uint8_t channel_number;
     uint8_t sequencer;
@@ -61,9 +51,7 @@ typedef struct badc_config_channel_t {
     bool differential;
 } badc_config_channel_t;
 
-
 typedef ADC_TypeDef badc_instance_t;
-
 
 ret_status badc_config(badc_instance_t *adc, const badc_config_t *config);
 
@@ -75,4 +63,4 @@ ret_status badc_disable(badc_instance_t *adc);
 
 ret_status badc_calibrate(badc_instance_t *adc, bool differential);
 
-#endif //BSP_ADC_H
+#endif // BSP_ADC_H

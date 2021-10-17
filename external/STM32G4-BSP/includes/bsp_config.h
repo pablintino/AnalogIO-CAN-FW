@@ -10,5 +10,4 @@
 /* Indicates the usage of an external crystal oscillator */
 #define BSP_HSE_VALUE (24000000UL)
 
-
-#endif  //BSP_CONFIG_H
+#endif // BSP_CONFIG_H

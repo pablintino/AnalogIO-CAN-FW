@@ -4,7 +4,6 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-
 /**
  * @file bsp_can_internal.h
  * @brief Internal, non intended to be use out of the bsp_can driver, definitions.
@@ -12,21 +11,19 @@
 #ifndef BSP_CAN_INTERNAL_H
 #define BSP_CAN_INTERNAL_H
 
-
-#define FDCAN_ELEMENT_MASK_RTR   ((uint32_t)0x20000000U) /* Remote Transmission Request */
-#define FDCAN_ELEMENT_MASK_XTD   ((uint32_t)0x40000000U) /* Extended Identifier         */
-#define FDCAN_ELEMENT_MASK_ESI   ((uint32_t)0x80000000U) /* Error State Indicator       */
-#define FDCAN_ELEMENT_MASK_TS    ((uint32_t)0x0000FFFFU) /* Timestamp                   */
-#define FDCAN_ELEMENT_MASK_DLC   ((uint32_t)0x000F0000U) /* Data Length Code            */
-#define FDCAN_ELEMENT_MASK_BRS   ((uint32_t)0x00100000U) /* Bit Rate Switch             */
-#define FDCAN_ELEMENT_MASK_FDF   ((uint32_t)0x00200000U) /* FD Format                   */
-#define FDCAN_ELEMENT_MASK_EFC   ((uint32_t)0x00800000U) /* Event FIFO Control          */
-#define FDCAN_ELEMENT_MASK_MM    ((uint32_t)0xFF000000U) /* Message Marker              */
-#define FDCAN_ELEMENT_MASK_FIDX  ((uint32_t)0x7F000000U) /* Filter Index                */
-#define FDCAN_ELEMENT_MASK_ANMF  ((uint32_t)0x80000000U) /* Accepted Non-matching Frame */
+#define FDCAN_ELEMENT_MASK_RTR ((uint32_t)0x20000000U)   /* Remote Transmission Request */
+#define FDCAN_ELEMENT_MASK_XTD ((uint32_t)0x40000000U)   /* Extended Identifier         */
+#define FDCAN_ELEMENT_MASK_ESI ((uint32_t)0x80000000U)   /* Error State Indicator       */
+#define FDCAN_ELEMENT_MASK_TS ((uint32_t)0x0000FFFFU)    /* Timestamp                   */
+#define FDCAN_ELEMENT_MASK_DLC ((uint32_t)0x000F0000U)   /* Data Length Code            */
+#define FDCAN_ELEMENT_MASK_BRS ((uint32_t)0x00100000U)   /* Bit Rate Switch             */
+#define FDCAN_ELEMENT_MASK_FDF ((uint32_t)0x00200000U)   /* FD Format                   */
+#define FDCAN_ELEMENT_MASK_EFC ((uint32_t)0x00800000U)   /* Event FIFO Control          */
+#define FDCAN_ELEMENT_MASK_MM ((uint32_t)0xFF000000U)    /* Message Marker              */
+#define FDCAN_ELEMENT_MASK_FIDX ((uint32_t)0x7F000000U)  /* Filter Index                */
+#define FDCAN_ELEMENT_MASK_ANMF ((uint32_t)0x80000000U)  /* Accepted Non-matching Frame */
 #define FDCAN_ELEMENT_MASK_STDID ((uint32_t)0x1FFC0000U) /* Standard Identifier         */
 #define FDCAN_ELEMENT_MASK_EXTID ((uint32_t)0x1FFFFFFFU) /* Extended Identifier         */
-
 
 #define __BCAN_STD_FILTER_SIZE 28U
 #define __BCAN_EXTD_FILTER_SIZE 8U
@@ -35,7 +32,6 @@
 #define __BCAN_TX_EVENTS_SIZE 3U
 #define __BCAN_ISR_SOURCES_N 24U
 #define __BCAN_MESSAGE_PAYLOAD_SIZE 16U
-
 
 /**
  * @brief Internal structure that stores information (like ISR handlers) for a particular FDCAN peripheral instance.
@@ -54,7 +50,6 @@ struct __bcan_irqs_state_s {
     void (*IsrVectors[__BCAN_ISR_SOURCES_N])(bcan_instance_t *can, uint32_t group_flags);
 };
 
-
 /**
  * @brief Extended filter element in FDCAN SRAM
  *
@@ -68,10 +63,9 @@ struct __bcan_irqs_state_s {
  *
  */
 struct __bcan_ram_extended_filter_s {
-    __IO32 header_word1;                /**< First word (F1) of the FDCAN RAM Extended filter [RMM0440 44.3.9] */
-    __IO32 header_word2;                /**< Second word (F2) of the filter element  */
+    __IO32 header_word1; /**< First word (F1) of the FDCAN RAM Extended filter [RMM0440 44.3.9] */
+    __IO32 header_word2; /**< Second word (F2) of the filter element  */
 };
-
 
 /**
  * @brief Transmission event element in FDCAN SRAM
@@ -92,10 +86,9 @@ struct __bcan_ram_extended_filter_s {
  *
  */
 struct __bcan_ram_tx_event_s {
-    __IO32 header_word1;    /**< First word (E0) of the FDCAN RAM TX Event [RMM0440 44.3.7] */
-    __IO32 header_word2;    /**< Second word (E1) of the FDCAN RAM TX Event */
+    __IO32 header_word1; /**< First word (E0) of the FDCAN RAM TX Event [RMM0440 44.3.7] */
+    __IO32 header_word2; /**< Second word (E1) of the FDCAN RAM TX Event */
 };
-
 
 /**
  * @brief Reception message element for each of the FDCAN SRAM RX FIFOs
@@ -126,11 +119,10 @@ struct __bcan_ram_rx_fifo_element_s {
      */
     __IO32 header_word2;
     /**
-    * Message payload. Size indicated by DLC field.
-    */
+     * Message payload. Size indicated by DLC field.
+     */
     __IO32 message_payload[__BCAN_MESSAGE_PAYLOAD_SIZE];
 };
-
 
 /**
  * @brief Reception message element of the FDCAN SRAM TX FIFO/Queue
@@ -152,19 +144,18 @@ struct __bcan_ram_rx_fifo_element_s {
  */
 struct __bcan_ram_tx_fifo_element_s {
     /**
-    * First word (T0) of the FDCAN RAM TX Message [RMM0440 44.3.6]
-    */
+     * First word (T0) of the FDCAN RAM TX Message [RMM0440 44.3.6]
+     */
     __IO32 header_word1;
     /**
-    * Second word (T1) of the FDCAN RAM TX Message
-    */
+     * Second word (T1) of the FDCAN RAM TX Message
+     */
     __IO32 header_word2;
     /**
      * Message payload. Size indicated by DLC field.
      */
     __IO32 message_payload[__BCAN_MESSAGE_PAYLOAD_SIZE];
 };
-
 
 /**
  * @brief Single FDCAN SRAM peripheral representation as a struct
@@ -196,14 +187,14 @@ struct __bcan_ram_s {
      */
     volatile struct __bcan_ram_rx_fifo_element_s rx_fifo1[__BCAN_RX_FIFO_SIZE];
     /**
-    * Message transmission event list. Every transmission event is modeled by @refitem __bcan_ram_tx_event_s.
-    */
+     * Message transmission event list. Every transmission event is modeled by @refitem __bcan_ram_tx_event_s.
+     */
     volatile struct __bcan_ram_tx_event_s tx_events[__BCAN_TX_FIFOQ_SIZE];
     /**
-    * Transmission FIFO/Queue for outgoing messages. Each message is described by @refitem __bcan_ram_tx_fifo_element_s.
-    */
+     * Transmission FIFO/Queue for outgoing messages. Each message is described by @refitem
+     * __bcan_ram_tx_fifo_element_s.
+     */
     volatile struct __bcan_ram_tx_fifo_element_s tx_fifoq[__BCAN_TX_EVENTS_SIZE];
 };
 
-
-#endif //BSP_CAN_INTERNAL_H
+#endif // BSP_CAN_INTERNAL_H

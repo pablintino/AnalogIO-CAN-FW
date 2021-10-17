@@ -12,24 +12,14 @@
 #ifndef BSP_CAN_H
 #define BSP_CAN_H
 
-
-#include <stddef.h>
-#include <stdbool.h>
 #include "bsp_types.h"
 #include "stm32g4xx.h"
+#include <stdbool.h>
+#include <stddef.h>
 
+enum bcan_mode_source_e { BCAN_MODE_NORMAL = 0x00U, BCAN_MODE_BM = 0x01U };
 
-enum bcan_mode_source_e {
-    BCAN_MODE_NORMAL = 0x00U,
-    BCAN_MODE_BM = 0x01U
-};
-
-
-enum bcan_tx_mode_e {
-    BCAN_TX_MODE_FIFO = 0x00U,
-    BCAN_TX_MODE_QUEUE = FDCAN_TXBC_TFQM
-};
-
+enum bcan_tx_mode_e { BCAN_TX_MODE_FIFO = 0x00U, BCAN_TX_MODE_QUEUE = FDCAN_TXBC_TFQM };
 
 enum bcan_non_matching_filter_e {
     BCAN_NON_MATCHING_ACCEPT_RX_0 = 0x00U,
@@ -37,25 +27,11 @@ enum bcan_non_matching_filter_e {
     BCAN_NON_MATCHING_REJECT = 0x02U
 };
 
+enum bcan_clock_source_e { BCAN_CLK_HSE = 0x00U, BCAN_CLK_PLLQ = 0x01U, BCAN_CLK_PCLK1 = 0x02U };
 
-enum bcan_clock_source_e {
-    BCAN_CLK_HSE = 0x00U,
-    BCAN_CLK_PLLQ = 0x01U,
-    BCAN_CLK_PCLK1 = 0x02U
-};
+enum bcan_rx_queue_e { BCAN_RX_QUEUE_O = 0x00U, BCAN_RX_QUEUE_1 = 0x01U };
 
-
-enum bcan_rx_queue_e {
-    BCAN_RX_QUEUE_O = 0x00U,
-    BCAN_RX_QUEUE_1 = 0x01U
-};
-
-
-enum bcan_isr_line_e {
-    BCAN_ISR_LINE_0 = 0x00U,
-    BCAN_ISR_LINE_1 = 0x01U
-};
-
+enum bcan_isr_line_e { BCAN_ISR_LINE_0 = 0x00U, BCAN_ISR_LINE_1 = 0x01U };
 
 enum bcan_isr_group_e {
     BCAN_ISR_GROUP_RXFIFO0 = FDCAN_ILS_RXFIFO0,
@@ -66,7 +42,6 @@ enum bcan_isr_group_e {
     BCAN_ISR_GROUP_BERR = FDCAN_ILS_BERR,
     BCAN_ISR_GROUP_PERR = FDCAN_ILS_PERR
 };
-
 
 #define BSP_CAN_STD_FILTER_TYPE_Pos 30
 /**
@@ -92,7 +67,6 @@ enum bcan_standard_filter_type_e {
      */
     BCAN_STD_FILTER_TYPE_DISABLED = 0x00000003U,
 };
-
 
 #define BSP_CAN_STD_FILTER_CONFIG_Pos 27
 /**
@@ -128,7 +102,6 @@ enum bcan_std_filter_action_e {
      */
     BCAN_STD_FILTER_ACTION_PRIORITIZE_STORE_RX1 = 0x00000006U
 };
-
 
 /**
  * Enumeration that holds of possible FDCAN interruption sources.
@@ -207,8 +180,8 @@ enum bcan_irq_type_e {
      */
     BCAN_IRQ_TYPE_EPE = FDCAN_IE_EPE_Pos,
     /**
-    * Warning status changed.
-    */
+     * Warning status changed.
+     */
     BCAN_IRQ_TYPE_EWE = FDCAN_IE_EWE_Pos,
     /**
      * Bus-Off status changed.
@@ -232,12 +205,10 @@ enum bcan_irq_type_e {
     BCAN_IRQ_TYPE_ARAE = FDCAN_IE_ARAE_Pos
 };
 
-
 typedef struct bcan_config_global_filters_t {
     bool reject_remote_standard;
     enum bcan_non_matching_filter_e non_matching_standard_action;
 } bcan_config_global_filters_t;
-
 
 typedef struct bcan_tx_metadata_t {
     uint32_t id;
@@ -246,7 +217,6 @@ typedef struct bcan_tx_metadata_t {
     bool store_tx_events;
     uint32_t message_marker;
 } bcan_tx_metadata_t;
-
 
 typedef struct bcan_rx_metadata_t {
     uint32_t id;
@@ -257,14 +227,12 @@ typedef struct bcan_rx_metadata_t {
     bool non_matching_element;
 } bcan_rx_metadata_t;
 
-
 typedef struct bcan_standard_filter_t {
     enum bcan_standard_filter_type_e type;
     enum bcan_std_filter_action_e action;
     uint16_t standard_id1;
     uint16_t standard_id2;
 } bcan_standard_filter_t;
-
 
 /**
  * Struct that describes all the time related values of the FDCAN peripheral.
@@ -281,8 +249,8 @@ typedef struct bcan_config_timing_t {
      */
     uint8_t phase1;
     /**
-    * Bit time after the sample point.
-    */
+     * Bit time after the sample point.
+     */
     uint8_t phase2;
     /**
      * Maximum resynchronization jump width.
@@ -294,7 +262,6 @@ typedef struct bcan_config_timing_t {
     uint16_t prescaler;
 } bcan_config_timing_t;
 
-
 typedef struct bcan_config_t {
     bcan_config_timing_t timing;
     bool auto_retransmission;
@@ -303,41 +270,31 @@ typedef struct bcan_config_t {
     bcan_config_global_filters_t global_filters;
 } bcan_config_t;
 
-
 typedef FDCAN_GlobalTypeDef bcan_instance_t;
 
 typedef void (*bcan_isr_handler)(bcan_instance_t *can, uint32_t group_flags);
 
-ret_status
-bcan_config(bcan_instance_t *can, const bcan_config_t *config);
+ret_status bcan_config(bcan_instance_t *can, const bcan_config_t *config);
 
-ret_status
-bcan_config_clk_source(enum bcan_clock_source_e clock_source);
+ret_status bcan_config_clk_source(enum bcan_clock_source_e clock_source);
 
-ret_status
-bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler handler);
+ret_status bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler handler);
 
-ret_status
-bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line);
+ret_status bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line);
 
-ret_status
-bcan_enable_irqs(bcan_instance_t *can);
+ret_status bcan_enable_irqs(bcan_instance_t *can);
 
-ret_status
-bcan_start(bcan_instance_t *can);
+ret_status bcan_start(bcan_instance_t *can);
 
-ret_status
-bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index);
+ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index);
 
-ret_status
-bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data);
+ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data);
 
-ret_status
-bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue,
-                    bcan_rx_metadata_t *rx_metadata, uint8_t *rx_data);
+ret_status bcan_get_rx_message(bcan_instance_t *can,
+                               enum bcan_rx_queue_e queue,
+                               bcan_rx_metadata_t *rx_metadata,
+                               uint8_t *rx_data);
 
-ret_status
-bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate);
+ret_status bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate);
 
-
-#endif //BSP_CAN_H
+#endif // BSP_CAN_H
