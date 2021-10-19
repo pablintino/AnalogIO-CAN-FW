@@ -6,8 +6,15 @@
 
 #include "bsp_adc.h"
 #include "bsp_common_utils.h"
-#include <bsp_tick.h>
+#include "bsp_irq_manager.h"
+#include "bsp_tick.h"
 #include <stddef.h>
+
+#define __BADC_ISR_SOURCES_N (ADC_IER_JQOVFIE_Pos + 1)
+
+struct __badc_irqs_state_s {
+    void (*isr_vectors[__BADC_ISR_SOURCES_N])(badc_instance_t *adc, uint32_t flags);
+};
 
 static ret_status __badc_exit_power_down(badc_instance_t *adc, uint32_t tick_start);
 
@@ -23,6 +30,56 @@ static ret_status __bcan_enable_regulator(badc_instance_t *adc, uint32_t tick_st
 static void __badc_config_channel_sampling_time(badc_instance_t *adc,
                                                 uint8_t channel_number,
                                                 enum badc_sampling_time_e sampling_time);
+
+static void __badc_irq_handler(badc_instance_t *adc);
+
+static inline struct __badc_irqs_state_s *__badc_get_instance_state(badc_instance_t *adc);
+
+#if defined(ADC5)
+static struct __badc_irqs_state_s __badc_internal_states[5U];
+#elif defined(ADC4)
+static struct __badc_irqs_state_s __badc_internal_states[4U];
+#elif defined(ADC3)
+static struct __badc_irqs_state_s __badc_internal_states[3U];
+#elif defined(ADC2)
+static struct __badc_irqs_state_s __badc_internal_states[2U];
+#else
+static struct __badc_irqs_state_s __badc_internal_states[1U];
+#endif
+
+#if defined(ADC1) || defined(ADC2)
+static void __irq_handler_adc12(void)
+{
+    /* ADC1 and ADC2 share the same IRQ line. Should check here the source */
+    if (__BSP_IS_FLAG_SET(ADC1->ISR, (ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR))) {
+        __badc_irq_handler(ADC1);
+    }
+    if (__BSP_IS_FLAG_SET(ADC2->ISR, (ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR))) {
+        __badc_irq_handler(ADC2);
+    }
+}
+#endif
+
+#ifdef ADC3
+static void __irq_handler_adc3(void)
+{
+    __badc_irq_handler(ADC3);
+}
+#endif
+
+#ifdef ADC4
+static void __irq_handler_adc4(void)
+{
+    __badc_irq_handler(ADC4);
+}
+#endif
+
+#ifdef ADC5
+static void __irq_handler_adc5(void)
+{
+    __badc_irq_handler(ADC5);
+}
+#endif
 
 ret_status badc_config(badc_instance_t *adc, const badc_config_t *config)
 {
@@ -198,6 +255,8 @@ ret_status badc_start_conversion(badc_instance_t *adc)
     __BSP_CLEAR_MASKED_REG(adc->ISR, ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR);
 
     __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADSTART);
+
+    return STATUS_OK;
 }
 
 ret_status badc_wait_conversion(badc_instance_t *adc, uint32_t timeout)
@@ -216,8 +275,88 @@ ret_status badc_wait_conversion(badc_instance_t *adc, uint32_t timeout)
 
 uint16_t badc_get_conversion(badc_instance_t *adc)
 {
-
     return adc->DR;
+}
+
+ret_status badc_enable_irqs(badc_instance_t *adc)
+{
+
+    if (adc == NULL) {
+        return STATUS_ERR;
+    }
+
+#if defined(ADC5)
+    if (adc == ADC5) {
+        bool irq_enabled;
+        BSP_IRQ_is_enabled(ADC5_IRQn, &irq_enabled);
+        if (!irq_enabled) {
+            BSP_IRQ_set_handler(ADC5_IRQn, __irq_handler_adc5);
+            BSP_IRQ_enable_irq(ADC5_IRQn);
+        }
+    }
+#endif
+
+#if defined(ADC4)
+    if (adc == ADC4) {
+        bool irq_enabled;
+        BSP_IRQ_is_enabled(ADC4_IRQn, &irq_enabled);
+        if (!irq_enabled) {
+            BSP_IRQ_set_handler(ADC4_IRQn, __irq_handler_adc4);
+            BSP_IRQ_enable_irq(ADC4_IRQn);
+        }
+    }
+#endif
+
+#if defined(ADC3)
+    if (adc == ADC3) {
+        bool irq_enabled;
+        BSP_IRQ_is_enabled(ADC3_IRQn, &irq_enabled);
+        if (!irq_enabled) {
+            BSP_IRQ_set_handler(ADC3_IRQn, __irq_handler_adc3);
+            BSP_IRQ_enable_irq(ADC3_IRQn);
+        }
+    }
+#endif
+
+#if defined(ADC2)
+    if (adc == ADC2) {
+        bool irq_enabled;
+        BSP_IRQ_is_enabled(ADC1_2_IRQn, &irq_enabled);
+        if (!irq_enabled) {
+            BSP_IRQ_set_handler(ADC1_2_IRQn, __irq_handler_adc12);
+            BSP_IRQ_enable_irq(ADC1_2_IRQn);
+        }
+    }
+#endif
+
+    if (adc == ADC1) {
+        bool irq_enabled;
+        BSP_IRQ_is_enabled(ADC1_2_IRQn, &irq_enabled);
+        if (!irq_enabled) {
+            BSP_IRQ_set_handler(ADC1_2_IRQn, __irq_handler_adc12);
+            BSP_IRQ_enable_irq(ADC1_2_IRQn);
+        }
+    }
+
+    return STATUS_OK;
+}
+
+ret_status badc_config_irq(badc_instance_t *adc, enum badc_isr_type_e irq, badc_isr_handler_t handler)
+{
+
+    if (irq > ADC_ISR_JQOVF_Pos || handler == NULL || adc == NULL) {
+        return STATUS_ERR;
+    }
+
+    struct __badc_irqs_state_s *instance_state = __badc_get_instance_state(adc);
+    if (instance_state != NULL) {
+        instance_state->isr_vectors[irq] = handler;
+        __BSP_SET_MASKED_REG(adc->IER, (1U << irq));
+
+        return STATUS_OK;
+    }
+
+    return STATUS_ERR;
 }
 
 static void __badc_config_channel_sampling_time(badc_instance_t *adc,
@@ -294,4 +433,60 @@ static inline ret_status __badc_get_sequencer_position(badc_instance_t *adc,
     }
 
     return STATUS_OK;
+}
+
+static inline struct __badc_irqs_state_s *__badc_get_instance_state(badc_instance_t *adc)
+{
+#if defined(ADC5)
+    if (adc == ADC5) {
+        return &__badc_internal_states[4U];
+    }
+#endif
+#if defined(ADC4)
+    if (adc == ADC4) {
+        return &__badc_internal_states[3U];
+    }
+#endif
+#if defined(ADC3)
+    if (adc == ADC3) {
+        return &__badc_internal_states[2U];
+    }
+#endif
+#if defined(ADC2)
+    if (adc == ADC2) {
+        return &__badc_internal_states[1U];
+    }
+#endif
+    if (adc == ADC1) {
+        return &__badc_internal_states[0U];
+    }
+    return NULL;
+}
+
+static void __badc_irq_handler(badc_instance_t *adc)
+{
+    struct __badc_irqs_state_s *adc_instance_state = __badc_get_instance_state(adc);
+    if (adc_instance_state != NULL) {
+
+        uint32_t isr_tmp = adc->ISR;
+
+        /* Process all the ISR bits until no one continues flagged */
+        while (isr_tmp != 0) {
+
+            /* Get the fist non-zero bit index. As ISR is right aligned just assume that it's better to start from LSB
+             */
+            uint8_t isr_index = __builtin_ctz(isr_tmp);
+
+            /* Clear the ADC interrupt flag by writing a 1 to the corresponding ISR bit */
+            __BSP_SET_MASKED_REG(adc->ISR, (1 << isr_index));
+
+            /* Call, if available, the registered callback */
+            if (adc_instance_state->isr_vectors[isr_index] != NULL) {
+                adc_instance_state->isr_vectors[isr_index](adc, adc->ISR);
+            }
+            /* Clean the ISR in our internal "ISR" register. In the next iteration (if isr_tmp is not empty) we'll
+             * process the next ISR bit. ADCs merge all IRQs in their single instance line. */
+            isr_tmp &= ~(1 << isr_index);
+        }
+    }
 }

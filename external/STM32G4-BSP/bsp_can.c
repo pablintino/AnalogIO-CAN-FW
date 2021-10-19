@@ -19,8 +19,15 @@ static const uint32_t __CAN_ISR_GROUP_MASK[] = {
 
 static void __bsp_can_irq_handler(bcan_instance_t *can);
 
-#ifdef FDCAN2
+#ifdef FDCAN3
+static struct __bcan_irqs_state_s __bsp_can_internal_states[3U];
+#elif FDCAN2
+static struct __bcan_irqs_state_s __bsp_can_internal_states[2U];
+#else
+static struct __bcan_irqs_state_s __bsp_can_internal_states[1U];
+#endif
 
+#ifdef FDCAN2
 static void __irq_handler_fdcan2_it0(void)
 {
     __bsp_can_irq_handler(FDCAN2);
@@ -30,11 +37,9 @@ static void __irq_handler_fdcan2_it1(void)
 {
     __bsp_can_irq_handler(FDCAN2);
 }
+#endif
 
-static struct __bcan_irqs_state_s __bsp_can_internal_states[2U];
-
-#elif FDCAN3
-
+#ifdef FDCAN3
 static void __irq_handler_fdcan3_it0(void)
 {
     __bsp_can_irq_handler(FDCAN3);
@@ -44,11 +49,9 @@ static void __irq_handler_fdcan3_it1(void)
 {
     __bsp_can_irq_handler(FDCAN3);
 }
+#endif
 
-static struct __bcan_irqs_state_s __bsp_can_internal_states[3U];
-
-#else
-
+#ifdef FDCAN1
 static void __irq_handler_fdcan1_it0(void)
 {
     __bsp_can_irq_handler(FDCAN1);
@@ -58,8 +61,6 @@ static void __irq_handler_fdcan1_it1(void)
 {
     __bsp_can_irq_handler(FDCAN1);
 }
-
-static struct __bcan_irqs_state_s __bsp_can_internal_states[1U];
 #endif
 
 static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bcan_config_t *config);

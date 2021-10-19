@@ -108,27 +108,30 @@ static ret_status __configure_adc(void)
     adc_config.mode = BADC_MODE_NORMAL;
     adc_config.resolution = BADC_RESOLUTON_12_BITS;
 
-    ret_status status = badc_config(ADC1, &adc_config);
-    if (status != STATUS_OK) {
-        return status;
+    ret_status tmp_status = badc_config(ADC1, &adc_config);
+    if (tmp_status != STATUS_OK) {
+        return tmp_status;
     }
 
-    badc_config_channel_t adc_channel_configs[1];
+    badc_config_channel_t adc_channel_configs[2];
     adc_channel_configs[0].channel_number = 4;
     adc_channel_configs[0].differential = false;
     adc_channel_configs[0].sampling_time = BADC_SAMPLING_TIME_2_5;
-    status = badc_config_channels(
+    adc_channel_configs[1].channel_number = 3;
+    adc_channel_configs[1].differential = false;
+    adc_channel_configs[1].sampling_time = BADC_SAMPLING_TIME_2_5;
+    tmp_status = badc_config_channels(
         ADC1, &adc_channel_configs[0], sizeof(adc_channel_configs) / sizeof(badc_config_channel_t));
-    if (status != STATUS_OK) {
-        return status;
+    if (tmp_status != STATUS_OK) {
+        return tmp_status;
     }
 
-    status = badc_calibrate(ADC1, false);
-    if (status != STATUS_OK) {
-        return status;
+    tmp_status = badc_calibrate(ADC1, false);
+    if (tmp_status != STATUS_OK) {
+        return tmp_status;
     }
 
-    return status;
+    return badc_enable_irqs(ADC1);
 }
 
 static ret_status __configure_can(void)

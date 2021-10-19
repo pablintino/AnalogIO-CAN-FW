@@ -37,6 +37,20 @@ enum badc_clock_source {
     BADC_CLK_SYSCLK = 0x02U,
 };
 
+enum badc_isr_type_e {
+    BADC_ISR_TYPE_ADRDY = ADC_IER_ADRDYIE_Pos,
+    BADC_ISR_TYPE_EOSMP = ADC_IER_EOSMPIE_Pos,
+    BADC_ISR_TYPE_EOC = ADC_IER_EOCIE_Pos,
+    BADC_ISR_TYPE_EOS = ADC_IER_EOSIE_Pos,
+    BADC_ISR_TYPE_OVR = ADC_IER_OVRIE_Pos,
+    BADC_ISR_TYPE_JEOC = ADC_IER_JEOCIE_Pos,
+    BADC_ISR_TYPE_JEOS = ADC_IER_JEOSIE_Pos,
+    BADC_ISR_TYPE_AWD1 = ADC_IER_AWD1IE_Pos,
+    BADC_ISR_TYPE_AWD2 = ADC_IER_AWD2IE_Pos,
+    BADC_ISR_TYPE_AWD3 = ADC_IER_AWD3IE_Pos,
+    BADC_ISR_TYPE_JQOVF = ADC_IER_JQOVFIE_Pos
+};
+
 typedef struct badc_config_t {
     enum badc_mode_e mode;
     uint8_t discontinuous_channels;
@@ -51,6 +65,8 @@ typedef struct badc_config_channel_t {
 } badc_config_channel_t;
 
 typedef ADC_TypeDef badc_instance_t;
+
+typedef void (*badc_isr_handler_t)(badc_instance_t *adc, uint32_t group_flags);
 
 ret_status badc_config(badc_instance_t *adc, const badc_config_t *config);
 
@@ -69,5 +85,9 @@ ret_status badc_start_conversion(badc_instance_t *adc);
 uint16_t badc_get_conversion(badc_instance_t *adc);
 
 ret_status badc_wait_conversion(badc_instance_t *adc, uint32_t timeout);
+
+ret_status badc_enable_irqs(badc_instance_t *adc);
+
+ret_status badc_config_irq(badc_instance_t *adc, enum badc_isr_type_e irq, badc_isr_handler_t handler);
 
 #endif // BSP_ADC_H
