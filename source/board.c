@@ -30,12 +30,12 @@ void board_init(void)
     }
 
     BSP_IRQ_init();
-    BSP_CLK_enable_periph_clock(ENGPIOA);
-    BSP_CLK_enable_periph_clock(ENGPIOB);
-    BSP_CLK_enable_periph_clock(ENI2C3);
-    BSP_CLK_enable_periph_clock(ENUSART1);
-    BSP_CLK_enable_periph_clock(ENFDCAN);
-    BSP_CLK_enable_periph_clock(ENADC12);
+    bclk_enable_periph_clock(ENGPIOA);
+    bclk_enable_periph_clock(ENGPIOB);
+    bclk_enable_periph_clock(ENI2C3);
+    bclk_enable_periph_clock(ENUSART1);
+    bclk_enable_periph_clock(ENFDCAN);
+    bclk_enable_periph_clock(ENADC12);
 
     temp_status = __configure_usart();
     if (temp_status != STATUS_OK) {
@@ -202,7 +202,7 @@ static ret_status __configure_clocks(void)
 
     ret_status temp_status;
 
-    btick_config(BSP_CLK_get_hclk_freq());
+    btick_config(bclk_get_hclk_freq());
 
     bsp_clk_osc_config_t oscConfig;
     oscConfig.ClockType = BSP_CLK_CLOCK_TYPE_PLL | BSP_CLK_CLOCK_TYPE_HSE;
@@ -223,9 +223,9 @@ static ret_status __configure_clocks(void)
     clockConfig.APB1_prescaler = APB1_PRESCALER_1;
     clockConfig.APB2_prescaler = APB2_PRESCALER_1;
 
-    temp_status = BSP_CLK_config_clocks_osc(&oscConfig);
+    temp_status = bclk_config_clocks_osc(&oscConfig);
     if (temp_status == STATUS_OK) {
-        temp_status = BSP_CLK_config_clocks(&clockConfig);
+        temp_status = bclk_config_clocks(&clockConfig);
     }
 
     return temp_status;

@@ -239,9 +239,9 @@ static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *fre
     if (((*ccipr) & (0x03U << position)) == (uint32_t)(BSP_I2C_CLK_HSI << position)) {
         *freq = BSP_CLK_HSI_VALUE;
     } else if (((*ccipr) & (0x03U << position)) == (uint32_t)(BSP_I2C_CLK_PCLK << position)) {
-        *freq = BSP_CLK_get_pclk1_freq();
+        *freq = bclk_get_pclk1_freq();
     } else if (((*ccipr) & (0x03U << position)) == (uint32_t)(BSP_I2C_CLK_SYSCLK << position)) {
-        *freq = BSP_CLK_get_sysclk_freq();
+        *freq = bclk_get_sysclk_freq();
     } else {
         return STATUS_ERR;
     }

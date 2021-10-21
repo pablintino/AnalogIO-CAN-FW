@@ -461,9 +461,9 @@ static ret_status __get_can_input_frequency(uint32_t *freq)
     if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_HSE << RCC_CCIPR_FDCANSEL_Pos)) {
         *freq = BSP_HSE_VALUE;
     } else if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_PLLQ << RCC_CCIPR_FDCANSEL_Pos)) {
-        *freq = BSP_CLK_get_pllq_freq();
+        *freq = bclk_get_pllq_freq();
     } else if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_PCLK1 << RCC_CCIPR_FDCANSEL_Pos)) {
-        *freq = BSP_CLK_get_pclk1_freq();
+        *freq = bclk_get_pclk1_freq();
     } else {
         return STATUS_ERR;
     }

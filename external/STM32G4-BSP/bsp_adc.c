@@ -252,7 +252,8 @@ ret_status badc_start_conversion(badc_instance_t *adc)
         return STATUS_ERR;
     }
 
-    __BSP_CLEAR_MASKED_REG(adc->ISR, ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR);
+    /* Caution, this register is cleared by writing ones */
+    __BSP_SET_MASKED_REG(adc->ISR, ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR);
 
     __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADSTART);
 
@@ -268,7 +269,7 @@ ret_status badc_wait_conversion(badc_instance_t *adc, uint32_t timeout)
 
     ret_status status = BSP_UTIL_wait_flag_status_now(&adc->ISR, ADC_ISR_EOC, ADC_ISR_EOC, timeout);
     if (status == STATUS_OK) {
-        __BSP_CLEAR_MASKED_REG(adc->ISR, ADC_ISR_EOC);
+        __BSP_SET_MASKED_REG(adc->ISR, ADC_ISR_EOC);
     }
     return status;
 }

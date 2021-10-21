@@ -120,13 +120,13 @@ static ret_status __get_usart_input_frequency(BSP_USART_Instance *usart, uint32_
     } else if ((RCC->CCIPR & (0x03U << position)) == (uint32_t)(BSP_USART_CLK_LSE << position)) {
         *freq = BSP_CLK_LSE_VALUE;
     } else if ((RCC->CCIPR & (0x03U << position)) == (uint32_t)(BSP_USART_CLK_SYSCLK << position)) {
-        *freq = BSP_CLK_get_sysclk_freq();
+        *freq = bclk_get_sysclk_freq();
     } else {
         /* PCLK... Need to check the correct bus for each USART */
         if (usart == USART1) {
-            *freq = BSP_CLK_get_pclk2_freq();
+            *freq = bclk_get_pclk2_freq();
         } else {
-            *freq = BSP_CLK_get_pclk1_freq();
+            *freq = bclk_get_pclk1_freq();
         }
     }
     return STATUS_OK;

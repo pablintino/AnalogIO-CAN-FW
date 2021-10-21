@@ -54,7 +54,7 @@ static ret_status __change_flash_latency(uint8_t flash_wait_states);
 /** Retrieves the current frequency of SYSCLK clock based on register values
     @return The actual SYSCLK in MHz
     */
-uint32_t BSP_CLK_get_sysclk_freq(void)
+uint32_t bclk_get_sysclk_freq(void)
 {
 
     switch (RCC->CFGR & RCC_CFGR_SWS) {
@@ -76,7 +76,7 @@ uint32_t BSP_CLK_get_sysclk_freq(void)
 /** Retrieves the current frequency of HCLK clock based on register values
     @return The actual HCLK in MHz
     */
-uint32_t BSP_CLK_get_hclk_freq(void)
+uint32_t bclk_get_hclk_freq(void)
 {
     uint32_t ahb_divider = 1;
     /* If CFGR HPRE MSB bit is set a division factor greater that the unit is applied */
@@ -84,10 +84,10 @@ uint32_t BSP_CLK_get_hclk_freq(void)
         /* AHB Clock is divided */
         ahb_divider = HPRE_DIVIDERS[((RCC->CFGR & RCC_CFGR_HPRE) >> RCC_CFGR_HPRE_Pos) & 0x07];
     }
-    return BSP_CLK_get_sysclk_freq() / ahb_divider;
+    return bclk_get_sysclk_freq() / ahb_divider;
 }
 
-uint32_t BSP_CLK_get_pclk1_freq(void)
+uint32_t bclk_get_pclk1_freq(void)
 {
     uint32_t ppre_divider = 1;
     /* If CFGR PPRE MSB bit is set a division factor greater that the unit is applied */
@@ -95,10 +95,10 @@ uint32_t BSP_CLK_get_pclk1_freq(void)
         /* AHB Clock is divided */
         ppre_divider = PPRE_DIVIDERS[((RCC->CFGR & RCC_CFGR_PPRE1) >> RCC_CFGR_PPRE1_Pos) & 0x03];
     }
-    return BSP_CLK_get_hclk_freq() / ppre_divider;
+    return bclk_get_hclk_freq() / ppre_divider;
 }
 
-uint32_t BSP_CLK_get_pclk2_freq(void)
+uint32_t bclk_get_pclk2_freq(void)
 {
     uint32_t ppre_divider = 1;
     /* If CFGR PPRE MSB bit is set a division factor greater that the unit is applied */
@@ -106,10 +106,10 @@ uint32_t BSP_CLK_get_pclk2_freq(void)
         /* AHB Clock is divided */
         ppre_divider = PPRE_DIVIDERS[((RCC->CFGR & RCC_CFGR_PPRE2) >> RCC_CFGR_PPRE2_Pos) & 0x03];
     }
-    return BSP_CLK_get_hclk_freq() / ppre_divider;
+    return bclk_get_hclk_freq() / ppre_divider;
 }
 
-uint32_t BSP_CLK_get_pllq_freq(void)
+uint32_t bclk_get_pllq_freq(void)
 {
     return __calculate_pllqclk_freq();
 }
@@ -118,7 +118,7 @@ uint32_t BSP_CLK_get_pllq_freq(void)
  *
  * @return
  */
-ret_status BSP_CLK_reset_clocks(void)
+ret_status bclk_reset_clocks(void)
 {
 
     // Enable HSI
@@ -160,17 +160,17 @@ ret_status BSP_CLK_reset_clocks(void)
     return STATUS_OK;
 }
 
-void BSP_CLK_disable_periph_clock(enum bsp_clk_enable_clock clock_disable)
+void bclk_disable_periph_clock(enum bsp_clk_enable_clock clock_disable)
 {
     __BSP_BIT_ADDR_OFF_TO_BASE_POINTER_32(RCC_BASE, clock_disable) &= ~__BSP_BIT_ADDR_OFFS_TO_BIT_32(clock_disable);
 }
 
-void BSP_CLK_enable_periph_clock(enum bsp_clk_enable_clock clock_en)
+void bclk_enable_periph_clock(enum bsp_clk_enable_clock clock_en)
 {
     __BSP_BIT_ADDR_OFF_TO_BASE_POINTER_32(RCC_BASE, clock_en) |= __BSP_BIT_ADDR_OFFS_TO_BIT_32(clock_en);
 }
 
-ret_status BSP_CLK_config_clocks_osc(const bsp_clk_osc_config_t *oscc)
+ret_status bclk_config_clocks_osc(const bsp_clk_osc_config_t *oscc)
 {
     ret_status temp_status;
 
@@ -203,7 +203,7 @@ ret_status BSP_CLK_config_clocks_osc(const bsp_clk_osc_config_t *oscc)
     return STATUS_OK;
 }
 
-ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc)
+ret_status bclk_config_clocks(const bsp_clk_clock_config_t *clkc)
 {
     ret_status temp_status;
     uint32_t cfgr_hpre_masked_init_value = RCC->CFGR & RCC_CFGR_HPRE;
@@ -254,7 +254,7 @@ ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc)
     }
 
     /* Get the actual configured frequency and call TICK_config to reconfigure SysTick to the current frequency */
-    uint32_t final_freq = BSP_CLK_get_hclk_freq();
+    uint32_t final_freq = bclk_get_hclk_freq();
     btick_config(final_freq);
 
     /* Just validate if the desired frequency has been achieved */
@@ -507,7 +507,7 @@ ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc)
         /* Same case as jumps over 80MHz barrier. If target frequency goes under 80MHz a secondary
          * frequency jump with AHB/2 is necessary. See RM0440, chapter 7.2.7 */
         /* Notice that this case can only happen when swtiching from PLL */
-        uint32_t pll_output_freq = BSP_CLK_get_sysclk_freq();
+        uint32_t pll_output_freq = bclk_get_sysclk_freq();
         if (pll_output_freq > 80000000U) {
             __BSP_SET_MASKED_REG_VALUE(RCC->CFGR, RCC_CFGR_HPRE, RCC_CFGR_HPRE_DIV2);
             uint32_t temp_status = BSP_UTIL_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_HPRE, RCC_CFGR_HPRE_DIV2, 100UL);

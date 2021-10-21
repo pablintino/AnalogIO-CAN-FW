@@ -111,7 +111,10 @@ enum bsp_clk_enable_clock {
     ENI2C3 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 30),  /*!< I2C2 Enable */
     ENFDCAN = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, APB1ENR1), 25), /*!< FDCAN Enable */
     ENADC12 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 13),  /*!< ADC 1 and 2 Enable */
-    ENADC345 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 14)  /*!< ADC 3, 4 and 5 Enable */
+    ENADC345 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 14), /*!< ADC 3, 4 and 5 Enable */
+    ENDMA1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB1ENR), 0),    /*!< DMA1 Enable */
+    ENDMA2 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB1ENR), 2),    /*!< DMA2 Enable */
+    ENDMAMUX = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB1ENR), 3)   /*!< DMAMUX Enable */
 };
 
 typedef struct {
@@ -148,24 +151,24 @@ typedef struct {
     (((VALUE) == APB2_PRESCALER_1) || ((VALUE) == APB2_PRESCALER_2) || ((VALUE) == APB2_PRESCALER_4) ||                \
      ((VALUE) == APB2_PRESCALER_8) || ((VALUE) == APB2_PRESCALER_16))
 
-ret_status BSP_CLK_config_clocks_osc(const bsp_clk_osc_config_t *oscc);
+ret_status bclk_config_clocks_osc(const bsp_clk_osc_config_t *oscc);
 
-ret_status BSP_CLK_config_clocks(const bsp_clk_clock_config_t *clkc);
+ret_status bclk_config_clocks(const bsp_clk_clock_config_t *clkc);
 
-uint32_t BSP_CLK_get_sysclk_freq(void);
+uint32_t bclk_get_sysclk_freq(void);
 
-uint32_t BSP_CLK_get_hclk_freq(void);
+uint32_t bclk_get_hclk_freq(void);
 
-uint32_t BSP_CLK_get_pclk1_freq(void);
+uint32_t bclk_get_pclk1_freq(void);
 
-uint32_t BSP_CLK_get_pclk2_freq(void);
+uint32_t bclk_get_pclk2_freq(void);
 
-uint32_t BSP_CLK_get_pllq_freq(void);
+uint32_t bclk_get_pllq_freq(void);
 
-ret_status BSP_CLK_reset_clocks(void);
+ret_status bclk_reset_clocks(void);
 
-void BSP_CLK_enable_periph_clock(enum bsp_clk_enable_clock clock_en);
+void bclk_enable_periph_clock(enum bsp_clk_enable_clock clock_en);
 
-void BSP_CLK_disable_periph_clock(enum bsp_clk_enable_clock clock_disable);
+void bclk_disable_periph_clock(enum bsp_clk_enable_clock clock_disable);
 
 #endif // BSP_CLOCKS_H
