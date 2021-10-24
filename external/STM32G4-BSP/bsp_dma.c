@@ -185,7 +185,7 @@ ret_status bdma_enable_new_xfer(
 
     /* Cannot set addresses and length if the channel is already enabled */
     if (__BSP_IS_FLAG_SET(channel_instance->CCR, DMA_CCR_EN)) {
-        return STATUS_ERR;
+        __BSP_CLEAR_MASKED_REG(channel_instance->CCR, DMA_CCR_EN); // TODO REVIEW
     }
 
     if (!(channel_instance->CCR & (DMA_CCR_MEM2MEM | DMA_CCR_DIR))) {
@@ -359,7 +359,7 @@ static void __bdma_irq_handler(bdma_instance_t *dma, bdma_channel_instance_t *ch
     /* Process all the ISR bits until no one continues flagged */
     while (isr_tmp != 0) {
 
-        const uint8_t isr_index = __builtin_ctz(isr_tmp);
+        const uint8_t isr_index = 31 - __builtin_clz(isr_tmp);
 
         const struct __bdma_channel_irqs_state_s *chan_state = __bdma_get_chan_instance_state(dma, chan_index);
 
