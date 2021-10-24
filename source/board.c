@@ -137,12 +137,13 @@ static ret_status __configure_dma(void)
 static ret_status __configure_adc(void)
 {
 
-    bio_config_analog_port(GPIOA, BSP_IO_PIN_3, BSP_IO_NO_PU_PD);
+    bio_config_analog_port(GPIOA, BSP_IO_PIN_3 | BSP_IO_PIN_2, BSP_IO_NO_PU_PD);
     badc_config_clk_source(ADC1, BADC_CLK_SYSCLK);
 
     badc_config_t adc_config = {0};
     adc_config.mode = BADC_MODE_NORMAL;
     adc_config.resolution = BADC_RESOLUTON_12_BITS;
+    adc_config.dma_circular_mode = true;
 
     ret_status tmp_status = badc_config(ADC1, &adc_config);
     if (tmp_status != STATUS_OK) {
