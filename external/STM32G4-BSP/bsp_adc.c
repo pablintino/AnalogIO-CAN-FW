@@ -51,10 +51,12 @@ static struct __badc_irqs_state_s __badc_internal_states[1U];
 static void __irq_handler_adc12(void)
 {
     /* ADC1 and ADC2 share the same IRQ line. Should check here the source */
-    if (__BSP_IS_FLAG_SET(ADC1->ISR, (ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR))) {
+    if (__BSP_IS_FLAG_SET(ADC1->ISR, ADC_ISR_EOC) || __BSP_IS_FLAG_SET(ADC1->ISR, ADC_ISR_EOS) ||
+        __BSP_IS_FLAG_SET(ADC1->ISR, ADC_ISR_OVR)) {
         __badc_irq_handler(ADC1);
     }
-    if (__BSP_IS_FLAG_SET(ADC2->ISR, (ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR))) {
+    if (__BSP_IS_FLAG_SET(ADC2->ISR, ADC_ISR_EOC) || __BSP_IS_FLAG_SET(ADC2->ISR, ADC_ISR_EOS) ||
+        __BSP_IS_FLAG_SET(ADC2->ISR, ADC_ISR_OVR)) {
         __badc_irq_handler(ADC2);
     }
 }
