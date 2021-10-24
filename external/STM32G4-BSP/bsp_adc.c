@@ -29,7 +29,7 @@ static ret_status __bcan_enable_regulator(badc_instance_t *adc, uint32_t tick_st
 
 static void __badc_config_channel_sampling_time(badc_instance_t *adc,
                                                 uint8_t channel_number,
-                                                enum badc_sampling_time_e sampling_time);
+                                                badc_sampling_time_t sampling_time);
 
 static void __badc_irq_handler(badc_instance_t *adc);
 
@@ -94,7 +94,7 @@ ret_status badc_config(badc_instance_t *adc, const badc_config_t *config)
         return STATUS_ERR;
     }
 
-    uint32_t tickstart = btick_get_ticks();
+    const uint32_t tickstart = btick_get_ticks();
 
     ret_status tmp_status;
     /* If the ADC is in power down mode just get the ADC out of that state */
@@ -196,7 +196,7 @@ ret_status badc_enable(badc_instance_t *adc)
         }
 
         /* TODO: Fine tune this timeout */
-        status = BSP_UTIL_wait_flag_status_now(&adc->CR, ADC_CR_ADEN, ADC_CR_ADEN, 25u);
+        status = butil_wait_flag_status_now(&adc->CR, ADC_CR_ADEN, ADC_CR_ADEN, 25u);
         /* If OK we are done */
         if (status == STATUS_OK) {
             break;
@@ -220,7 +220,7 @@ ret_status badc_disable(badc_instance_t *adc)
 
     /* Disabling ADC is done by setting ADDIS, not clearing the ADEN one */
     __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADDIS);
-    return BSP_UTIL_wait_flag_status_now(&adc->CR, ADC_CR_ADDIS, 0U, 25u);
+    return butil_wait_flag_status_now(&adc->CR, ADC_CR_ADDIS, 0U, 25u);
 }
 
 ret_status badc_calibrate(badc_instance_t *adc, bool differential)
@@ -233,10 +233,10 @@ ret_status badc_calibrate(badc_instance_t *adc, bool differential)
     __BSP_SET_MASKED_REG_VALUE(
         adc->CR, ADC_CR_ADCAL | ADC_CR_ADCALDIF, ADC_CR_ADCAL | ((ADC_CR_ADCALDIF * differential) & ADC_CR_ADCALDIF));
     /* TODO This timeout depends on system freq and ADC clk source. Calculate it properly */
-    return BSP_UTIL_wait_flag_status_now(&adc->CR, ADC_CR_ADCAL, 0U, 1000U);
+    return butil_wait_flag_status_now(&adc->CR, ADC_CR_ADCAL, 0U, 1000U);
 }
 
-ret_status badc_config_clk_source(badc_instance_t *adc, enum badc_clock_source clock_source)
+ret_status badc_config_clk_source(badc_instance_t *adc, badc_clock_source_t clock_source)
 {
     if (adc == ADC1 || adc == ADC2) {
         __BSP_SET_MASKED_REG_VALUE(RCC->CCIPR, RCC_CCIPR_ADC12SEL, clock_source << RCC_CCIPR_ADC12SEL_Pos);
@@ -272,7 +272,7 @@ ret_status badc_wait_conversion(badc_instance_t *adc, uint32_t timeout)
         return STATUS_ERR;
     }
 
-    ret_status status = BSP_UTIL_wait_flag_status_now(&adc->ISR, ADC_ISR_EOC, ADC_ISR_EOC, timeout);
+    ret_status status = butil_wait_flag_status_now(&adc->ISR, ADC_ISR_EOC, ADC_ISR_EOC, timeout);
     if (status == STATUS_OK) {
         __BSP_SET_MASKED_REG(adc->ISR, ADC_ISR_EOC);
     }
@@ -327,27 +327,27 @@ ret_status badc_enable_irqs(badc_instance_t *adc)
 #if defined(ADC2)
     if (adc == ADC2) {
         bool irq_enabled;
-        BSP_IRQ_is_enabled(ADC1_2_IRQn, &irq_enabled);
+        birq_is_enabled(ADC1_2_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(ADC1_2_IRQn, __irq_handler_adc12);
-            BSP_IRQ_enable_irq(ADC1_2_IRQn);
+            birq_set_handler(ADC1_2_IRQn, __irq_handler_adc12);
+            birq_enable_irq(ADC1_2_IRQn);
         }
     }
 #endif
 
     if (adc == ADC1) {
         bool irq_enabled;
-        BSP_IRQ_is_enabled(ADC1_2_IRQn, &irq_enabled);
+        birq_is_enabled(ADC1_2_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(ADC1_2_IRQn, __irq_handler_adc12);
-            BSP_IRQ_enable_irq(ADC1_2_IRQn);
+            birq_set_handler(ADC1_2_IRQn, __irq_handler_adc12);
+            birq_enable_irq(ADC1_2_IRQn);
         }
     }
 
     return STATUS_OK;
 }
 
-ret_status badc_config_irq(badc_instance_t *adc, enum badc_isr_type_e irq, badc_isr_handler_t handler)
+ret_status badc_config_irq(badc_instance_t *adc, badc_isr_type_t irq, badc_isr_handler_t handler)
 {
 
     if (irq > ADC_ISR_JQOVF_Pos || handler == NULL || adc == NULL) {
@@ -390,7 +390,7 @@ ret_status badc_start_conversion_dma(
 
 static void __badc_config_channel_sampling_time(badc_instance_t *adc,
                                                 uint8_t channel_number,
-                                                enum badc_sampling_time_e sampling_time)
+                                                badc_sampling_time_t sampling_time)
 { /* Configure sampling time */
     uint8_t channel_sample_time_bit = (channel_number > 9 ? channel_number - 10 : channel_number) * 3;
     if (channel_number > 9) {
@@ -413,13 +413,13 @@ static ret_status __bcan_enable_regulator(badc_instance_t *adc, uint32_t tick_st
     const uint32_t disabled_bits = ADC_CR_ADCAL | ADC_CR_ADSTP | ADC_CR_JADSTART | ADC_CR_ADSTART | ADC_CR_ADDIS |
                                    ADC_CR_ADEN;
 
-    ret_status tmp_status = BSP_UTIL_wait_flag_status(&adc->CR, disabled_bits, 0U, tick_start, 25u);
+    ret_status tmp_status = butil_wait_flag_status(&adc->CR, disabled_bits, 0U, tick_start, 25u);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
 
     __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADVREGEN);
-    return BSP_UTIL_wait_flag_status(&adc->CR, ADC_CR_ADVREGEN, ADC_CR_ADVREGEN, tick_start, 25u);
+    return butil_wait_flag_status(&adc->CR, ADC_CR_ADVREGEN, ADC_CR_ADVREGEN, tick_start, 25u);
 }
 
 static ret_status __badc_exit_power_down(badc_instance_t *adc, uint32_t tick_start)
@@ -428,13 +428,13 @@ static ret_status __badc_exit_power_down(badc_instance_t *adc, uint32_t tick_sta
     const uint32_t disabled_bits = ADC_CR_ADCAL | ADC_CR_JADSTP | ADC_CR_ADSTP | ADC_CR_JADSTART | ADC_CR_ADSTART |
                                    ADC_CR_ADDIS | ADC_CR_ADEN;
     __BSP_CLEAR_MASKED_REG(adc->CR, disabled_bits);
-    ret_status tmp_status = BSP_UTIL_wait_flag_status(&adc->CR, disabled_bits, 0U, tick_start, 25u);
+    ret_status tmp_status = butil_wait_flag_status(&adc->CR, disabled_bits, 0U, tick_start, 25u);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
 
     __BSP_CLEAR_MASKED_REG(adc->CR, ADC_CR_DEEPPWD);
-    return BSP_UTIL_wait_flag_status(&adc->CR, ADC_CR_DEEPPWD, 0U, tick_start, 25u);
+    return butil_wait_flag_status(&adc->CR, ADC_CR_DEEPPWD, 0U, tick_start, 25u);
 }
 
 static inline ret_status __badc_get_sequencer_position(badc_instance_t *adc,
@@ -494,7 +494,7 @@ static inline struct __badc_irqs_state_s *__badc_get_instance_state(badc_instanc
 
 static void __badc_irq_handler(badc_instance_t *adc)
 {
-    struct __badc_irqs_state_s *adc_instance_state = __badc_get_instance_state(adc);
+    const struct __badc_irqs_state_s *adc_instance_state = __badc_get_instance_state(adc);
     if (adc_instance_state != NULL) {
 
         uint32_t isr_tmp = adc->ISR;

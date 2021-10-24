@@ -154,12 +154,12 @@ ret_status bdma_config(bdma_instance_t *dma, bdma_chan_t channel, const bdma_con
     /* Configure XFER source/target addrs and length if given */
     if (config->source_addr != 0 && config->target_addr != 0 && channel_instance->CNDTR != 0) {
         if (config->direction == BDMA_XFER_DIR_P2M) {
-            channel_instance->CPAR = config->source_addr;
-            channel_instance->CMAR = config->target_addr;
+            channel_instance->CPAR = (uint32_t)config->source_addr;
+            channel_instance->CMAR = (uint32_t)config->target_addr;
         } else {
             /* Valid for M2M and M2P modes */
-            channel_instance->CMAR = config->source_addr;
-            channel_instance->CPAR = config->target_addr;
+            channel_instance->CMAR = (uint32_t)config->source_addr;
+            channel_instance->CPAR = (uint32_t)config->target_addr;
         }
         channel_instance->CNDTR = config->data_count;
     }
@@ -190,12 +190,12 @@ ret_status bdma_enable_new_xfer(
 
     if (!(channel_instance->CCR & (DMA_CCR_MEM2MEM | DMA_CCR_DIR))) {
         /* P2M xfer */
-        channel_instance->CPAR = source_addr;
-        channel_instance->CMAR = target_addr;
+        channel_instance->CPAR = (uint32_t)source_addr;
+        channel_instance->CMAR = (uint32_t)target_addr;
     } else {
         /* M2M or M2P xfer */
-        channel_instance->CMAR = source_addr;
-        channel_instance->CPAR = target_addr;
+        channel_instance->CMAR = (uint32_t)source_addr;
+        channel_instance->CPAR = (uint32_t)target_addr;
     }
 
     channel_instance->CNDTR = data_count;
@@ -332,10 +332,10 @@ static inline uint8_t __get_channel_index_by_addr(bdma_instance_t *dma, bdma_cha
 static inline ret_status __enable_irq_for_channel(IRQn_Type irq, bsp_cmn_void_cb handler)
 {
     bool irq_enabled;
-    BSP_IRQ_is_enabled(irq, &irq_enabled);
+    birq_is_enabled(irq, &irq_enabled);
     if (!irq_enabled) {
-        BSP_IRQ_set_handler(irq, handler);
-        BSP_IRQ_enable_irq(irq);
+        birq_set_handler(irq, handler);
+        birq_enable_irq(irq);
         return STATUS_OK;
     }
     return STATUS_ERR;
@@ -348,7 +348,7 @@ static inline ret_status __enable_channel_dma(bdma_instance_t *dma, bdma_channel
     __BSP_SET_MASKED_REG(dma->IFCR, DMA_IFCR_CGIF1 << (4 * chan_index));
 
     __BSP_SET_MASKED_REG(channel_instance->CCR, DMA_CCR_EN);
-    return BSP_UTIL_wait_flag_status_now(&channel_instance->CCR, DMA_CCR_EN, DMA_CCR_EN, 25u);
+    return butil_wait_flag_status_now(&channel_instance->CCR, DMA_CCR_EN, DMA_CCR_EN, 25u);
 }
 
 static void __bdma_irq_handler(bdma_instance_t *dma, bdma_channel_instance_t *chan)

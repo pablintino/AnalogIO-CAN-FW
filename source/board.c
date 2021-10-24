@@ -31,7 +31,7 @@ void board_init(void)
         };
     }
 
-    BSP_IRQ_init();
+    birq_init();
     bclk_enable_periph_clock(ENGPIOA);
     bclk_enable_periph_clock(ENGPIOB);
     bclk_enable_periph_clock(ENI2C3);

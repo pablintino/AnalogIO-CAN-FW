@@ -81,7 +81,7 @@ static inline struct __bcan_ram_s *__bsp_can_get_instance_base_address(bcan_inst
 
 static inline void __bsp_can_ensure_isr_line_active(bcan_instance_t *can);
 
-static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group);
+static inline ret_status __bsp_can_conf_validate_isr_group(bcan_isr_group_t isr_group);
 
 /**
  *
@@ -124,14 +124,14 @@ ret_status bcan_config(bcan_instance_t *can, const bcan_config_t *config)
 
     /*Request initialization mode of the CAN peripheral */
     __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_INIT);
-    ret_status status = BSP_UTIL_wait_flag_status(&can->CCCR, FDCAN_CCCR_INIT, FDCAN_CCCR_INIT, start_tick, 25U);
+    ret_status status = butil_wait_flag_status(&can->CCCR, FDCAN_CCCR_INIT, FDCAN_CCCR_INIT, start_tick, 25U);
     if (status != STATUS_OK) {
         return status;
     }
 
     /* Request unlock of configuration registers */
     __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_CCE);
-    status = BSP_UTIL_wait_flag_status(&can->CCCR, FDCAN_CCCR_CCE, FDCAN_CCCR_CCE, start_tick, 25U);
+    status = butil_wait_flag_status(&can->CCCR, FDCAN_CCCR_CCE, FDCAN_CCCR_CCE, start_tick, 25U);
     if (status != STATUS_OK) {
         return status;
     }
@@ -258,7 +258,7 @@ ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *t
 }
 
 ret_status bcan_get_rx_message(bcan_instance_t *can,
-                               enum bcan_rx_queue_e queue,
+                               bcan_rx_queue_t queue,
                                bcan_rx_metadata_t *rx_metadata,
                                uint8_t *rx_data)
 {
@@ -316,7 +316,7 @@ ret_status bcan_start(bcan_instance_t *can)
     return STATUS_OK;
 }
 
-ret_status bcan_config_clk_source(enum bcan_clock_source_e clock_source)
+ret_status bcan_config_clk_source(bcan_clock_source_t clock_source)
 {
     __BSP_SET_MASKED_REG_VALUE(RCC->CCIPR, RCC_CCIPR_FDCANSEL, clock_source << RCC_CCIPR_FDCANSEL_Pos);
     return STATUS_OK;
@@ -344,7 +344,7 @@ ret_status bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate)
     return STATUS_OK;
 }
 
-ret_status bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line)
+ret_status bcan_config_irq_line(bcan_instance_t *can, bcan_isr_group_t isr_group, bcan_isr_line_t isr_line)
 {
 
     if (can == NULL || (isr_line != BCAN_ISR_LINE_0 && isr_line != BCAN_ISR_LINE_1) ||
@@ -363,7 +363,7 @@ ret_status bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_
     return STATUS_OK;
 }
 
-ret_status bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler handler)
+ret_status bcan_config_irq(bcan_instance_t *can, bcan_irq_type_t irq, bcan_isr_handler handler)
 {
 
     if (irq > FDCAN_IE_ARAE_Pos || handler == NULL || can == NULL) {
@@ -425,16 +425,16 @@ ret_status bcan_enable_irqs(bcan_instance_t *can)
     if (can == FDCAN1) {
 
         bool irq_enabled;
-        BSP_IRQ_is_enabled(FDCAN1_IT0_IRQn, &irq_enabled);
+        birq_is_enabled(FDCAN1_IT0_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(FDCAN1_IT0_IRQn, __irq_handler_fdcan1_it0);
-            BSP_IRQ_enable_irq(FDCAN1_IT0_IRQn);
+            birq_set_handler(FDCAN1_IT0_IRQn, __irq_handler_fdcan1_it0);
+            birq_enable_irq(FDCAN1_IT0_IRQn);
         }
 
-        BSP_IRQ_is_enabled(FDCAN1_IT1_IRQn, &irq_enabled);
+        birq_is_enabled(FDCAN1_IT1_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(FDCAN1_IT1_IRQn, __irq_handler_fdcan1_it1);
-            BSP_IRQ_enable_irq(FDCAN1_IT1_IRQn);
+            birq_set_handler(FDCAN1_IT1_IRQn, __irq_handler_fdcan1_it1);
+            birq_enable_irq(FDCAN1_IT1_IRQn);
         }
     }
 
@@ -569,7 +569,7 @@ static inline struct __bcan_ram_s *__bsp_can_get_instance_base_address(bcan_inst
     return NULL;
 }
 
-static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group)
+static inline ret_status __bsp_can_conf_validate_isr_group(bcan_isr_group_t isr_group)
 {
     return (isr_group != BCAN_ISR_GROUP_RXFIFO0 && isr_group != BCAN_ISR_GROUP_RXFIFO1 &&
             isr_group != BCAN_ISR_GROUP_SMSG && isr_group != BCAN_ISR_GROUP_TFERR && isr_group != BCAN_ISR_GROUP_MISC &&

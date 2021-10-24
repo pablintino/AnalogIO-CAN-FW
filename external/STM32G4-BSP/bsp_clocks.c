@@ -125,8 +125,7 @@ ret_status bclk_reset_clocks(void)
     __BSP_SET_MASKED_REG(RCC->CR, RCC_CR_HSION);
 
     // Wait until HSI is enabled
-    ret_status tmp_status =
-        BSP_UTIL_wait_flag_status_now(&RCC->CR, RCC_CR_HSIRDY, RCC_CR_HSIRDY, BSP_CLK_HSI_READY_TMT);
+    ret_status tmp_status = butil_wait_flag_status_now(&RCC->CR, RCC_CR_HSIRDY, RCC_CR_HSIRDY, BSP_CLK_HSI_READY_TMT);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
@@ -134,13 +133,13 @@ ret_status bclk_reset_clocks(void)
     // Change clock source to HSI (PLL can be disabled at the same time, or at least ST does exactly this)
     RCC->CFGR = RCC_CFGR_SW_HSI;
     // Wait until HSI is selected as system clock
-    tmp_status = BSP_UTIL_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_SWS, RCC_CFGR_SWS_HSI, 5000U);
+    tmp_status = butil_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_SWS, RCC_CFGR_SWS_HSI, 5000U);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
 
     // Wait until PLL is OFF
-    tmp_status = BSP_UTIL_wait_flag_status_now(&RCC->CR, RCC_CR_PLLRDY, 0UL, BSP_CLK_PLL_READY_TMT);
+    tmp_status = butil_wait_flag_status_now(&RCC->CR, RCC_CR_PLLRDY, 0UL, BSP_CLK_PLL_READY_TMT);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
@@ -290,14 +289,14 @@ ret_status __config_clock_hsi(const bsp_clk_osc_config_t *oscc)
     if (oscc->HSIState == BSP_CLK_CLOCK_STATE_HSI_STATE_ENABLE) {
         /* Enable HSI */
         __BSP_SET_MASKED_REG(RCC->CR, RCC_CR_HSION);
-        return BSP_UTIL_wait_flag_status_now(&RCC->CR, RCC_CR_HSIRDY, RCC_CR_HSIRDY, BSP_CLK_HSI_READY_TMT);
+        return butil_wait_flag_status_now(&RCC->CR, RCC_CR_HSIRDY, RCC_CR_HSIRDY, BSP_CLK_HSI_READY_TMT);
 
     } else if (oscc->HSIState == BSP_CLK_CLOCK_STATE_HSI_STATE_DISABLE) {
         /* Disable HSI oscillator */
         __BSP_CLEAR_MASKED_REG(RCC->CR, RCC_CR_HSION);
 
         /* Wait for HSI to turn off */
-        return BSP_UTIL_wait_flag_status_now(&RCC->CR, RCC_CR_HSIRDY, 0UL, BSP_CLK_HSI_READY_TMT);
+        return butil_wait_flag_status_now(&RCC->CR, RCC_CR_HSIRDY, 0UL, BSP_CLK_HSI_READY_TMT);
     } else {
         /* Invalid configuration option. Shouldn't be reached */
         return STATUS_ERR;
@@ -325,7 +324,7 @@ ret_status __config_clock_hse(const bsp_clk_osc_config_t *oscc)
 
         /* Wait for HSE to turn on */
         // TODO Remove hardcoded timeout
-        return BSP_UTIL_wait_flag_status_now(&RCC->CR, RCC_CR_HSERDY, RCC_CR_HSERDY, BSP_CLK_HSE_READY_TMT);
+        return butil_wait_flag_status_now(&RCC->CR, RCC_CR_HSERDY, RCC_CR_HSERDY, BSP_CLK_HSE_READY_TMT);
 
     } else if (oscc->HSEState == BSP_CLK_CLOCK_STATE_HSE_STATE_DISABLE) {
         /* Disable HSE oscillator */
@@ -335,7 +334,7 @@ ret_status __config_clock_hse(const bsp_clk_osc_config_t *oscc)
         RCC->CR ^= (-(oscc->HSEState == BSP_CLK_CLOCK_STATE_HSE_STATE_BYPASS) ? 1U : 0) & (1U << RCC_CR_HSEBYP_Pos);
 
         /* Wait for HSE to turn off */
-        return BSP_UTIL_wait_flag_status_now(&RCC->CR, RCC_CR_HSERDY, 0, BSP_CLK_HSE_READY_TMT);
+        return butil_wait_flag_status_now(&RCC->CR, RCC_CR_HSERDY, 0, BSP_CLK_HSE_READY_TMT);
     } else {
         /* Invalid configuration option. Shouldn't be reached */
         return STATUS_ERR;
@@ -348,7 +347,7 @@ ret_status __disable_pll()
     __BSP_CLEAR_MASKED_REG(RCC->CR, RCC_CR_PLLON);
 
     /* Wait until PLL is disabled */
-    return BSP_UTIL_wait_flag_status_now(&RCC->CR, RCC_CR_PLLRDY, 0UL, BSP_CLK_PLL_READY_TMT);
+    return butil_wait_flag_status_now(&RCC->CR, RCC_CR_PLLRDY, 0UL, BSP_CLK_PLL_READY_TMT);
 }
 
 ret_status __pll_validate_params(const bsp_pll_config_t *pllc)
@@ -452,7 +451,7 @@ ret_status __config_clock_pll(const bsp_pll_config_t *pllc)
         __BSP_SET_MASKED_REG(RCC->CR, RCC_CR_PLLON);
 
         /* Wait until PLL is enabled */
-        return BSP_UTIL_wait_flag_status_now(&RCC->CR, RCC_CR_PLLRDY, RCC_CR_PLLRDY, BSP_CLK_PLL_READY_TMT);
+        return butil_wait_flag_status_now(&RCC->CR, RCC_CR_PLLRDY, RCC_CR_PLLRDY, BSP_CLK_PLL_READY_TMT);
 
     } else if (pllc->PLLState == BSP_CLK_CLOCK_STATE_PLL_STATE_DISABLE) {
         return __disable_pll();
@@ -488,7 +487,7 @@ ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc)
         uint32_t pll_output_freq = __calculate_pllrclk_freq();
         if (pll_output_freq > 80000000U) {
             __BSP_SET_MASKED_REG_VALUE(RCC->CFGR, RCC_CFGR_HPRE, RCC_CFGR_HPRE_DIV2);
-            uint32_t temp_status = BSP_UTIL_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_HPRE, RCC_CFGR_HPRE_DIV2, 100UL);
+            uint32_t temp_status = butil_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_HPRE, RCC_CFGR_HPRE_DIV2, 100UL);
             if (temp_status != STATUS_OK) {
                 return temp_status;
             }
@@ -510,7 +509,7 @@ ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc)
         uint32_t pll_output_freq = bclk_get_sysclk_freq();
         if (pll_output_freq > 80000000U) {
             __BSP_SET_MASKED_REG_VALUE(RCC->CFGR, RCC_CFGR_HPRE, RCC_CFGR_HPRE_DIV2);
-            uint32_t temp_status = BSP_UTIL_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_HPRE, RCC_CFGR_HPRE_DIV2, 100UL);
+            uint32_t temp_status = butil_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_HPRE, RCC_CFGR_HPRE_DIV2, 100UL);
             if (temp_status != STATUS_OK) {
                 return temp_status;
             }
@@ -520,7 +519,7 @@ ret_status __config_clock_sysclk(const bsp_clk_clock_config_t *clkc)
     /* Set the specified clock source */
     __BSP_SET_MASKED_REG_VALUE(RCC->CFGR, RCC_CFGR_SW, clkc->SystemClockSource);
 
-    return BSP_UTIL_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_SWS, clkc->SystemClockSource << RCC_CFGR_SWS_Pos, 5000UL);
+    return butil_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_SWS, clkc->SystemClockSource << RCC_CFGR_SWS_Pos, 5000UL);
 }
 
 ret_status __config_clock_hclk(const bsp_clk_clock_config_t *clkc)
@@ -540,7 +539,7 @@ ret_status __config_clock_hclk(const bsp_clk_clock_config_t *clkc)
     // Just assign the divider. It must be already shifted to the HPRE bits position
     __BSP_SET_MASKED_REG_VALUE(RCC->CFGR, RCC_CFGR_HPRE, clkc->AHBDivider);
 
-    uint32_t temp_status = BSP_UTIL_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_HPRE, clkc->AHBDivider, 100UL);
+    uint32_t temp_status = butil_wait_flag_status_now(&RCC->CFGR, RCC_CFGR_HPRE, clkc->AHBDivider, 100UL);
     if (temp_status != STATUS_OK) {
         return temp_status;
     }
@@ -548,7 +547,7 @@ ret_status __config_clock_hclk(const bsp_clk_clock_config_t *clkc)
     /* Assign APB1 and APB2 bus clock dividers */
     RCC->CFGR = (RCC->CFGR & ~(RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2)) | clkc->APB1_prescaler | clkc->APB2_prescaler;
 
-    return BSP_UTIL_wait_flag_status_now(
+    return butil_wait_flag_status_now(
         &RCC->CFGR, RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2, clkc->APB1_prescaler | clkc->APB2_prescaler, 100UL);
 }
 
@@ -612,5 +611,5 @@ uint8_t __calculate_flash_wait_states(uint32_t frequency)
 ret_status __change_flash_latency(uint8_t flash_wait_states)
 {
     __BSP_SET_MASKED_REG_VALUE(FLASH->ACR, FLASH_ACR_LATENCY, flash_wait_states);
-    return BSP_UTIL_wait_flag_status_now(&FLASH->ACR, FLASH_ACR_LATENCY, flash_wait_states, 10UL);
+    return butil_wait_flag_status_now(&FLASH->ACR, FLASH_ACR_LATENCY, flash_wait_states, 10UL);
 }

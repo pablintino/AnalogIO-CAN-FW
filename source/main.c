@@ -118,7 +118,7 @@ static void AppTaskCanTX(void *p_arg)
     test.message_marker = 0x00;
 
     while (DEF_TRUE) {
-        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
+        OSTimeDly(500, OS_OPT_TIME_PERIODIC, &err);
 
         badc_start_conversion_dma(ADC1, DMA1, BDMA_CHANNEL_1, (uint8_t *)&adc_dma_conversions, 2);
 
@@ -211,7 +211,7 @@ static void AppTaskStart(void *p_arg)
 
     board_init();
     bcan_config_irq(FDCAN1, BCAN_IRQ_TYPE_RF0NE, can_rx_handler);
-    // badc_config_irq(ADC1, BADC_ISR_TYPE_EOS, adc_eos_handler);
+    //badc_config_irq(ADC1, BADC_ISR_TYPE_EOS, adc_eos_handler);
 
     bdma_config_irq(DMA1, BDMA_CHANNEL_1, BDMA_ISR_TYPE_XFER_COMPL, dma_xfer_complete_handler);
 

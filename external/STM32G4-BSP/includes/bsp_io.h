@@ -12,6 +12,8 @@
 #include <stdbool.h>
 
 #define BSP_IO_PORT_LENGTH 16
+#define BSP_IO_IS_PIN_VALID(PIN) (PIN < BSP_IO_PORT_LENGTH)
+#define __BSP_IO_IS_PIN_VALID(PIN) ((PIN >= BSP_IO_PIN_0) && (PIN <= BSP_IO_PIN_15))
 
 typedef enum bsp_port_speed_t {
     BSP_IO_LOW = 0x00,
@@ -43,36 +45,32 @@ typedef enum {
     BSP_IO_PIN_15 = 0x8000U
 } bsp_io_pin_number;
 
-#define __BSP_IO_IS_PIN_VALID(PIN) ((PIN >= BSP_IO_PIN_0) && (PIN <= BSP_IO_PIN_15))
+typedef GPIO_TypeDef bio_port;
 
-typedef GPIO_TypeDef BSP_IO_Port;
+ret_status bio_conf_output_port(bio_port *port,
+                                bsp_io_pin_number pin_number,
+                                bsp_port_pp_pd_t pull_up_down,
+                                bsp_port_speed_t speed,
+                                bsp_port_output_type_t output_type);
 
-#define BSP_IO_IS_PIN_VALID(PIN) (PIN < BSP_IO_PORT_LENGTH)
+ret_status bio_config_input_port(bio_port *port,
+                                 bsp_io_pin_number pin_number,
+                                 bsp_port_pp_pd_t pull_up_down,
+                                 bsp_port_speed_t speed);
 
-void bio_conf_output_port(BSP_IO_Port *port,
-                          bsp_io_pin_number pin_number,
-                          bsp_port_pp_pd_t pull_up_down,
-                          bsp_port_speed_t speed,
-                          bsp_port_output_type_t output_type);
+ret_status bio_config_analog_port(bio_port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down);
 
-void bio_config_input_port(BSP_IO_Port *port,
-                           bsp_io_pin_number pin_number,
-                           bsp_port_pp_pd_t pull_up_down,
-                           bsp_port_speed_t speed);
+ret_status bio_config_af_port(bio_port *port,
+                              bsp_io_pin_number pin_number,
+                              uint8_t af_function,
+                              bsp_port_pp_pd_t pull_up_down,
+                              bsp_port_speed_t speed,
+                              bsp_port_output_type_t output_type);
 
-void bio_config_analog_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down);
+void bio_toggle_port(bio_port *port, uint8_t pin_number);
 
-void bio_config_af_port(BSP_IO_Port *port,
-                        bsp_io_pin_number pin_number,
-                        uint8_t af_function,
-                        bsp_port_pp_pd_t pull_up_down,
-                        bsp_port_speed_t speed,
-                        bsp_port_output_type_t output_type);
+ret_status bio_write_port(bio_port *port, uint8_t pin_number, bool value);
 
-void bio_toggle_port(BSP_IO_Port *port, uint8_t pin_number);
-
-ret_status bio_write_port(BSP_IO_Port *port, uint8_t pin_number, bool value);
-
-uint8_t bio_read_port(BSP_IO_Port *port, uint8_t pin_number);
+uint8_t bio_read_port(bio_port *port, uint8_t pin_number);
 
 #endif // BSP_IO_H
