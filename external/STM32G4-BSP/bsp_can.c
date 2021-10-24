@@ -489,12 +489,14 @@ static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader,
     /* Write Tx element header to the message RAM */
     message_ram->header_word1 = (pTxHeader->is_rtr ? (1 << 30) : 0x00000000U) |
                                 (pTxHeader->id << (extended_id_xtd ? 0 : 18U)) | extended_id_xtd;
+
+    const uint8_t message_size = pTxHeader->size_b & 0x0FU;
     message_ram->header_word2 = (pTxHeader->message_marker << 24U) |
-                                (pTxHeader->store_tx_events ? (1 << 23) : 0x00000000U) | (pTxHeader->size_b << 16);
+                                (pTxHeader->store_tx_events ? (1 << 23) : 0x00000000U) | (message_size << 16);
 
     uint8_t element_counter = 0;
     /* Write Tx payload to the message RAM */
-    for (uint32_t byte_n = 0; byte_n < __CAN_DLC_TO_BYTE_NUMBER[pTxHeader->size_b]; byte_n += 4U) {
+    for (uint32_t byte_n = 0; byte_n < __CAN_DLC_TO_BYTE_NUMBER[message_size]; byte_n += 4U) {
         message_ram->message_payload[element_counter] = ((pTxData[byte_n + 3U] << 24U) | (pTxData[byte_n + 2U] << 16U) |
                                                          (pTxData[byte_n + 1U] << 8U) | pTxData[byte_n]);
         element_counter++;

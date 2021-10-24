@@ -21,6 +21,8 @@ static OS_SEM adc_sync_sem;
 static uint8_t aRxBuffer[2];
 static uint8_t aTxBuffer[2];
 
+static uint16_t adc_dma_conversions[2];
+
 static void AppTaskStart(void *p_arg);
 
 const unsigned char completeVersion[] = {VERSION_MAJOR_INIT,
@@ -111,18 +113,18 @@ static void AppTaskCanTX(void *p_arg)
     bcan_tx_metadata_t test;
     test.id = 0x7ff;
     test.is_rtr = false;
-    test.size_b = 2;
+    test.size_b = 4;
     test.store_tx_events = false;
     test.message_marker = 0x00;
 
     while (DEF_TRUE) {
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
 
-        badc_start_conversion(ADC1);
+        badc_start_conversion_dma(ADC1, DMA1, BDMA_CHANNEL_1, (uint8_t *)&adc_dma_conversions, 2);
 
         OSSemPend(&adc_sync_sem, 0, OS_OPT_PEND_BLOCKING, &ts, &err);
         if (err == OS_ERR_NONE) {
-            uint16_t conversion_value = badc_get_conversion(ADC1);
+            uint32_t conversion_value = adc_dma_conversions[0] | (adc_dma_conversions[1] << 16);
             if (bcan_add_tx_message(FDCAN1, &test, (const uint8_t *)&conversion_value) != STATUS_OK) {
                 SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
             }
@@ -145,6 +147,16 @@ void adc_eos_handler(badc_instance_t *adc, uint32_t flags)
 {
     (void)adc;
     (void)flags;
+
+    OS_ERR err;
+    OSSemPost(&adc_sync_sem, OS_OPT_POST_1, &err);
+}
+
+void dma_xfer_complete_handler(bdma_instance_t *dma, bdma_channel_instance_t *channel, uint32_t group_flags)
+{
+    (void)dma;
+    (void)channel;
+    (void)group_flags;
 
     OS_ERR err;
     OSSemPost(&adc_sync_sem, OS_OPT_POST_1, &err);
@@ -199,12 +211,14 @@ static void AppTaskStart(void *p_arg)
 
     board_init();
     bcan_config_irq(FDCAN1, BCAN_IRQ_TYPE_RF0NE, can_rx_handler);
-    badc_config_irq(ADC1, BADC_ISR_TYPE_EOS, adc_eos_handler);
+    // badc_config_irq(ADC1, BADC_ISR_TYPE_EOS, adc_eos_handler);
+
+    bdma_config_irq(DMA1, BDMA_CHANNEL_1, BDMA_ISR_TYPE_XFER_COMPL, dma_xfer_complete_handler);
 
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
     bio_conf_output_port(GPIOA, BSP_IO_PIN_4 | BSP_IO_PIN_5 | BSP_IO_PIN_6, BSP_IO_PU, BSP_IO_HIGH, BSP_IO_OUT_TYPE_PP);
 
-    OSSemCreate(&adc_sync_sem, "adc_sem", 1, &err);
+    OSSemCreate(&adc_sync_sem, "adc_sem", 0, &err);
 
     OSTaskCreate(&AppTaskObj0TCB,
                  "Kernel Objects Task 0",

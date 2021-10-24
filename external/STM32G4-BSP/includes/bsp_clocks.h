@@ -113,8 +113,8 @@ enum bsp_clk_enable_clock {
     ENADC12 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 13),  /*!< ADC 1 and 2 Enable */
     ENADC345 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB2ENR), 14), /*!< ADC 3, 4 and 5 Enable */
     ENDMA1 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB1ENR), 0),    /*!< DMA1 Enable */
-    ENDMA2 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB1ENR), 2),    /*!< DMA2 Enable */
-    ENDMAMUX = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB1ENR), 3)   /*!< DMAMUX Enable */
+    ENDMA2 = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB1ENR), 1),    /*!< DMA2 Enable */
+    ENDMAMUX = __BSP_BIT_ADDR_OFF_32(offsetof(RCC_TypeDef, AHB1ENR), 2)   /*!< DMAMUX Enable */
 };
 
 typedef struct {

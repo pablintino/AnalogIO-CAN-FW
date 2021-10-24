@@ -118,9 +118,12 @@ ret_status badc_config(badc_instance_t *adc, const badc_config_t *config)
     cfgr_value |= config->mode == BADC_MODE_DISCONTINUOUS ? config->discontinuous_channels << ADC_CFGR_DISCNUM_Pos
                                                           : 0x00;
     cfgr_value |= config->resolution;
+    cfgr_value |= config->dma_circular_mode ? ADC_CFGR_DMACFG : 0x00;
 
-    __BSP_SET_MASKED_REG_VALUE(
-        adc->CFGR, ADC_CFGR_CONT | ADC_CFGR_OVRMOD | ADC_CFGR_ALIGN | ADC_CFGR_DISCEN, cfgr_value);
+    __BSP_SET_MASKED_REG_VALUE(adc->CFGR,
+                               ADC_CFGR_CONT | ADC_CFGR_OVRMOD | ADC_CFGR_ALIGN | ADC_CFGR_DISCEN | ADC_CFGR_DMACFG |
+                                   ADC_CFGR_DISCNUM,
+                               cfgr_value);
 
     /* Disable oversampling mode and gain corrections TODO: This features could be useful, try to implement them */
     __BSP_CLEAR_MASKED_REG(adc->CFGR2, ADC_CFGR2_ROVSE | ADC_CFGR2_GCOMP);
@@ -358,6 +361,29 @@ ret_status badc_config_irq(badc_instance_t *adc, enum badc_isr_type_e irq, badc_
     }
 
     return STATUS_ERR;
+}
+
+ret_status badc_start_conversion_dma(
+    badc_instance_t *adc, bdma_instance_t *dma, bdma_chan_t channel, uint8_t *data_address, uint16_t data_count)
+{
+    /* Cannot continue if conversion is ongoing or ADC is not enabled */
+    if ((adc->CR & (ADC_CR_JADSTART | ADC_CR_ADSTART | ADC_CR_ADEN)) != ADC_CR_ADEN) {
+        return STATUS_ERR;
+    }
+
+    /* Caution, this register is cleared by writing ones */
+    __BSP_SET_MASKED_REG(adc->ISR, ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR);
+
+    /* Enable DMA request generation */
+    __BSP_SET_MASKED_REG(adc->CFGR, ADC_CFGR_DMAEN);
+
+    ret_status status = bdma_enable_new_xfer(dma, channel, (uint8_t *)&adc->DR, data_address, data_count);
+    if (status != STATUS_OK) {
+        return status;
+    }
+
+    __BSP_SET_MASKED_REG(adc->CR, ADC_CR_ADSTART);
+    return STATUS_OK;
 }
 
 static void __badc_config_channel_sampling_time(badc_instance_t *adc,

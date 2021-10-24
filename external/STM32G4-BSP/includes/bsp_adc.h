@@ -7,6 +7,7 @@
 #ifndef BSP_ADC_H
 #define BSP_ADC_H
 
+#include "bsp_dma.h"
 #include "bsp_types.h"
 #include "stm32g4xx.h"
 #include <stdbool.h>
@@ -56,6 +57,7 @@ typedef struct badc_config_t {
     uint8_t discontinuous_channels;
     enum badc_resolution_e resolution;
     bool preserve_overruns;
+    bool dma_circular_mode;
 } badc_config_t;
 
 typedef struct badc_config_channel_t {
@@ -81,6 +83,9 @@ ret_status badc_disable(badc_instance_t *adc);
 ret_status badc_calibrate(badc_instance_t *adc, bool differential);
 
 ret_status badc_start_conversion(badc_instance_t *adc);
+
+ret_status badc_start_conversion_dma(
+    badc_instance_t *adc, bdma_instance_t *dma, bdma_chan_t channel, uint8_t *data_address, uint16_t data_count);
 
 uint16_t badc_get_conversion(badc_instance_t *adc);
 

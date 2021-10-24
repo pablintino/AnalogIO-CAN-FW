@@ -165,28 +165,38 @@ typedef enum bdma_chan_s {
     BDMA_CHANNEL_4 = 0x0044UL,
     BDMA_CHANNEL_5 = 0x0058UL,
     BDMA_CHANNEL_6 = 0x006CUL,
+#if defined(DMA1_Channel7)
     BDMA_CHANNEL_7 = 0x0080UL,
+#endif
+#if defined(DMA1_Channel8)
     BDMA_CHANNEL_8 = 0x0094UL
+#endif
 } bdma_chan_t;
 
-typedef enum bdma_xfer_data_size_s {
+typedef enum bdma_xfer_data_size_e {
     BDMA_XFER_SIZE_8 = 0x0000U,
     BDMA_XFER_SIZE_16 = 0x0001U,
     BDMA_XFER_SIZE_32 = 0x0002U
 } bdma_xfer_data_size_t;
 
-typedef enum bdma_xfer_direction_s {
-    BDMA_XFER_DIR_PM = 0x0000U,
-    BDMA_XFER_DIR_MP = DMA_CCR_DIR,
-    BDMA_XFER_DIR_MM = DMA_CCR_MEM2MEM
+typedef enum bdma_xfer_direction_e {
+    BDMA_XFER_DIR_P2M = 0x0000U,
+    BDMA_XFER_DIR_M2P = DMA_CCR_DIR,
+    BDMA_XFER_DIR_M2M = DMA_CCR_MEM2MEM
 } bdma_xfer_direction_t;
 
-typedef enum bdma_channel_prio_s {
+typedef enum bdma_channel_prio_e {
     BDMA_CHAN_PRIO_LOW = 0x0000U,
     BDMA_CHAN_PRIO_MED = DMA_CCR_PL_0,
     BDMA_CHAN_PRIO_HI = DMA_CCR_PL_1,
     BDMA_CHAN_PRIO_VHI = DMA_CCR_PL_Msk
 } bdma_channel_prio_t;
+
+typedef enum bdma_isr_type_e {
+    BDMA_ISR_TYPE_XFER_COMPL = DMA_CCR_TCIE,
+    BDMA_ISR_TYPE_HALF_XFER = DMA_CCR_HTIE,
+    BDMA_ISR_TYPE_XFER_ERROR = DMA_CCR_TEIE
+} bdma_isr_type_t;
 
 typedef struct bdma_config_s {
     bool circular_mode;
@@ -197,10 +207,28 @@ typedef struct bdma_config_s {
     bool memory_increment;
     bdma_channel_prio_t priority;
     bdma_rqst_id_t request;
+    uint8_t *source_addr;
+    uint8_t *target_addr;
+    uint16_t data_count;
 } bdma_config_t;
 
 typedef DMA_TypeDef bdma_instance_t;
+typedef DMA_Channel_TypeDef bdma_channel_instance_t;
+
+typedef void (*bdma_isr_handler_t)(bdma_instance_t *dma, bdma_channel_instance_t *channel, uint32_t group_flags);
 
 ret_status bdma_config(bdma_instance_t *dma, bdma_chan_t channel, const bdma_config_t *config);
+
+ret_status bdma_enable(bdma_instance_t *dma, bdma_chan_t channel);
+
+ret_status bdma_enable_new_xfer(
+    bdma_instance_t *dma, bdma_chan_t channel, uint8_t *source_addr, uint8_t *target_addr, uint16_t data_count);
+
+ret_status bdma_enable_irq(const bdma_instance_t *dma, bdma_chan_t channel);
+
+ret_status bdma_config_irq(const bdma_instance_t *dma,
+                           bdma_chan_t channel,
+                           bdma_isr_type_t isr,
+                           bdma_isr_handler_t handler);
 
 #endif // BSP_DMA_H
