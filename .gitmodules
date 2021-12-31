@@ -3,13 +3,13 @@
 	url = git@github.com:FreeRTOS/FreeRTOS-Kernel.git
 [submodule "external/uCOS-III/uCOS-III-kernel"]
 	path = external/uCOS-III/uCOS-III-kernel
-	url = git@github.com:SiliconLabs/uC-OS3.git
+	url = git@gitlab.pablintino.com:third-party-packages/uc-os3.git
 [submodule "external/uCOS-III/uCOS-CPU"]
 	path = external/uCOS-III/uCOS-CPU
-	url = git@github.com:SiliconLabs/uC-CPU.git
+	url = git@gitlab.pablintino.com:third-party-packages/uc-cpu.git
 [submodule "external/uCOS-III/uCOS-LIB"]
 	path = external/uCOS-III/uCOS-LIB
-	url = git@github.com:SiliconLabs/uC-LIB.git
+	url = git@gitlab.pablintino.com:third-party-packages/uc-lib.git
 [submodule "external/STM32Cube/STM32Cube-Src"]
 	path = external/STM32Cube/STM32Cube-Src
 	url = git@github.com:STMicroelectronics/STM32CubeG4.git
