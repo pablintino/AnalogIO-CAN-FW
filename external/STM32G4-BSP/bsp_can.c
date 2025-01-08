@@ -5,48 +5,53 @@
  */
 
 #include "includes/bsp_can.h"
-#include "includes/bsp_tick.h"
-#include "includes/bsp_common_utils.h"
 #include "includes/bsp_clocks.h"
+#include "includes/bsp_common_utils.h"
 #include "includes/bsp_irq_manager.h"
+#include "includes/bsp_tick.h"
 #include "internal/bsp_can_internal.h"
-
 
 static const uint8_t __CAN_DLC_TO_BYTE_NUMBER[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 static const uint8_t __CAN_CLK_DIVIDERS[] = {1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30};
 
-static const uint32_t __CAN_ISR_GROUP_MASK[] = {0x00000007U, 0x00000038U, 0x000001C0U, 0x00001E00U, 0x0000E000U,
-                                                0x00030000U, 0x00FC0000U};
-
+static const uint32_t __CAN_ISR_GROUP_MASK[] = {
+    0x00000007U, 0x00000038U, 0x000001C0U, 0x00001E00U, 0x0000E000U, 0x00030000U, 0x00FC0000U};
 
 static void __bsp_can_irq_handler(bcan_instance_t *can);
 
-#ifdef FDCAN2
-
-static void __irq_handler_fdcan2_it0(void){
-    __bsp_can_irq_handler(FDCAN2);
-}
-
-static void __irq_handler_fdcan2_it1(void){
-    __bsp_can_irq_handler(FDCAN2);
-}
-
-static struct __bcan_irqs_state_s __bsp_can_internal_states[2U];
-
-#elif FDCAN3
-
-static void __irq_handler_fdcan3_it0(void){
-    __bsp_can_irq_handler(FDCAN3);
-}
-
-static void __irq_handler_fdcan3_it1(void){
-    __bsp_can_irq_handler(FDCAN3);
-}
-
+#ifdef FDCAN3
 static struct __bcan_irqs_state_s __bsp_can_internal_states[3U];
-
+#elif FDCAN2
+static struct __bcan_irqs_state_s __bsp_can_internal_states[2U];
 #else
+static struct __bcan_irqs_state_s __bsp_can_internal_states[1U];
+#endif
 
+#ifdef FDCAN2
+static void __irq_handler_fdcan2_it0(void)
+{
+    __bsp_can_irq_handler(FDCAN2);
+}
+
+static void __irq_handler_fdcan2_it1(void)
+{
+    __bsp_can_irq_handler(FDCAN2);
+}
+#endif
+
+#ifdef FDCAN3
+static void __irq_handler_fdcan3_it0(void)
+{
+    __bsp_can_irq_handler(FDCAN3);
+}
+
+static void __irq_handler_fdcan3_it1(void)
+{
+    __bsp_can_irq_handler(FDCAN3);
+}
+#endif
+
+#ifdef FDCAN1
 static void __irq_handler_fdcan1_it0(void)
 {
     __bsp_can_irq_handler(FDCAN1);
@@ -56,19 +61,17 @@ static void __irq_handler_fdcan1_it1(void)
 {
     __bsp_can_irq_handler(FDCAN1);
 }
-
-static struct __bcan_irqs_state_s __bsp_can_internal_states[1U];
 #endif
-
 
 static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bcan_config_t *config);
 
-static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader, const uint8_t *pTxData,
+static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader,
+                                      const uint8_t *pTxData,
                                       volatile struct __bcan_ram_tx_fifo_element_s *message_ram);
 
-static void
-__bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *message, bcan_rx_metadata_t *rx_metadata,
-                            uint8_t *rx_data);
+static void __bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *message,
+                                        bcan_rx_metadata_t *rx_metadata,
+                                        uint8_t *rx_data);
 
 static ret_status __get_can_input_frequency(uint32_t *freq);
 
@@ -78,8 +81,7 @@ static inline struct __bcan_ram_s *__bsp_can_get_instance_base_address(bcan_inst
 
 static inline void __bsp_can_ensure_isr_line_active(bcan_instance_t *can);
 
-static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group);
-
+static inline ret_status __bsp_can_conf_validate_isr_group(bcan_isr_group_t isr_group);
 
 /**
  *
@@ -111,8 +113,7 @@ static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e
  *     After configuring the given FDCAN instance the peripheral remains in "SW initialization" state. To put the
  *     instance in normal mode ::bcan_start should be called.
  */
-ret_status
-bcan_config(bcan_instance_t *can, const bcan_config_t *config)
+ret_status bcan_config(bcan_instance_t *can, const bcan_config_t *config)
 {
 
     if (can == NULL || config == NULL) {
@@ -123,14 +124,14 @@ bcan_config(bcan_instance_t *can, const bcan_config_t *config)
 
     /*Request initialization mode of the CAN peripheral */
     __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_INIT);
-    ret_status status = BSP_UTIL_wait_flag_status(&can->CCCR, FDCAN_CCCR_INIT, FDCAN_CCCR_INIT, start_tick, 25U);
+    ret_status status = butil_wait_flag_status(&can->CCCR, FDCAN_CCCR_INIT, FDCAN_CCCR_INIT, start_tick, 25U);
     if (status != STATUS_OK) {
         return status;
     }
 
     /* Request unlock of configuration registers */
     __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_CCE);
-    status = BSP_UTIL_wait_flag_status(&can->CCCR, FDCAN_CCCR_CCE, FDCAN_CCCR_CCE, start_tick, 25U);
+    status = butil_wait_flag_status(&can->CCCR, FDCAN_CCCR_CCE, FDCAN_CCCR_CCE, start_tick, 25U);
     if (status != STATUS_OK) {
         return status;
     }
@@ -142,7 +143,8 @@ bcan_config(bcan_instance_t *can, const bcan_config_t *config)
         __BSP_SET_MASKED_REG(can->CCCR, FDCAN_CCCR_DAR);
     }
 
-    /* TODO: Now only Classic CAN is supported: Disable FDCAN operation, baudrate switching and exception handling (used only in FD operation) */
+    /* TODO: Now only Classic CAN is supported: Disable FDCAN operation, baudrate switching and exception handling (used
+     * only in FD operation) */
     __BSP_CLEAR_MASKED_REG(can->CCCR, FDCAN_CCCR_FDOE | FDCAN_CCCR_BRSE | FDCAN_CCCR_PXHD);
 
     /* If monitor mode has been selected just turn it on */
@@ -166,7 +168,6 @@ bcan_config(bcan_instance_t *can, const bcan_config_t *config)
                  (((config->timing.phase2 & 0x7F) - 1U) << FDCAN_NBTP_NTSEG2_Pos) |
                  (((config->timing.prescaler & 0x01FF) - 1U) << FDCAN_NBTP_NBRP_Pos));
 
-
     __BSP_SET_MASKED_REG_VALUE(can->TXBC, FDCAN_TXBC_TFQM, config->tx_mode);
 
     __bsp_can_configure_global_filtering(can, config);
@@ -178,17 +179,15 @@ bcan_config(bcan_instance_t *can, const bcan_config_t *config)
     }
 
     /* Flush the allocated Message RAM area */
-    for (uint32_t *raw_ram_ptr = (uint32_t *) instance_ram;
-         raw_ram_ptr < (uint32_t *) (instance_ram + 1); raw_ram_ptr++) {
+    for (uint32_t *raw_ram_ptr = (uint32_t *)instance_ram; raw_ram_ptr < (uint32_t *)(instance_ram + 1);
+         raw_ram_ptr++) {
         *raw_ram_ptr = 0x00000000U;
     }
 
     return STATUS_OK;
 }
 
-
-ret_status
-bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index)
+ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index)
 {
 
     /* Obtain the portion of RAM mapped to the FDCAN selected instance */
@@ -217,10 +216,9 @@ bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *fil
     }
 
     /* Add the filter itself */
-    instance_ram->standard_filters[index] = ((filter->type << BSP_CAN_STD_FILTER_TYPE_Pos) |
-                                             (filter->action << BSP_CAN_STD_FILTER_CONFIG_Pos) |
-                                             (filter->standard_id1 << 16) |
-                                             (filter->standard_id2));
+    instance_ram->standard_filters[index] =
+        ((filter->type << BSP_CAN_STD_FILTER_TYPE_Pos) | (filter->action << BSP_CAN_STD_FILTER_CONFIG_Pos) |
+         (filter->standard_id1 << 16) | (filter->standard_id2));
 
     /* Update the number of active filters in filters global register */
     __BSP_SET_MASKED_REG_VALUE(can->RXGFC, FDCAN_RXGFC_LSS, ((++number_of_filters) << FDCAN_RXGFC_LSS_Pos));
@@ -228,9 +226,7 @@ bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *fil
     return STATUS_OK;
 }
 
-
-ret_status
-bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data)
+ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data)
 {
 
     /* Simple validation to avoid NULL pointers */
@@ -256,15 +252,15 @@ bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata,
     __bsp_copy_message_to_ram(tx_metadata, tx_data, &instance_ram->tx_fifoq[tx_index]);
 
     /* Activate the corresponding transmission request */
-    __BSP_SET_REG_VALUE(can->TXBAR, ((uint32_t) 1 << tx_index));
+    __BSP_SET_REG_VALUE(can->TXBAR, ((uint32_t)1 << tx_index));
 
     return STATUS_OK;
 }
 
-
-ret_status
-bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_metadata_t *rx_metadata,
-                    uint8_t *rx_data)
+ret_status bcan_get_rx_message(bcan_instance_t *can,
+                               bcan_rx_queue_t queue,
+                               bcan_rx_metadata_t *rx_metadata,
+                               uint8_t *rx_data)
 {
 
     /* Simple validation to avoid NULL pointers */
@@ -275,7 +271,6 @@ bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_me
     volatile struct __bcan_ram_rx_fifo_element_s *message;
     struct __bcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
     uint8_t fifo_index;
-
 
     if (queue == BCAN_RX_QUEUE_O) {
         if ((can->RXF0S & FDCAN_RXF0S_F0FL) == 0) {
@@ -293,7 +288,6 @@ bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_me
         return STATUS_ERR;
     }
 
-
     __bsp_copy_message_from_ram(message, rx_metadata, rx_data);
 
     /* Just tell the underlying HW that we have read the message */
@@ -306,15 +300,13 @@ bcan_get_rx_message(bcan_instance_t *can, enum bcan_rx_queue_e queue, bcan_rx_me
     return STATUS_OK;
 }
 
-
 /** @brief Starts the given CAN peripheral getting the peripheral out of the software initialization state to one of the
  * possible final states. Check RM0440 to see all the possible final states.
  *
  *  @param can The instance of the peripheral to be started.
  *  @return the result of the operation. ::STATUS_OK if no error has occurred, other otherwise.
  */
-ret_status
-bcan_start(bcan_instance_t *can)
+ret_status bcan_start(bcan_instance_t *can)
 {
     if (can == NULL) {
         return STATUS_ERR;
@@ -324,17 +316,13 @@ bcan_start(bcan_instance_t *can)
     return STATUS_OK;
 }
 
-
-ret_status
-bcan_config_clk_source(enum bcan_clock_source_e clock_source)
+ret_status bcan_config_clk_source(bcan_clock_source_t clock_source)
 {
     __BSP_SET_MASKED_REG_VALUE(RCC->CCIPR, RCC_CCIPR_FDCANSEL, clock_source << RCC_CCIPR_FDCANSEL_Pos);
     return STATUS_OK;
 }
 
-
-ret_status
-bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate)
+ret_status bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate)
 {
 
     if (can == NULL || baudrate == NULL) {
@@ -351,14 +339,12 @@ bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate)
 
     uint32_t bit_samples = (((can->NBTP & FDCAN_NBTP_NTSEG1) >> FDCAN_NBTP_NTSEG1_Pos) + 1U) +
                            (((can->NBTP & FDCAN_NBTP_NTSEG2) >> FDCAN_NBTP_NTSEG2_Pos) + 1U) + 1U;
-    *baudrate = input_freq / (float) ((((can->NBTP & FDCAN_NBTP_NBRP) >> FDCAN_NBTP_NBRP_Pos) + 1U) * bit_samples);
+    *baudrate = input_freq / (float)((((can->NBTP & FDCAN_NBTP_NBRP) >> FDCAN_NBTP_NBRP_Pos) + 1U) * bit_samples);
 
     return STATUS_OK;
 }
 
-
-ret_status
-bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum bcan_isr_line_e isr_line)
+ret_status bcan_config_irq_line(bcan_instance_t *can, bcan_isr_group_t isr_group, bcan_isr_line_t isr_line)
 {
 
     if (can == NULL || (isr_line != BCAN_ISR_LINE_0 && isr_line != BCAN_ISR_LINE_1) ||
@@ -375,12 +361,9 @@ bcan_config_irq_line(bcan_instance_t *can, enum bcan_isr_group_e isr_group, enum
     __bsp_can_ensure_isr_line_active(can);
 
     return STATUS_OK;
-
 }
 
-
-ret_status
-bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler handler)
+ret_status bcan_config_irq(bcan_instance_t *can, bcan_irq_type_t irq, bcan_isr_handler handler)
 {
 
     if (irq > FDCAN_IE_ARAE_Pos || handler == NULL || can == NULL) {
@@ -398,8 +381,7 @@ bcan_config_irq(bcan_instance_t *can, enum bcan_irq_type_e irq, bcan_isr_handler
     return STATUS_OK;
 }
 
-ret_status
-bcan_enable_irqs(bcan_instance_t *can)
+ret_status bcan_enable_irqs(bcan_instance_t *can)
 {
 
     if (can == NULL) {
@@ -407,54 +389,52 @@ bcan_enable_irqs(bcan_instance_t *can)
     }
 
 #if defined(FDCAN2)
-    if (can == FDCAN2)
-  {
+    if (can == FDCAN2) {
 
-     bool irq_enabled;
+        bool irq_enabled;
         BSP_IRQ_is_enabled(FDCAN2_IT0_IRQn, &irq_enabled);
-        if(!irq_enabled){
+        if (!irq_enabled) {
             BSP_IRQ_set_handler(FDCAN2_IT0_IRQn, __irq_handler_fdcan2_it0);
             BSP_IRQ_enable_irq(FDCAN2_IT0_IRQn);
         }
 
         BSP_IRQ_is_enabled(FDCAN2_IT1_IRQn, &irq_enabled);
-        if(!irq_enabled){
+        if (!irq_enabled) {
             BSP_IRQ_set_handler(FDCAN2_IT1_IRQn, __irq_handler_fdcan2_it1);
             BSP_IRQ_enable_irq(FDCAN2_IT1_IRQn);
         }
-  }
+    }
 #endif
 #if defined(FDCAN3)
-    if (can == FDCAN3)
-  {
+    if (can == FDCAN3) {
 
-     bool irq_enabled;
+        bool irq_enabled;
         BSP_IRQ_is_enabled(FDCAN3_IT0_IRQn, &irq_enabled);
-        if(!irq_enabled){
+        if (!irq_enabled) {
             BSP_IRQ_set_handler(FDCAN3_IT0_IRQn, __irq_handler_fdcan3_it0);
             BSP_IRQ_enable_irq(FDCAN3_IT0_IRQn);
         }
 
         BSP_IRQ_is_enabled(FDCAN3_IT1_IRQn, &irq_enabled);
-        if(!irq_enabled){
+        if (!irq_enabled) {
             BSP_IRQ_set_handler(FDCAN3_IT1_IRQn, __irq_handler_fdcan3_it1);
             BSP_IRQ_enable_irq(FDCAN3_IT1_IRQn);
         }
-  }
+    }
 #endif
     if (can == FDCAN1) {
 
         bool irq_enabled;
-        BSP_IRQ_is_enabled(FDCAN1_IT0_IRQn, &irq_enabled);
+        birq_is_enabled(FDCAN1_IT0_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(FDCAN1_IT0_IRQn, __irq_handler_fdcan1_it0);
-            BSP_IRQ_enable_irq(FDCAN1_IT0_IRQn);
+            birq_set_handler(FDCAN1_IT0_IRQn, __irq_handler_fdcan1_it0);
+            birq_enable_irq(FDCAN1_IT0_IRQn);
         }
 
-        BSP_IRQ_is_enabled(FDCAN1_IT1_IRQn, &irq_enabled);
+        birq_is_enabled(FDCAN1_IT1_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(FDCAN1_IT1_IRQn, __irq_handler_fdcan1_it1);
-            BSP_IRQ_enable_irq(FDCAN1_IT1_IRQn);
+            birq_set_handler(FDCAN1_IT1_IRQn, __irq_handler_fdcan1_it1);
+            birq_enable_irq(FDCAN1_IT1_IRQn);
         }
     }
 
@@ -481,55 +461,51 @@ static ret_status __get_can_input_frequency(uint32_t *freq)
     if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_HSE << RCC_CCIPR_FDCANSEL_Pos)) {
         *freq = BSP_HSE_VALUE;
     } else if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_PLLQ << RCC_CCIPR_FDCANSEL_Pos)) {
-        *freq = BSP_CLK_get_pllq_freq();
+        *freq = bclk_get_pllq_freq();
     } else if ((RCC->CCIPR & RCC_CCIPR_FDCANSEL) == (BCAN_CLK_PCLK1 << RCC_CCIPR_FDCANSEL_Pos)) {
-        *freq = BSP_CLK_get_pclk1_freq();
+        *freq = bclk_get_pclk1_freq();
     } else {
         return STATUS_ERR;
     }
     return STATUS_OK;
 }
 
-
 static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bcan_config_t *config)
 {
 
-    __BSP_SET_MASKED_REG_VALUE(can->RXGFC, FDCAN_RXGFC_RRFS | FDCAN_RXGFC_ANFS,
+    __BSP_SET_MASKED_REG_VALUE(can->RXGFC,
+                               FDCAN_RXGFC_RRFS | FDCAN_RXGFC_ANFS,
                                (config->global_filters.reject_remote_standard ? FDCAN_RXGFC_RRFS : 0x00U) |
-                               config->global_filters.non_matching_standard_action);
-
+                                   config->global_filters.non_matching_standard_action);
 }
 
-
-static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader, const uint8_t *pTxData,
+static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader,
+                                      const uint8_t *pTxData,
                                       volatile struct __bcan_ram_tx_fifo_element_s *message_ram)
 {
     /* If ID is larger than 11 bits the message is sent using extended 29 bits IDs */
-    uint32_t extended_id_xtd =
-            (pTxHeader->id & 0xFFFFF800) ? FDCAN_ELEMENT_MASK_XTD : 0x00U;
+    uint32_t extended_id_xtd = (pTxHeader->id & 0xFFFFF800) ? FDCAN_ELEMENT_MASK_XTD : 0x00U;
 
     /* Write Tx element header to the message RAM */
-    message_ram->header_word1 =
-            (pTxHeader->is_rtr ? (1 << 30) : 0x00000000U) | (pTxHeader->id << (extended_id_xtd ? 0 : 18U)) |
-            extended_id_xtd;
-    message_ram->header_word2 =
-            (pTxHeader->message_marker << 24U) | (pTxHeader->store_tx_events ? (1 << 23) : 0x00000000U) |
-            (pTxHeader->size_b << 16);
+    message_ram->header_word1 = (pTxHeader->is_rtr ? (1 << 30) : 0x00000000U) |
+                                (pTxHeader->id << (extended_id_xtd ? 0 : 18U)) | extended_id_xtd;
+
+    const uint8_t message_size = pTxHeader->size_b & 0x0FU;
+    message_ram->header_word2 = (pTxHeader->message_marker << 24U) |
+                                (pTxHeader->store_tx_events ? (1 << 23) : 0x00000000U) | (message_size << 16);
 
     uint8_t element_counter = 0;
     /* Write Tx payload to the message RAM */
-    for (uint32_t byte_n = 0; byte_n < __CAN_DLC_TO_BYTE_NUMBER[pTxHeader->size_b]; byte_n += 4U) {
-        message_ram->message_payload[element_counter] = ((pTxData[byte_n + 3U] << 24U) |
-                                                         (pTxData[byte_n + 2U] << 16U) |
+    for (uint32_t byte_n = 0; byte_n < __CAN_DLC_TO_BYTE_NUMBER[message_size]; byte_n += 4U) {
+        message_ram->message_payload[element_counter] = ((pTxData[byte_n + 3U] << 24U) | (pTxData[byte_n + 2U] << 16U) |
                                                          (pTxData[byte_n + 1U] << 8U) | pTxData[byte_n]);
         element_counter++;
     }
 }
 
-
-static void
-__bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *message, bcan_rx_metadata_t *rx_metadata,
-                            uint8_t *rx_data)
+static void __bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *message,
+                                        bcan_rx_metadata_t *rx_metadata,
+                                        uint8_t *rx_data)
 {
 
     /* Retrieve Identifier */
@@ -549,27 +525,23 @@ __bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *messag
     rx_metadata->matched_filter_index = ((message->header_word2 & FDCAN_ELEMENT_MASK_FIDX) >> 24U);
     rx_metadata->non_matching_element = ((message->header_word2 & FDCAN_ELEMENT_MASK_ANMF) == FDCAN_ELEMENT_MASK_ANMF);
 
-
-    uint8_t *pData = (uint8_t *) &message->message_payload;
+    uint8_t *pData = (uint8_t *)&message->message_payload;
     for (uint32_t byte_n = 0; byte_n < __CAN_DLC_TO_BYTE_NUMBER[rx_metadata->size_b]; byte_n++) {
         rx_data[byte_n] = pData[byte_n];
     }
 }
 
-
 static inline struct __bcan_irqs_state_s *__bsp_can_get_instance_state(bcan_instance_t *can)
 {
 #if defined(FDCAN2)
-    if (can == FDCAN2)
-      {
+    if (can == FDCAN2) {
         return &__bsp_can_internal_states[1U];
-      }
+    }
 #endif
 #if defined(FDCAN3)
-    if (can == FDCAN3)
-      {
+    if (can == FDCAN3) {
         return &__bsp_can_internal_states[2U];
-      }
+    }
 #endif
     if (can == FDCAN1) {
         return &__bsp_can_internal_states[0U];
@@ -577,44 +549,36 @@ static inline struct __bcan_irqs_state_s *__bsp_can_get_instance_state(bcan_inst
     return NULL;
 }
 
-
 static inline struct __bcan_ram_s *__bsp_can_get_instance_base_address(bcan_instance_t *can)
 {
 
     if (can == FDCAN1) {
-        return (struct __bcan_ram_s *) SRAMCAN_BASE;
+        return (struct __bcan_ram_s *)SRAMCAN_BASE;
     }
 
 #if defined(FDCAN2)
-    if (can == FDCAN2)
-  {
-    return (__bsp_fdcan_ram_t *) (SRAMCAN_BASE + SRAMCAN_SIZE);
-  }
+    if (can == FDCAN2) {
+        return (__bsp_fdcan_ram_t *)(SRAMCAN_BASE + SRAMCAN_SIZE);
+    }
 #endif
 #if defined(FDCAN3)
-    if (can == FDCAN3)
-  {
-    return (__bsp_fdcan_ram_t *) (SRAMCAN_BASE + SRAMCAN_SIZE * 2U);
-  }
+    if (can == FDCAN3) {
+        return (__bsp_fdcan_ram_t *)(SRAMCAN_BASE + SRAMCAN_SIZE * 2U);
+    }
 #endif
     return NULL;
 }
 
-
-static inline ret_status __bsp_can_conf_validate_isr_group(enum bcan_isr_group_e isr_group)
+static inline ret_status __bsp_can_conf_validate_isr_group(bcan_isr_group_t isr_group)
 {
-    return (
-                   isr_group != BCAN_ISR_GROUP_RXFIFO0 &&
-                   isr_group != BCAN_ISR_GROUP_RXFIFO1 &&
-                   isr_group != BCAN_ISR_GROUP_SMSG &&
-                   isr_group != BCAN_ISR_GROUP_TFERR &&
-                   isr_group != BCAN_ISR_GROUP_MISC &&
-                   isr_group != BCAN_ISR_GROUP_BERR &&
-                           isr_group != BCAN_ISR_GROUP_PERR
+    return (isr_group != BCAN_ISR_GROUP_RXFIFO0 && isr_group != BCAN_ISR_GROUP_RXFIFO1 &&
+            isr_group != BCAN_ISR_GROUP_SMSG && isr_group != BCAN_ISR_GROUP_TFERR && isr_group != BCAN_ISR_GROUP_MISC &&
+            isr_group != BCAN_ISR_GROUP_BERR && isr_group != BCAN_ISR_GROUP_PERR
 
-           ) ? STATUS_ERR : STATUS_OK;
+            )
+               ? STATUS_ERR
+               : STATUS_OK;
 }
-
 
 static void __bsp_can_irq_handler(bcan_instance_t *can)
 {

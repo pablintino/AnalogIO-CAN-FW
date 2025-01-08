@@ -4,53 +4,51 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#include "includes/bsp_io.h"
 #include "includes/bsp_i2c.h"
-#include "includes/bsp_tick.h"
 #include "includes/bsp_clocks.h"
 #include "includes/bsp_common_utils.h"
-
+#include "includes/bsp_io.h"
+#include "includes/bsp_tick.h"
 
 #define __BSP_I2C_MAX_TRANSFER_SIZE 255U
 
-
 /**
  * This matrix allows I2C peripheral to be configured based on pre-calculated speeds for various well known frequencies.
- * The first index indicates the peripheral speed whereas the second one represents the speed mode (standard, full or fast modes)
+ * The first index indicates the peripheral speed whereas the second one represents the speed mode (standard, full or
+ * fast modes)
  */
-const uint32_t __TIMING_REGISTER_CONFIG_VALUES[7][3] = {{0x2000090EU, 0x0000020BU, 0x00000001U}, /** 8 MHz */
-                                                        {0x00303D5BU, 0x0010061AU, 0x00000107U}, /** 16 MHz */
-                                                        {0x00506682U, 0x00200C28U, 0x0010030DU}, /** 24 MHz */
-                                                        {0x20303E5DU, 0x2010091AU, 0x20000209U}, /** 48 MHz */
-                                                        {0x10B0DCFBU, 0x009032AEU, 0x0040163AU}, /** 96 MHz */
-                                                        {0x20A0C4DFU, 0x2040184BU, 0x00601C51U}, /** 128 MHz */
-                                                        {0x30A0A7FBU, 0x10802D9BU, 0x00802172U}, /** 170 MHz */
+const uint32_t __TIMING_REGISTER_CONFIG_VALUES[7][3] = {
+    {0x2000090EU, 0x0000020BU, 0x00000001U}, /** 8 MHz */
+    {0x00303D5BU, 0x0010061AU, 0x00000107U}, /** 16 MHz */
+    {0x00506682U, 0x00200C28U, 0x0010030DU}, /** 24 MHz */
+    {0x20303E5DU, 0x2010091AU, 0x20000209U}, /** 48 MHz */
+    {0x10B0DCFBU, 0x009032AEU, 0x0040163AU}, /** 96 MHz */
+    {0x20A0C4DFU, 0x2040184BU, 0x00601C51U}, /** 128 MHz */
+    {0x30A0A7FBU, 0x10802D9BU, 0x00802172U}, /** 170 MHz */
 
 };
 
+static ret_status __get_i2c_input_frequency(bi2c_instance *i2c, uint32_t *freq);
 
-static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *freq);
+static ret_status __get_i2c_clk_mux_position(bi2c_instance *i2c, uint8_t *position, volatile uint32_t **ccipr);
 
-static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, volatile uint32_t **ccipr);
+static ret_status __configure_i2c_timmings(bi2c_instance *i2c, const bsp_i2c_master_config_t *config);
 
-static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, const bsp_i2c_master_config_t *config);
+static uint8_t __start_i2c_transfer(
+    bi2c_instance *i2c, uint16_t address, uint16_t transfer_size, bool write_transfer, bool is_reload_transfer);
 
-static uint8_t
-__start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_size, bool write_transfer,
-                     bool is_reload_transfer);
+static ret_status __wait_for_isr_flag_or_nack(bi2c_instance *i2c, uint32_t flag, uint32_t timeout, uint32_t start_tick);
 
-static ret_status
-__wait_for_isr_flag_or_nack(BSP_I2C_Instance *i2c, uint32_t flag, uint32_t timeout, uint32_t start_tick);
+static ret_status __wait_for_empty_rx(bi2c_instance *i2c,
+                                      uint32_t timeout,
+                                      uint32_t start_tick,
+                                      uint32_t pending_bytes);
 
-static ret_status
-__wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick, uint32_t pending_bytes);
+static ret_status __is_nack_condition_present(bi2c_instance *i2c, uint32_t timeout, uint32_t start_tick);
 
-static ret_status __is_nack_condition_present(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick);
+static void __clean_txd_txis_flag(bi2c_instance *hi2c);
 
-static void __clean_txd_txis_flag(BSP_I2C_Instance *hi2c);
-
-
-ret_status bi2c_master_config(BSP_I2C_Instance *i2c, const bsp_i2c_master_config_t *config)
+ret_status bi2c_master_config(bi2c_instance *i2c, const bsp_i2c_master_config_t *config)
 {
 
     /* Most configurations cannot be done if the I2C peripheral is enabled */
@@ -91,27 +89,23 @@ ret_status bi2c_master_config(BSP_I2C_Instance *i2c, const bsp_i2c_master_config
     return STATUS_OK;
 }
 
-
-void bi2c_enable(BSP_I2C_Instance *i2c)
+void bi2c_enable(bi2c_instance *i2c)
 {
     __BSP_SET_MASKED_REG(i2c->CR1, I2C_CR1_PE);
 }
 
-
-void bi2c_disable(BSP_I2C_Instance *i2c)
+void bi2c_disable(bi2c_instance *i2c)
 {
     __BSP_CLEAR_MASKED_REG(i2c->CR1, I2C_CR1_PE);
 }
 
-
-ret_status
-bi2c_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, uint16_t size, bool is_write,
-                     uint32_t timeout)
+ret_status bi2c_master_transfer(
+    bi2c_instance *i2c, uint16_t address, uint8_t *data, uint16_t size, bool is_write, uint32_t timeout)
 {
-    uint32_t tickstart = btick_get_ticks();
-    uint8_t *pBuffPtr = pData;
+    const uint32_t tickstart = btick_get_ticks();
+    uint8_t *pBuffPtr = data;
 
-    ret_status status = BSP_UTIL_wait_flag_status(&i2c->ISR, I2C_ISR_BUSY, 0x00U, tickstart, 25U);
+    ret_status status = butil_wait_flag_status(&i2c->ISR, I2C_ISR_BUSY, 0x00U, tickstart, 25U);
     if (status != STATUS_OK) {
         return status;
     }
@@ -131,7 +125,7 @@ bi2c_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, ui
         } else {
             status = __wait_for_empty_rx(i2c, timeout, tickstart, transfer_block_size);
             if (status == STATUS_OK) {
-                *pBuffPtr = (uint8_t) (i2c->RXDR & 0xFF);
+                *pBuffPtr = (uint8_t)(i2c->RXDR & 0xFF);
             } else {
                 return status;
             }
@@ -145,7 +139,7 @@ bi2c_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, ui
 
         if ((transfer_count != 0U) && (transfer_block_size == 0U)) {
             /* Wait until TCR flag is set */
-            status = BSP_UTIL_wait_flag_status(&i2c->ISR, I2C_ISR_TCR, 0x00U, tickstart, 25U);
+            status = butil_wait_flag_status(&i2c->ISR, I2C_ISR_TCR, 0x00U, tickstart, 25U);
             if (status != STATUS_OK) {
                 return status;
             }
@@ -172,8 +166,7 @@ bi2c_master_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint8_t *pData, ui
     return status;
 }
 
-
-static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, const bsp_i2c_master_config_t *config)
+static ret_status __configure_i2c_timmings(bi2c_instance *i2c, const bsp_i2c_master_config_t *config)
 {
     uint32_t freq = 0;
 
@@ -181,29 +174,29 @@ static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, const bsp_i2c_
         i2c->TIMINGR = config->custom_timming;
     } else if ((config->fixed_speed != BSP_I2C_SPEED_NONE) && __get_i2c_input_frequency(i2c, &freq) != STATUS_ERR) {
         switch (freq) {
-            case 8000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[0][(config->fixed_speed - 1) & 0x03U];
-                break;
-            case 16000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[1][(config->fixed_speed - 1) & 0x03U];
-                break;
-            case 24000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[2][(config->fixed_speed - 1) & 0x03U];
-                break;
-            case 48000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[3][(config->fixed_speed - 1) & 0x03U];
-                break;
-            case 96000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[4][(config->fixed_speed - 1) & 0x03U];
-                break;
-            case 128000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[5][(config->fixed_speed - 1) & 0x03U];
-                break;
-            case 170000000U:
-                i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[6][(config->fixed_speed - 1) & 0x03U];
-                break;
-            default:
-                return STATUS_ERR;
+        case 8000000U:
+            i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[0][(config->fixed_speed - 1) & 0x03U];
+            break;
+        case 16000000U:
+            i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[1][(config->fixed_speed - 1) & 0x03U];
+            break;
+        case 24000000U:
+            i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[2][(config->fixed_speed - 1) & 0x03U];
+            break;
+        case 48000000U:
+            i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[3][(config->fixed_speed - 1) & 0x03U];
+            break;
+        case 96000000U:
+            i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[4][(config->fixed_speed - 1) & 0x03U];
+            break;
+        case 128000000U:
+            i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[5][(config->fixed_speed - 1) & 0x03U];
+            break;
+        case 170000000U:
+            i2c->TIMINGR = __TIMING_REGISTER_CONFIG_VALUES[6][(config->fixed_speed - 1) & 0x03U];
+            break;
+        default:
+            return STATUS_ERR;
         }
 
     } else {
@@ -212,8 +205,7 @@ static ret_status __configure_i2c_timmings(BSP_I2C_Instance *i2c, const bsp_i2c_
     return STATUS_OK;
 }
 
-
-static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *position, volatile uint32_t **ccipr)
+static ret_status __get_i2c_clk_mux_position(bi2c_instance *i2c, uint8_t *position, volatile uint32_t **ccipr)
 {
     *ccipr = &RCC->CCIPR;
     if (i2c == I2C1) {
@@ -223,7 +215,7 @@ static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *pos
     } else if (i2c == I2C3) {
         *position = RCC_CCIPR_I2C3SEL_Pos;
 #if defined(I2C4)
-        }else if (i2c == I2C4){
+    } else if (i2c == I2C4) {
         position = RCC_CCIPR2_I2C4SEL_Pos;
         *ccipr = RCC->CCIPR2;
 #endif
@@ -233,8 +225,7 @@ static ret_status __get_i2c_clk_mux_position(BSP_I2C_Instance *i2c, uint8_t *pos
     return STATUS_OK;
 }
 
-
-static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *freq)
+static ret_status __get_i2c_input_frequency(bi2c_instance *i2c, uint32_t *freq)
 {
     uint8_t position;
     volatile uint32_t *ccipr;
@@ -242,55 +233,51 @@ static ret_status __get_i2c_input_frequency(BSP_I2C_Instance *i2c, uint32_t *fre
         return STATUS_ERR;
     }
 
-    if (((*ccipr) & (0x03U << position)) == (uint32_t) (BSP_I2C_CLK_HSI << position)) {
+    if (((*ccipr) & (0x03U << position)) == (uint32_t)(BSP_I2C_CLK_HSI << position)) {
         *freq = BSP_CLK_HSI_VALUE;
-    } else if (((*ccipr) & (0x03U << position)) == (uint32_t) (BSP_I2C_CLK_PCLK << position)) {
-        *freq = BSP_CLK_get_pclk1_freq();
-    } else if (((*ccipr) & (0x03U << position)) == (uint32_t) (BSP_I2C_CLK_SYSCLK << position)) {
-        *freq = BSP_CLK_get_sysclk_freq();
+    } else if (((*ccipr) & (0x03U << position)) == (uint32_t)(BSP_I2C_CLK_PCLK << position)) {
+        *freq = bclk_get_pclk1_freq();
+    } else if (((*ccipr) & (0x03U << position)) == (uint32_t)(BSP_I2C_CLK_SYSCLK << position)) {
+        *freq = bclk_get_sysclk_freq();
     } else {
         return STATUS_ERR;
     }
     return STATUS_OK;
 }
 
-
-static uint8_t
-__start_i2c_transfer(BSP_I2C_Instance *i2c, uint16_t address, uint16_t transfer_size, bool write_transfer,
-                     bool is_reload_transfer)
+static uint8_t __start_i2c_transfer(
+    bi2c_instance *i2c, uint16_t address, uint16_t transfer_size, bool write_transfer, bool is_reload_transfer)
 {
-    /** Peripheral allows only 255 transfers. Bigger transfers can be accomplished by manually reloading the whole peripheral
-     * using the proper RELOAD bit in CR2.
+    /** Peripheral allows only 255 transfers. Bigger transfers can be accomplished by manually reloading the whole
+     * peripheral using the proper RELOAD bit in CR2.
      */
-    uint8_t actual_transfer_size =
-            transfer_size > __BSP_I2C_MAX_TRANSFER_SIZE ? __BSP_I2C_MAX_TRANSFER_SIZE : transfer_size;
+    const uint8_t actual_transfer_size = transfer_size > __BSP_I2C_MAX_TRANSFER_SIZE ? __BSP_I2C_MAX_TRANSFER_SIZE
+                                                                                     : transfer_size;
 
-    __BSP_SET_MASKED_REG_VALUE(i2c->CR2,
-    /** If the transfer is a write one clear RD_WRN */
-                               (write_transfer ? I2C_CR2_RD_WRN : 0x00) |
-                               I2C_CR2_STOP | I2C_CR2_START | I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD |
-                               I2C_CR2_AUTOEND,
-    /** Write the slave address in which we want to read/write */
-                               ((address << I2C_CR2_SADD_Pos) & I2C_CR2_SADD_Msk) |
-                               /** Simply indicate the number of bytes to transfer (always less than 256) */
-                               ((actual_transfer_size << I2C_CR2_NBYTES_Pos) & I2C_CR2_NBYTES_Msk) |
-                               /** If we want to read ensure to set RD_WRN */
-                               (write_transfer ? 0x00 : I2C_CR2_RD_WRN) |
-                               /** Flag start to indicate HW that start condition should be placed on bus just now.
-                                * Note that if this transfer is not the first one (can be part of a transfer of more than 255 bytes
-                                * START should not be performed on bus as it can break the whole transfer*/
-                               (is_reload_transfer ? 0x00 : I2C_CR2_START) |
-                               /** If transfer size is bigger that 255 the peripheral shouldn't end the transfer with a
-                                * STOP cause we'll reload with the remaining data
-                                */
-                               (transfer_size > __BSP_I2C_MAX_TRANSFER_SIZE ? I2C_CR2_RELOAD : I2C_CR2_AUTOEND));
+    __BSP_SET_MASKED_REG_VALUE(
+        i2c->CR2,
+        /** If the transfer is a write one clear RD_WRN */
+        (write_transfer ? I2C_CR2_RD_WRN : 0x00) | I2C_CR2_STOP | I2C_CR2_START | I2C_CR2_SADD | I2C_CR2_NBYTES |
+            I2C_CR2_RELOAD | I2C_CR2_AUTOEND,
+        /** Write the slave address in which we want to read/write */
+        ((address << I2C_CR2_SADD_Pos) & I2C_CR2_SADD_Msk) |
+            /** Simply indicate the number of bytes to transfer (always less than 256) */
+            ((actual_transfer_size << I2C_CR2_NBYTES_Pos) & I2C_CR2_NBYTES_Msk) |
+            /** If we want to read ensure to set RD_WRN */
+            (write_transfer ? 0x00 : I2C_CR2_RD_WRN) |
+            /** Flag start to indicate HW that start condition should be placed on bus just now.
+             * Note that if this transfer is not the first one (can be part of a transfer of more than 255 bytes
+             * START should not be performed on bus as it can break the whole transfer*/
+            (is_reload_transfer ? 0x00 : I2C_CR2_START) |
+            /** If transfer size is bigger that 255 the peripheral shouldn't end the transfer with a
+             * STOP cause we'll reload with the remaining data
+             */
+            (transfer_size > __BSP_I2C_MAX_TRANSFER_SIZE ? I2C_CR2_RELOAD : I2C_CR2_AUTOEND));
 
     return actual_transfer_size;
 }
 
-
-static ret_status
-__wait_for_isr_flag_or_nack(BSP_I2C_Instance *i2c, uint32_t flag, uint32_t timeout, uint32_t start_tick)
+static ret_status __wait_for_isr_flag_or_nack(bi2c_instance *i2c, uint32_t flag, uint32_t timeout, uint32_t start_tick)
 {
     while (!__BSP_IS_FLAG_SET(i2c->ISR, flag)) {
         /* Just check if the other party has sent us a NACK cause that means the transfer has been aborted */
@@ -306,9 +293,7 @@ __wait_for_isr_flag_or_nack(BSP_I2C_Instance *i2c, uint32_t flag, uint32_t timeo
     return STATUS_OK;
 }
 
-
-static ret_status
-__wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick, uint32_t pending_bytes)
+static ret_status __wait_for_empty_rx(bi2c_instance *i2c, uint32_t timeout, uint32_t start_tick, uint32_t pending_bytes)
 {
     while (!__BSP_IS_FLAG_SET(i2c->ISR, I2C_ISR_RXNE)) {
         /* Check if a NACK is detected */
@@ -346,13 +331,12 @@ __wait_for_empty_rx(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick
     return STATUS_OK;
 }
 
-
-static ret_status __is_nack_condition_present(BSP_I2C_Instance *i2c, uint32_t timeout, uint32_t start_tick)
+static ret_status __is_nack_condition_present(bi2c_instance *i2c, uint32_t timeout, uint32_t start_tick)
 {
     /* Check if a NACK condition has been detected */
     if (__BSP_IS_FLAG_SET(i2c->ISR, I2C_ISR_NACKF)) {
         /* If a NACK arrives STOPF should be flagged by HW. Just wait for it */
-        ret_status status = BSP_UTIL_wait_flag_status(&i2c->ISR, I2C_ISR_STOPF, I2C_ISR_STOPF, start_tick, timeout);
+        ret_status status = butil_wait_flag_status(&i2c->ISR, I2C_ISR_STOPF, I2C_ISR_STOPF, start_tick, timeout);
         if (status != STATUS_OK) {
             return status;
         }
@@ -369,8 +353,7 @@ static ret_status __is_nack_condition_present(BSP_I2C_Instance *i2c, uint32_t ti
     return STATUS_OK;
 }
 
-
-static void __clean_txd_txis_flag(BSP_I2C_Instance *hi2c)
+static void __clean_txd_txis_flag(bi2c_instance *hi2c)
 {
     /* If a pending TXIS flag is set */
     /* Write a dummy data in TXDR to clear it */

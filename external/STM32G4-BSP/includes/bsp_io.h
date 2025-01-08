@@ -4,7 +4,6 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-
 #ifndef BSP_IO_H
 #define BSP_IO_H
 
@@ -12,26 +11,20 @@
 #include "stm32g4xx.h"
 #include <stdbool.h>
 
-
 #define BSP_IO_PORT_LENGTH 16
+#define BSP_IO_IS_PIN_VALID(PIN) (PIN < BSP_IO_PORT_LENGTH)
+#define __BSP_IO_IS_PIN_VALID(PIN) ((PIN >= BSP_IO_PIN_0) && (PIN <= BSP_IO_PIN_15))
 
 typedef enum bsp_port_speed_t {
-    BSP_IO_LOW  = 0x00,
+    BSP_IO_LOW = 0x00,
     BSP_IO_MEDIUM = 0x01,
     BSP_IO_HIGH = 0x02,
     BSP_IO_VERY_HIGH = 0x03
 } bsp_port_speed_t;
 
-typedef enum  {
-    BSP_IO_NO_PU_PD = 0x00U,
-    BSP_IO_PU = 0x01U,
-    BSP_IO_PD = 0x02U
-} bsp_port_pp_pd_t;
+typedef enum { BSP_IO_NO_PU_PD = 0x00U, BSP_IO_PU = 0x01U, BSP_IO_PD = 0x02U } bsp_port_pp_pd_t;
 
-typedef enum  {
-    BSP_IO_OUT_TYPE_PP = 0x00U,
-    BSP_IO_OUT_TYPE_OPEN_DRAIN = 0x01U
-} bsp_port_output_type_t;
+typedef enum { BSP_IO_OUT_TYPE_PP = 0x00U, BSP_IO_OUT_TYPE_OPEN_DRAIN = 0x01U } bsp_port_output_type_t;
 
 typedef enum {
     BSP_IO_PIN_0 = 0x0001U,
@@ -52,26 +45,32 @@ typedef enum {
     BSP_IO_PIN_15 = 0x8000U
 } bsp_io_pin_number;
 
+typedef GPIO_TypeDef bio_port;
 
+ret_status bio_conf_output_port(bio_port *port,
+                                bsp_io_pin_number pin_number,
+                                bsp_port_pp_pd_t pull_up_down,
+                                bsp_port_speed_t speed,
+                                bsp_port_output_type_t output_type);
 
-#define __BSP_IO_IS_PIN_VALID(PIN) ((PIN >= BSP_IO_PIN_0) && (PIN <= BSP_IO_PIN_15))
+ret_status bio_config_input_port(bio_port *port,
+                                 bsp_io_pin_number pin_number,
+                                 bsp_port_pp_pd_t pull_up_down,
+                                 bsp_port_speed_t speed);
 
-typedef GPIO_TypeDef BSP_IO_Port;
+ret_status bio_config_analog_port(bio_port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down);
 
-#define BSP_IO_IS_PIN_VALID(PIN) (PIN < BSP_IO_PORT_LENGTH)
+ret_status bio_config_af_port(bio_port *port,
+                              bsp_io_pin_number pin_number,
+                              uint8_t af_function,
+                              bsp_port_pp_pd_t pull_up_down,
+                              bsp_port_speed_t speed,
+                              bsp_port_output_type_t output_type);
 
-void
-bio_conf_output_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
+void bio_toggle_port(bio_port *port, uint8_t pin_number);
 
-void bio_config_input_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed);
+ret_status bio_write_port(bio_port *port, uint8_t pin_number, bool value);
 
-void bio_config_af_port(BSP_IO_Port *port, bsp_io_pin_number pin_number, uint8_t af_function, bsp_port_pp_pd_t pull_up_down, bsp_port_speed_t speed, bsp_port_output_type_t output_type);
+uint8_t bio_read_port(bio_port *port, uint8_t pin_number);
 
-void bio_toggle_port(BSP_IO_Port *port, uint8_t pin_number);
-
-ret_status bio_write_port(BSP_IO_Port *port, uint8_t pin_number, bool value);
-
-uint8_t bio_read_port(BSP_IO_Port *port, uint8_t pin_number);
-
-
-#endif //BSP_IO_H
+#endif // BSP_IO_H

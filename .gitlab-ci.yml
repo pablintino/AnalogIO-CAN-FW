@@ -1,0 +1,27 @@
+
+image: registry.internal.pablintino.net/tools/cpp-builder:v0.0.3
+
+stages:
+  - build
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+Build:
+  stage: build
+  script:
+    - mkdir build && cd build
+    - > 
+      $(builder2 get path cmake)/bin/cmake -S .. -B .
+      -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_TOOLCHAIN_FILE=${CI_PROJECT_DIR}/cmake/arm-gcc-toolchain.cmake 
+      -DDEVICE=STM32G431KB6T
+      -DLD_LINKER_FILE=${CI_PROJECT_DIR}/STM32G431KBTX_FLASH.ld
+      -DENABLE_UCOS_USAGE=True
+      -DSTM32_HAL_LL_USAGE=False
+      -DSTM32_HAL_FULL_USAGE=False
+      -DENABLE_FREERTOS_USAGE=False
+      -DGIT_SUBMODULE=False
+      -DARM_TOOLCHAIN_PATH=$(builder2 get path gcc --component-triplet arm-none-eabi)
+    - make build-hex
+    - make build-bin

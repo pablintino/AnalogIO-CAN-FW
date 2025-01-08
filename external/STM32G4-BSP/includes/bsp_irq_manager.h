@@ -4,27 +4,25 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-
 #ifndef BSP_IRQ_MANAGER_H
 #define BSP_IRQ_MANAGER_H
 
-
-#include <cpu.h>
-#include <stdbool.h>
-#include "os.h"
 #include "bsp_types.h"
+#include "common/common_types.h"
+
 #include "stm32g4xx.h"
+#include <stdbool.h>
 
-#define __BSP_IRQ_IS_IRQ_ID_VALID(IRQ) ((IRQ) < 0 || (IRQ) >= MCU_IRQ_VECTOR_SIZE)
+typedef IRQn_Type birq_irq_id;
 
-void BSP_IRQ_init(void);
+void birq_init(void);
 
-ret_status BSP_IRQ_set_handler(IRQn_Type irq_id, CPU_FNCT_VOID isr);
+ret_status birq_set_handler(birq_irq_id irq_id, bsp_cmn_void_cb handler);
 
-ret_status BSP_IRQ_enable_irq(IRQn_Type irq_id);
+ret_status birq_enable_irq(birq_irq_id irq_id);
 
-ret_status BSP_IRQ_disable_irq(IRQn_Type irq_id);
+ret_status birq_disable_irq(birq_irq_id irq_id);
 
-ret_status BSP_IRQ_is_enabled(IRQn_Type irq_id, bool *status);
+ret_status birq_is_enabled(birq_irq_id irq_id, bool *status);
 
-#endif //BSP_IRQ_MANAGER_H
+#endif // BSP_IRQ_MANAGER_H
