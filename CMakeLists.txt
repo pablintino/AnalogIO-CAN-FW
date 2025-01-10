@@ -59,7 +59,7 @@ add_executable(${EXECUTABLE_NAME} ${PROJECT_SOURCES} ${ARM_STARTUP_FILE})
 target_include_directories(${EXECUTABLE_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/includes)
 
 # Add libs to the executable
-target_link_libraries(${EXECUTABLE_NAME} ucos3-kernel stm32g4-bsp segger-rtt)
+target_link_libraries(${EXECUTABLE_NAME} freertos_kernel stm32g4-bsp segger-rtt)
 
 # Add custom build targets
 include(arm-gcc-add-custom-targets)

@@ -146,8 +146,8 @@ g_pfnVectors:
 	.word	SVC_Handler
 	.word	DebugMon_Handler
 	.word	0
-	.word	OS_CPU_PendSVHandler
-	.word	OS_CPU_SysTickHandler
+	.word	PendSV_Handler
+	.word	SysTick_Handler
 	.word	BSP_IntHandlerWWDG
 	.word	BSP_IntHandlerPVD
 	.word	BSP_IntHandlerTMP_STMP

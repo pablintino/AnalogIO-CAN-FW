@@ -8,24 +8,24 @@
 #include "build_defs.h"
 #include "version_numbers.h"
 
-#include "os.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "task.h"
 #include <SEGGER_RTT.h>
 
-static OS_TCB AppTaskStartTCB;
-static CPU_STK AppTaskStartStk[APP_CFG_TASK_START_STK_SIZE];
+static StaticTask_t AppTaskObj0TCB;
+static StackType_t AppTaskObj0Stk[APP_CFG_TASK_OBJ_STK_SIZE];
 
-static OS_TCB AppTaskObj0TCB;
-static CPU_STK AppTaskObj0Stk[APP_CFG_TASK_OBJ_STK_SIZE];
-static OS_TCB AppTaskCANTCB;
-static CPU_STK AppTaskCANStk[APP_CFG_TASK_OBJ_STK_SIZE];
-static OS_SEM adc_sync_sem;
+static StaticTask_t AppTaskCANTCB;
+static StackType_t AppTaskCANStk[APP_CFG_TASK_OBJ_STK_SIZE];
+
+static SemaphoreHandle_t adc_sync_sem;
+static StaticSemaphore_t adc_sync_sem_buffer;
 
 static uint8_t aRxBuffer[2];
 static uint8_t aTxBuffer[2];
 
 static uint16_t adc_dma_conversions[2];
-
-static void AppTaskStart(void *p_arg);
 
 const unsigned char completeVersion[] = {VERSION_MAJOR_INIT,
                                          '.',
@@ -53,12 +53,36 @@ const unsigned char completeVersion[] = {VERSION_MAJOR_INIT,
                                          BUILD_SEC_CH0,
                                          BUILD_SEC_CH1,
                                          '\0'};
+void SysTick_Handler(void)
+{
+    xPortSysTickHandler();
+}
+
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+                                   StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize)
+{
+    static StaticTask_t xIdleTaskTCB;
+    static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
+    *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+    *ppxIdleTaskStackBuffer = uxIdleTaskStack;
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
+                                    StackType_t **ppxTimerTaskStackBuffer,
+                                    uint32_t *pulTimerTaskStackSize)
+{
+    static StaticTask_t xTimerTaskTCB;
+    static StackType_t uxTimerTaskStack[configTIMER_TASK_STACK_DEPTH];
+    *ppxTimerTaskTCBBuffer = &xTimerTaskTCB;
+    *ppxTimerTaskStackBuffer = uxTimerTaskStack;
+    *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+}
 
 uint32_t test_n = 0;
 static void AppTaskObj0(void *p_arg)
 {
-    OS_ERR err;
-
     (void)p_arg;
 
     aTxBuffer[0] = 0x0F;
@@ -67,14 +91,12 @@ static void AppTaskObj0(void *p_arg)
     SEGGER_RTT_WriteString(0, "SEGGER Real-Time-Terminal Sample\r\n");
 
     bio_write_port(GPIOA, 5, 1);
-
-    OSTimeDly(500, OS_OPT_TIME_PERIODIC, &err);
-
+    vTaskDelay(500);
     // i2c_transfer7(I2C3, 0x90U, &aTxBuffer, 1, &aRxBuffer, 2);
 
     bi2c_master_transfer(I2C3, 0x90U, aTxBuffer, 1, true, 500);
     bi2c_master_transfer(I2C3, 0x90U, aRxBuffer, 2, false, 500);
-    OSTimeDly(500, OS_OPT_TIME_PERIODIC, &err);
+    vTaskDelay(500);
 
     /*
         BSP_USART_put_char(USART1, 'T', 100U);
@@ -94,22 +116,20 @@ static void AppTaskObj0(void *p_arg)
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
     }*/
 
-    while (DEF_TRUE) {
+    for (;;) {
         if (aRxBuffer[0] == 0x75U && aRxBuffer[1] == 0x00U) {
             // busart_put_char(USART1, 'H', 100U);
             bio_toggle_port(GPIOA, 4);
-            OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
+            vTaskDelay(1000);
         } else {
             bio_toggle_port(GPIOA, 6);
-            OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
+            vTaskDelay(1000);
         }
     }
 }
 
 static void AppTaskCanTX(void *p_arg)
 {
-    OS_ERR err;
-    CPU_TS ts;
     (void)p_arg;
 
     bcan_tx_metadata_t test;
@@ -119,17 +139,15 @@ static void AppTaskCanTX(void *p_arg)
     test.store_tx_events = false;
     test.message_marker = 0x00;
 
-    while (DEF_TRUE) {
-        OSTimeDly(500, OS_OPT_TIME_PERIODIC, &err);
+    for (;;) {
+        vTaskDelay(500);
 
         badc_start_conversion_dma(ADC1, DMA1, BDMA_CHANNEL_1, (uint8_t *)&adc_dma_conversions, 2);
 
-        OSSemPend(&adc_sync_sem, 0, OS_OPT_PEND_BLOCKING, &ts, &err);
-        if (err == OS_ERR_NONE) {
-            uint32_t conversion_value = adc_dma_conversions[0] | (adc_dma_conversions[1] << 16);
-            if (bcan_add_tx_message(FDCAN1, &test, (const uint8_t *)&conversion_value) != STATUS_OK) {
-                SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
-            }
+        xSemaphoreTake(adc_sync_sem, portMAX_DELAY);
+        uint32_t conversion_value = adc_dma_conversions[0] | (adc_dma_conversions[1] << 16);
+        if (bcan_add_tx_message(FDCAN1, &test, (const uint8_t *)&conversion_value) != STATUS_OK) {
+            SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
         }
     }
 }
@@ -150,8 +168,8 @@ void adc_eos_handler(badc_instance_t *adc, uint32_t flags)
     (void)adc;
     (void)flags;
 
-    OS_ERR err;
-    OSSemPost(&adc_sync_sem, OS_OPT_POST_1, &err);
+    static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(adc_sync_sem, &xHigherPriorityTaskWoken);
 }
 
 void dma_xfer_complete_handler(bdma_instance_t *dma, bdma_channel_instance_t *channel, uint32_t group_flags)
@@ -160,55 +178,12 @@ void dma_xfer_complete_handler(bdma_instance_t *dma, bdma_channel_instance_t *ch
     (void)channel;
     (void)group_flags;
 
-    OS_ERR err;
-    OSSemPost(&adc_sync_sem, OS_OPT_POST_1, &err);
+    static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(adc_sync_sem, &xHigherPriorityTaskWoken);
 }
 
 int main(void)
 {
-    OS_ERR os_err;
-
-    CPU_IntDis(); /* Disable all Interrupts.                              */
-    CPU_Init();
-
-    /* Init uC/Os micro kernel */
-    OSInit(&os_err);
-    if (os_err != OS_ERR_NONE) {
-        while (1)
-            ;
-    }
-
-    /* Launch the bootstrap task */
-    OSTaskCreate(&AppTaskStartTCB, /* Create the start task                                */
-                 "Start Tsk",
-                 AppTaskStart,
-                 0u,
-                 APP_CFG_TASK_START_PRIO,
-                 &AppTaskStartStk[0u],
-                 AppTaskStartStk[APP_CFG_TASK_START_STK_SIZE / 10u],
-                 APP_CFG_TASK_START_STK_SIZE,
-                 0u,
-                 0u,
-                 0u,
-                 (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
-                 &os_err);
-    if (os_err != OS_ERR_NONE) {
-        while (1)
-            ;
-    }
-
-    OSStart(&os_err); /* Start multitasking (i.e. give control to uC/OS-III). */
-
-    while (DEF_ON) { /* Should Never Get Here.                               */
-        ;
-    }
-}
-
-static void AppTaskStart(void *p_arg)
-{
-    (void)p_arg;
-
-    OS_ERR err;
     SEGGER_RTT_printf(0, "### Analog-IO SW Version %s@pablintino ###\r\n", completeVersion);
 
     board_init();
@@ -220,33 +195,25 @@ static void AppTaskStart(void *p_arg)
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
     bio_conf_output_port(GPIOA, BSP_IO_PIN_4 | BSP_IO_PIN_5 | BSP_IO_PIN_6, BSP_IO_PU, BSP_IO_HIGH, BSP_IO_OUT_TYPE_PP);
 
-    OSSemCreate(&adc_sync_sem, "adc_sem", 0, &err);
+    adc_sync_sem = xSemaphoreCreateBinaryStatic(&adc_sync_sem_buffer);
 
-    OSTaskCreate(&AppTaskObj0TCB,
-                 "Kernel Objects Task 0",
-                 AppTaskObj0,
-                 0,
-                 APP_CFG_TASK_OBJ_PRIO,
-                 &AppTaskObj0Stk[0],
-                 AppTaskObj0Stk[APP_CFG_TASK_OBJ_STK_SIZE / 10u],
-                 APP_CFG_TASK_OBJ_STK_SIZE,
-                 0u,
-                 0u,
-                 0,
-                 (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
-                 &err);
+    xTaskCreateStatic(AppTaskObj0,
+                      "Kernel Objects Task 0",
+                      APP_CFG_TASK_OBJ_STK_SIZE,
+                      NULL,
+                      APP_CFG_TASK_OBJ_PRIO,
+                      AppTaskObj0Stk,
+                      &AppTaskObj0TCB);
+    xTaskCreateStatic(AppTaskCanTX,
+                      "CAN Task 0",
+                      APP_CFG_TASK_OBJ_STK_SIZE,
+                      NULL,
+                      APP_CFG_TASK_OBJ_PRIO,
+                      AppTaskCANStk,
+                      &AppTaskCANTCB);
 
-    OSTaskCreate(&AppTaskCANTCB,
-                 "CAN Task 0",
-                 AppTaskCanTX,
-                 0,
-                 APP_CFG_TASK_OBJ_PRIO,
-                 &AppTaskCANStk[0],
-                 AppTaskCANStk[APP_CFG_TASK_OBJ_STK_SIZE / 10u],
-                 APP_CFG_TASK_OBJ_STK_SIZE,
-                 0u,
-                 0u,
-                 0,
-                 (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
-                 &err);
+    vTaskStartScheduler();
+
+    for (;;)
+        ; /* Should Never Get Here.                               */
 }
