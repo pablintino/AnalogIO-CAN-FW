@@ -13,3 +13,6 @@
 [submodule "external/STM32Cube/STM32Cube-Src"]
 	path = external/STM32Cube/STM32Cube-Src
 	url = git@github.com:STMicroelectronics/STM32CubeG4.git
+[submodule "external/threadx/threadx-kernel"]
+	path = external/threadx/threadx-kernel
+	url = https://github.com/eclipse-threadx/threadx.git
