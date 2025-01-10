@@ -335,7 +335,7 @@ static inline ret_status __enable_irq_for_channel(IRQn_Type irq, bsp_cmn_void_cb
     birq_is_enabled(irq, &irq_enabled);
     if (!irq_enabled) {
         birq_set_handler(irq, handler);
-        birq_enable_irq(irq);
+        birq_enable_irq_with_priority(irq, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         return STATUS_OK;
     }
     return STATUS_ERR;

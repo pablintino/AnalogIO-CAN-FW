@@ -6,8 +6,6 @@
 
 #include "bsp_irq_manager.h"
 
-#include "bsp_os.h"
-
 #include <stdbool.h>
 
 #define MCU_IRQ_VECTOR_SIZE 102
@@ -549,10 +547,20 @@ ret_status birq_set_handler(birq_irq_id irq_id, bsp_cmn_void_cb handler)
         return STATUS_ERR;
     }
 
-    CPU_SR_ALLOC();
-    CPU_CRITICAL_ENTER();
+    BOS_CRITICAL_SECTION_BEGIN();
     __birq_handler_table[irq_id] = handler;
-    CPU_CRITICAL_EXIT();
+    BOS_CRITICAL_SECTION_EXIT();
+    return STATUS_OK;
+}
+
+ret_status birq_enable_irq_with_priority(birq_irq_id irq_id, uint32_t priority, uint32_t sub_priority)
+{
+    if (!__birq_is_irq_valid(irq_id)) {
+        return STATUS_ERR;
+    }
+
+    NVIC_SetPriority(irq_id, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), priority, sub_priority));
+    NVIC_EnableIRQ(irq_id);
     return STATUS_OK;
 }
 
@@ -593,12 +601,10 @@ static inline bool __birq_is_irq_valid(birq_irq_id irq)
 static void __birq_global_irq_handler(birq_irq_id int_id)
 {
     BOS_ISR_ENTER();
-
     bsp_cmn_void_cb isr = __birq_handler_table[int_id];
     if (isr != (bsp_cmn_void_cb)0) {
         isr();
     }
-
     BOS_ISR_EXIT();
 }
 

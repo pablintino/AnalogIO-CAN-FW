@@ -7,14 +7,9 @@
 #ifndef BSP_TYPES_H
 #define BSP_TYPES_H
 
+#include <stddef.h>
 #include <stdint.h>
 
-typedef enum {
-    STATUS_OK = 1U,
-    STATUS_ERR = 2U,
-    STATUS_TMT = 3U
-} ret_status;
+typedef enum { STATUS_OK = 1U, STATUS_ERR = 2U, STATUS_TMT = 3U } ret_status;
 
-
-
-#endif //BSP_TYPES_H
+#endif // BSP_TYPES_H

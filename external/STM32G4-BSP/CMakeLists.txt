@@ -23,7 +23,7 @@ if (ENABLE_UCOS_USAGE)
     target_link_libraries(stm32g4-bsp ucos3-kernel)
     target_compile_definitions(stm32g4-bsp PUBLIC BSP_USING_OS_UCOS)
 elseif (ENABLE_FREERTOS_USAGE)
-    target_link_libraries(stm32g4-bsp freertos)
+    target_link_libraries(stm32g4-bsp freertos_kernel)
     target_compile_definitions(stm32g4-bsp PUBLIC BSP_USING_OS_FREERTOS)
 endif ()
 

@@ -428,13 +428,15 @@ ret_status bcan_enable_irqs(bcan_instance_t *can)
         birq_is_enabled(FDCAN1_IT0_IRQn, &irq_enabled);
         if (!irq_enabled) {
             birq_set_handler(FDCAN1_IT0_IRQn, __irq_handler_fdcan1_it0);
-            birq_enable_irq(FDCAN1_IT0_IRQn);
+            birq_enable_irq_with_priority(
+                FDCAN1_IT0_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
 
         birq_is_enabled(FDCAN1_IT1_IRQn, &irq_enabled);
         if (!irq_enabled) {
             birq_set_handler(FDCAN1_IT1_IRQn, __irq_handler_fdcan1_it1);
-            birq_enable_irq(FDCAN1_IT1_IRQn);
+            birq_enable_irq_with_priority(
+                FDCAN1_IT1_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
     }
 

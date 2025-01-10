@@ -8,14 +8,11 @@
 #ifndef BSP_OS_H
 #define BSP_OS_H
 
-/* Include OS related headers */
-#ifdef BSP_USING_OS_UCOS
+#if defined(BSP_USING_OS_UCOS)
 #include "cpu.h"
 #include "cpu_core.h"
 #include "os.h"
-#endif
 
-#ifdef BSP_USING_OS_UCOS
 #define BOS_CRITICAL_SECTION_BEGIN()                                                                                   \
     do {                                                                                                               \
         CPU_SR_ALLOC();                                                                                                \
@@ -43,13 +40,18 @@
         retval = OSTimeGet(&err);                                                                                      \
         err == OS_ERR_NONE ? retval : 0;                                                                               \
     })
+#define BOS_OS_MAX_PRIORITY 0
+#endif
 
-#else
+#if defined(BSP_USING_OS_FREERTOS)
+#include "FreeRTOS.h"
+#include "task.h"
+#define BOS_GET_TICKS() xTaskGetTickCount()
 #define BOS_CRITICAL_SECTION_BEGIN() ((void)0)
 #define BOS_CRITICAL_SECTION_EXIT() ((void)0)
 #define BOS_ISR_ENTER() ((void)0)
 #define BOS_ISR_EXIT() ((void)0)
-#define BOS_GET_TICKS() (0)
+#define BOS_OS_MAX_PRIORITY configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
 #endif
 
 #endif // BSP_OS_H

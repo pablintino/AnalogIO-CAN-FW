@@ -8,7 +8,6 @@
 #include "bsp_common_utils.h"
 #include "bsp_irq_manager.h"
 #include "bsp_tick.h"
-#include <stddef.h>
 
 #define __BADC_ISR_SOURCES_N (ADC_IER_JQOVFIE_Pos + 1)
 
@@ -272,7 +271,7 @@ ret_status badc_wait_conversion(badc_instance_t *adc, uint32_t timeout)
         return STATUS_ERR;
     }
 
-    ret_status status = butil_wait_flag_status_now(&adc->ISR, ADC_ISR_EOC, ADC_ISR_EOC, timeout);
+    const ret_status status = butil_wait_flag_status_now(&adc->ISR, ADC_ISR_EOC, ADC_ISR_EOC, timeout);
     if (status == STATUS_OK) {
         __BSP_SET_MASKED_REG(adc->ISR, ADC_ISR_EOC);
     }
@@ -330,7 +329,8 @@ ret_status badc_enable_irqs(badc_instance_t *adc)
         birq_is_enabled(ADC1_2_IRQn, &irq_enabled);
         if (!irq_enabled) {
             birq_set_handler(ADC1_2_IRQn, __irq_handler_adc12);
-            birq_enable_irq(ADC1_2_IRQn);
+            birq_enable_irq_with_priority(
+                ADC1_2_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
     }
 #endif
@@ -340,7 +340,8 @@ ret_status badc_enable_irqs(badc_instance_t *adc)
         birq_is_enabled(ADC1_2_IRQn, &irq_enabled);
         if (!irq_enabled) {
             birq_set_handler(ADC1_2_IRQn, __irq_handler_adc12);
-            birq_enable_irq(ADC1_2_IRQn);
+            birq_enable_irq_with_priority(
+                ADC1_2_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
     }
 
