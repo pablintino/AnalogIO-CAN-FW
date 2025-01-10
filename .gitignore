@@ -1,5 +1,6 @@
-# Ignore CMake build directory
+# Ignore CMake directories
 build/
+.cmake/
 
 #Ignore vscode setting directory
 .vscode/
