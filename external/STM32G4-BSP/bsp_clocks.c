@@ -9,6 +9,9 @@
 #include "includes/bsp_tick.h"
 #include <stddef.h>
 
+/* CMSIS global that contains the current base CPU speed */
+uint32_t SystemCoreClock = BSP_CLK_HSI_VALUE;
+
 /** AHB divider values accoring to HPRE possible values. Doesn't contains division by 1 */
 static const uint32_t HPRE_DIVIDERS[] = {2, 4, 8, 16, 64, 128, 256, 512};
 
@@ -254,10 +257,18 @@ ret_status bclk_config_clocks(const bsp_clk_clock_config_t *clkc)
 
     /* Get the actual configured frequency and call TICK_config to reconfigure SysTick to the current frequency */
     uint32_t final_freq = bclk_get_hclk_freq();
+    /* Update the CMSIS clock var */
+    SystemCoreClock = final_freq;
     btick_config(final_freq);
 
     /* Just validate if the desired frequency has been achieved */
     return target_hclk_freq == final_freq ? STATUS_OK : STATUS_ERR;
+}
+
+/* CMSIS base CPU speed variable update function */
+void SystemCoreClockUpdate(void)
+{
+    SystemCoreClock = bclk_get_hclk_freq();
 }
 
 /*
@@ -589,7 +600,7 @@ uint32_t __calculate_pll_vco_freq(void)
 {
     uint32_t pllmul = (uint8_t)((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> RCC_PLLCFGR_PLLN_Pos);
 
-    return (uint32_t)(__get_base_pll_freq() * pllmul);
+    return __get_base_pll_freq() * pllmul;
 }
 
 uint8_t __calculate_flash_wait_states(uint32_t frequency)
