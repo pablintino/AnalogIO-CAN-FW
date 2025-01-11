@@ -4,14 +4,13 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-
 #ifndef APP_CFG_H
 #define APP_CFG_H
 
+#define APP_CFG_BYTE_POOL_SIZE 2048u
+#define APP_CFG_TASK_START_STK_SIZE 100u
+#define APP_CFG_TASK_OBJ_STK_SIZE 512u
+#define APP_CFG_TASK_START_PRIO 3u
+#define APP_CFG_TASK_OBJ_PRIO 3u
 
-#define  APP_CFG_TASK_START_STK_SIZE            100u
-#define  APP_CFG_TASK_OBJ_STK_SIZE              1000u
-#define  APP_CFG_TASK_START_PRIO                3u
-#define  APP_CFG_TASK_OBJ_PRIO                  3u
-
-#endif //APP_CFG_H
+#endif // APP_CFG_H

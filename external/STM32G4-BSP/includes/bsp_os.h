@@ -54,4 +54,14 @@
 #define BOS_OS_MAX_PRIORITY configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
 #endif
 
+#if defined(BSP_USING_OS_THREADX)
+#include "tx_api.h"
+#define BOS_GET_TICKS() tx_time_get()
+#define BOS_CRITICAL_SECTION_BEGIN() ((void)0)
+#define BOS_CRITICAL_SECTION_EXIT() ((void)0)
+#define BOS_ISR_ENTER() ((void)0)
+#define BOS_ISR_EXIT() ((void)0)
+#define BOS_OS_MAX_PRIORITY 0
+#endif
+
 #endif // BSP_OS_H

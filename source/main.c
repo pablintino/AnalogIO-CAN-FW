@@ -8,19 +8,15 @@
 #include "build_defs.h"
 #include "version_numbers.h"
 
-#include "FreeRTOS.h"
-#include "semphr.h"
-#include "task.h"
+#include "tx_api.h"
 #include <SEGGER_RTT.h>
 
-static StaticTask_t AppTaskObj0TCB;
-static StackType_t AppTaskObj0Stk[APP_CFG_TASK_OBJ_STK_SIZE];
+static UCHAR tx_byte_pool_buffer[APP_CFG_BYTE_POOL_SIZE] __attribute__((aligned(4U)));
+static TX_BYTE_POOL tx_app_byte_pool;
 
-static StaticTask_t AppTaskCANTCB;
-static StackType_t AppTaskCANStk[APP_CFG_TASK_OBJ_STK_SIZE];
-
-static SemaphoreHandle_t adc_sync_sem;
-static StaticSemaphore_t adc_sync_sem_buffer;
+TX_THREAD TX_thread_adc_sync;
+TX_THREAD TX_thread_0;
+TX_SEMAPHORE TX_adc_sync_sem;
 
 static uint8_t aRxBuffer[2];
 static uint8_t aTxBuffer[2];
@@ -53,35 +49,9 @@ const unsigned char completeVersion[] = {VERSION_MAJOR_INIT,
                                          BUILD_SEC_CH0,
                                          BUILD_SEC_CH1,
                                          '\0'};
-void SysTick_Handler(void)
-{
-    xPortSysTickHandler();
-}
-
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
-                                   StackType_t **ppxIdleTaskStackBuffer,
-                                   uint32_t *pulIdleTaskStackSize)
-{
-    static StaticTask_t xIdleTaskTCB;
-    static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
-    *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
-    *ppxIdleTaskStackBuffer = uxIdleTaskStack;
-    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-}
-
-void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
-                                    StackType_t **ppxTimerTaskStackBuffer,
-                                    uint32_t *pulTimerTaskStackSize)
-{
-    static StaticTask_t xTimerTaskTCB;
-    static StackType_t uxTimerTaskStack[configTIMER_TASK_STACK_DEPTH];
-    *ppxTimerTaskTCBBuffer = &xTimerTaskTCB;
-    *ppxTimerTaskStackBuffer = uxTimerTaskStack;
-    *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
-}
 
 uint32_t test_n = 0;
-static void AppTaskObj0(void *p_arg)
+static void AppTaskObj0(ULONG p_arg)
 {
     (void)p_arg;
 
@@ -91,12 +61,12 @@ static void AppTaskObj0(void *p_arg)
     SEGGER_RTT_WriteString(0, "SEGGER Real-Time-Terminal Sample\r\n");
 
     bio_write_port(GPIOA, 5, 1);
-    vTaskDelay(500);
+    tx_thread_sleep(1);
     // i2c_transfer7(I2C3, 0x90U, &aTxBuffer, 1, &aRxBuffer, 2);
 
     bi2c_master_transfer(I2C3, 0x90U, aTxBuffer, 1, true, 500);
     bi2c_master_transfer(I2C3, 0x90U, aRxBuffer, 2, false, 500);
-    vTaskDelay(500);
+    tx_thread_sleep(5);
 
     /*
         BSP_USART_put_char(USART1, 'T', 100U);
@@ -115,20 +85,23 @@ static void AppTaskObj0(void *p_arg)
         bio_toggle_port(GPIOA, 5);
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
     }*/
-
+    uint32_t ticks = 0;
     for (;;) {
         if (aRxBuffer[0] == 0x75U && aRxBuffer[1] == 0x00U) {
             // busart_put_char(USART1, 'H', 100U);
             bio_toggle_port(GPIOA, 4);
-            vTaskDelay(1000);
+            uint32_t ticks1 = btick_get_ticks();
+            tx_thread_sleep(1000);
+            uint32_t ticks2 = btick_get_ticks();
+            ticks = ticks2 - ticks1;
         } else {
             bio_toggle_port(GPIOA, 6);
-            vTaskDelay(1000);
+            tx_thread_sleep(1000);
         }
     }
 }
 
-static void AppTaskCanTX(void *p_arg)
+static void AppTaskCanTX(ULONG p_arg)
 {
     (void)p_arg;
 
@@ -140,11 +113,11 @@ static void AppTaskCanTX(void *p_arg)
     test.message_marker = 0x00;
 
     for (;;) {
-        vTaskDelay(500);
+        tx_thread_sleep(500);
 
         badc_start_conversion_dma(ADC1, DMA1, BDMA_CHANNEL_1, (uint8_t *)&adc_dma_conversions, 2);
 
-        xSemaphoreTake(adc_sync_sem, portMAX_DELAY);
+        tx_semaphore_get(&TX_adc_sync_sem, TX_WAIT_FOREVER);
         uint32_t conversion_value = adc_dma_conversions[0] | (adc_dma_conversions[1] << 16);
         if (bcan_add_tx_message(FDCAN1, &test, (const uint8_t *)&conversion_value) != STATUS_OK) {
             SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
@@ -168,8 +141,7 @@ void adc_eos_handler(badc_instance_t *adc, uint32_t flags)
     (void)adc;
     (void)flags;
 
-    static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(adc_sync_sem, &xHigherPriorityTaskWoken);
+    tx_semaphore_put(&TX_adc_sync_sem);
 }
 
 void dma_xfer_complete_handler(bdma_instance_t *dma, bdma_channel_instance_t *channel, uint32_t group_flags)
@@ -178,13 +150,17 @@ void dma_xfer_complete_handler(bdma_instance_t *dma, bdma_channel_instance_t *ch
     (void)channel;
     (void)group_flags;
 
-    static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(adc_sync_sem, &xHigherPriorityTaskWoken);
+    tx_semaphore_put(&TX_adc_sync_sem);
 }
 
-int main(void)
+void tx_application_define(VOID *first_unused_memory)
 {
-    SEGGER_RTT_printf(0, "### Analog-IO SW Version %s@pablintino ###\r\n", completeVersion);
+    (void)first_unused_memory;
+    if (tx_byte_pool_create(&tx_app_byte_pool, "Tx App memory pool", tx_byte_pool_buffer, APP_CFG_BYTE_POOL_SIZE) !=
+        TX_SUCCESS) {
+        for (;;)
+            ;
+    }
 
     board_init();
     bcan_config_irq(FDCAN1, BCAN_IRQ_TYPE_RF0NE, can_rx_handler);
@@ -195,24 +171,61 @@ int main(void)
     /* -2- Configure IO in output push-pull mode to drive external LEDs */
     bio_conf_output_port(GPIOA, BSP_IO_PIN_4 | BSP_IO_PIN_5 | BSP_IO_PIN_6, BSP_IO_PU, BSP_IO_HIGH, BSP_IO_OUT_TYPE_PP);
 
-    adc_sync_sem = xSemaphoreCreateBinaryStatic(&adc_sync_sem_buffer);
+    if (tx_semaphore_create(&TX_adc_sync_sem, "adc sync sem", 0) != TX_SUCCESS) {
+        for (;;)
+            ;
+    }
+    if (tx_semaphore_ceiling_put(&TX_adc_sync_sem, 1) != TX_SUCCESS) {
+        for (;;)
+            ;
+    }
 
-    xTaskCreateStatic(AppTaskObj0,
-                      "Kernel Objects Task 0",
-                      APP_CFG_TASK_OBJ_STK_SIZE,
-                      NULL,
-                      APP_CFG_TASK_OBJ_PRIO,
-                      AppTaskObj0Stk,
-                      &AppTaskObj0TCB);
-    xTaskCreateStatic(AppTaskCanTX,
-                      "CAN Task 0",
-                      APP_CFG_TASK_OBJ_STK_SIZE,
-                      NULL,
-                      APP_CFG_TASK_OBJ_PRIO,
-                      AppTaskCANStk,
-                      &AppTaskCANTCB);
+    char *stack_can_tx_thread;
+    if (tx_byte_allocate(&tx_app_byte_pool, (void **)&stack_can_tx_thread, APP_CFG_TASK_OBJ_STK_SIZE, TX_NO_WAIT) !=
+        TX_SUCCESS) {
+        for (;;)
+            ;
+    }
+    if (tx_thread_create(&TX_thread_adc_sync,
+                         "CAN Task",
+                         AppTaskCanTX,
+                         0,
+                         stack_can_tx_thread,
+                         APP_CFG_TASK_OBJ_STK_SIZE,
+                         APP_CFG_TASK_OBJ_PRIO,
+                         APP_CFG_TASK_OBJ_PRIO,
+                         TX_NO_TIME_SLICE,
+                         TX_AUTO_START) != TX_SUCCESS) {
+        for (;;)
+            ;
+    }
 
-    vTaskStartScheduler();
+    char *stack_app0_thread;
+    if (tx_byte_allocate(&tx_app_byte_pool, (void **)&stack_app0_thread, APP_CFG_TASK_OBJ_STK_SIZE, TX_NO_WAIT) !=
+        TX_SUCCESS) {
+        for (;;)
+            ;
+    }
+    if (tx_thread_create(&TX_thread_0,
+                         "Task 0",
+                         AppTaskObj0,
+                         0,
+                         stack_app0_thread,
+                         APP_CFG_TASK_OBJ_STK_SIZE,
+                         APP_CFG_TASK_OBJ_PRIO,
+                         APP_CFG_TASK_OBJ_PRIO,
+                         TX_NO_TIME_SLICE,
+                         TX_AUTO_START) != TX_SUCCESS) {
+        for (;;)
+            ;
+    }
+}
+
+int main(void)
+{
+    SEGGER_RTT_printf(0, "### Analog-IO SW Version %s@pablintino ###\r\n", completeVersion);
+    board_early_init();
+    tx_kernel_enter();
 
     for (;;)
         ; /* Should Never Get Here.                               */

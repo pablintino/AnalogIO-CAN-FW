@@ -25,9 +25,9 @@
 cmake_minimum_required(VERSION 3.13)
 
 # Disable in-source build.
-if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source build is not allowed, please use a separate build folder.")
-endif()
+endif ()
 
 # Project definition
 project(analog-io-can-fw C CXX ASM)
@@ -35,9 +35,9 @@ project(analog-io-can-fw C CXX ASM)
 set(EXECUTABLE_NAME ${CMAKE_PROJECT_NAME}.elf CACHE STRING "Executable file name")
 
 # Set default build type to DEBUG if not type was given
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE DEBUG)
-endif()
+endif ()
 
 # Get target specific information
 include(stm32)
@@ -50,16 +50,19 @@ add_subdirectory(./external)
 
 # Get top level executable sources and headers
 file(GLOB_RECURSE PROJECT_SOURCES "source/*.c")
+set_property(SOURCE source/tx_initialize_low_level.s APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp")
 
 # Add ARM CPU startup file
 include(arm-add-vectors)
 
 # Just create the top-level executable target. CMAKE_PROJECT_NAME as name
-add_executable(${EXECUTABLE_NAME} ${PROJECT_SOURCES} ${ARM_STARTUP_FILE})
+#add_executable(${EXECUTABLE_NAME} ${PROJECT_SOURCES} ${ARM_STARTUP_FILE}
+#        source/tx_initialize_low_level.c)
+add_executable(${EXECUTABLE_NAME} ${PROJECT_SOURCES} ${ARM_STARTUP_FILE} source/tx_initialize_low_level.s)
 target_include_directories(${EXECUTABLE_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/includes)
 
 # Add libs to the executable
-target_link_libraries(${EXECUTABLE_NAME} freertos_kernel stm32g4-bsp segger-rtt)
+target_link_libraries(${EXECUTABLE_NAME} threadx stm32g4-bsp segger-rtt)
 
 # Add custom build targets
 include(arm-gcc-add-custom-targets)

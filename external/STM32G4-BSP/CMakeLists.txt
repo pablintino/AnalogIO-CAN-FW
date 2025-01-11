@@ -25,6 +25,9 @@ if (ENABLE_UCOS_USAGE)
 elseif (ENABLE_FREERTOS_USAGE)
     target_link_libraries(stm32g4-bsp freertos_kernel)
     target_compile_definitions(stm32g4-bsp PUBLIC BSP_USING_OS_FREERTOS)
+elseif (ENABLE_THREADX_USAGE)
+    target_link_libraries(stm32g4-bsp threadx)
+    target_compile_definitions(stm32g4-bsp PUBLIC BSP_USING_OS_THREADX)
 endif ()
 
 target_include_directories(

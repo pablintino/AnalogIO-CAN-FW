@@ -259,6 +259,7 @@ ret_status bclk_config_clocks(const bsp_clk_clock_config_t *clkc)
     uint32_t final_freq = bclk_get_hclk_freq();
     /* Update the CMSIS clock var */
     SystemCoreClock = final_freq;
+    // TODO Handle return value
     btick_config(final_freq);
 
     /* Just validate if the desired frequency has been achieved */

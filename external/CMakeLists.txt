@@ -38,6 +38,11 @@ if(ENABLE_UCOS_USAGE)
     add_subdirectory(uCOS-III)
 endif()
 
+# Add ThreadX as external lib if enabled
+if(ENABLE_THREADX_USAGE)
+    add_subdirectory(threadx)
+endif()
+
 add_subdirectory(SEGGER-RTT)
 
 # Add STM32 and CMSIS libs

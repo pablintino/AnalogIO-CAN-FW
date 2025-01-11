@@ -17,7 +17,7 @@ if (GIT_FOUND AND EXISTS "${FREERTOS_BASE_DIR}/.git")
     endif ()
 endif ()
 
-if (NOT EXISTS "${FREERTOS_BASE_DIR}/tasks.c")
+if (NOT EXISTS "${FREERTOS_BASE_DIR}/CMakeLists.txt")
     message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 else ()
     set(FREERTOS_BASE_DIR "${FREERTOS_BASE_DIR}" CACHE FILEPATH "FreeRTOS base directory")

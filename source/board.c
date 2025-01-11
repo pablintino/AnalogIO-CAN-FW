@@ -20,9 +20,8 @@ static ret_status __configure_adc(void);
 
 static ret_status __configure_dma(void);
 
-void board_init(void)
+void board_early_init(void)
 {
-
     ret_status temp_status = __configure_clocks();
     if (temp_status != STATUS_OK) {
         SEGGER_RTT_WriteString(0, "[ERR] Failed to configure system clocks\r\n");
@@ -30,7 +29,10 @@ void board_init(void)
             ;
         };
     }
+}
 
+void board_init(void)
+{
     birq_init();
     bclk_enable_periph_clock(ENGPIOA);
     bclk_enable_periph_clock(ENGPIOB);
@@ -39,7 +41,7 @@ void board_init(void)
     bclk_enable_periph_clock(ENFDCAN);
     bclk_enable_periph_clock(ENADC12);
 
-    temp_status = __configure_usart();
+    ret_status temp_status = __configure_usart();
     if (temp_status != STATUS_OK) {
         SEGGER_RTT_WriteString(0, "[ERR] Failed to configure USART\r\n");
         while (1) {
@@ -239,8 +241,6 @@ static ret_status __configure_clocks(void)
 
     ret_status temp_status;
 
-    btick_config(bclk_get_hclk_freq());
-
     bsp_clk_osc_config_t oscConfig;
     oscConfig.ClockType = BSP_CLK_CLOCK_TYPE_PLL | BSP_CLK_CLOCK_TYPE_HSE;
     oscConfig.HSEState = BSP_CLK_CLOCK_STATE_HSE_STATE_ENABLE;
@@ -264,6 +264,5 @@ static ret_status __configure_clocks(void)
     if (temp_status == STATUS_OK) {
         temp_status = bclk_config_clocks(&clockConfig);
     }
-
     return temp_status;
 }

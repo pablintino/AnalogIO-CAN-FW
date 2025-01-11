@@ -19,5 +19,6 @@
 #include "bsp_usart.h"
 
 void board_init(void);
+void board_early_init(void);
 
 #endif // BOARD_H
