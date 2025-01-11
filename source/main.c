@@ -16,6 +16,7 @@ static TX_BYTE_POOL tx_app_byte_pool;
 
 TX_THREAD TX_thread_adc_sync;
 TX_THREAD TX_thread_0;
+TX_THREAD TX_thread_start;
 TX_SEMAPHORE TX_adc_sync_sem;
 
 static uint8_t aRxBuffer[2];
@@ -58,15 +59,30 @@ static void AppTaskObj0(ULONG p_arg)
     aTxBuffer[0] = 0x0F;
     aTxBuffer[1] = 0;
 
-    SEGGER_RTT_WriteString(0, "SEGGER Real-Time-Terminal Sample\r\n");
+    // SEGGER_RTT_WriteString(0, "SEGGER Real-Time-Terminal Sample\r\n");
 
     bio_write_port(GPIOA, 5, 1);
-    tx_thread_sleep(1);
-    // i2c_transfer7(I2C3, 0x90U, &aTxBuffer, 1, &aRxBuffer, 2);
+    //  i2c_transfer7(I2C3, 0x90U, &aTxBuffer, 1, &aRxBuffer, 2);
+    tx_thread_sleep(500);
+    ret_status status1 = bi2c_master_transfer(I2C3, 0x90U, aTxBuffer, 1, true, 1000);
+    if (status1 != STATUS_OK) {
+        for (;;) {
 
-    bi2c_master_transfer(I2C3, 0x90U, aTxBuffer, 1, true, 500);
-    bi2c_master_transfer(I2C3, 0x90U, aRxBuffer, 2, false, 500);
-    tx_thread_sleep(5);
+            bio_toggle_port(GPIOA, 6);
+            tx_thread_sleep(5000);
+        }
+    }
+    tx_thread_sleep(500);
+    ret_status status2 = bi2c_master_transfer(I2C3, 0x90U, aRxBuffer, 2, false, 1000);
+    if (status2 != STATUS_OK) {
+        for (;;) {
+
+            bio_toggle_port(GPIOA, 6);
+            tx_thread_sleep(5000);
+        }
+    }
+
+    // tx_thread_sleep(500);
 
     /*
         BSP_USART_put_char(USART1, 'T', 100U);
@@ -85,18 +101,15 @@ static void AppTaskObj0(ULONG p_arg)
         bio_toggle_port(GPIOA, 5);
         OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
     }*/
-    uint32_t ticks = 0;
+
     for (;;) {
         if (aRxBuffer[0] == 0x75U && aRxBuffer[1] == 0x00U) {
             // busart_put_char(USART1, 'H', 100U);
             bio_toggle_port(GPIOA, 4);
-            uint32_t ticks1 = btick_get_ticks();
             tx_thread_sleep(1000);
-            uint32_t ticks2 = btick_get_ticks();
-            ticks = ticks2 - ticks1;
         } else {
             bio_toggle_port(GPIOA, 6);
-            tx_thread_sleep(1000);
+            tx_thread_sleep(500);
         }
     }
 }
@@ -153,15 +166,11 @@ void dma_xfer_complete_handler(bdma_instance_t *dma, bdma_channel_instance_t *ch
     tx_semaphore_put(&TX_adc_sync_sem);
 }
 
-void tx_application_define(VOID *first_unused_memory)
+static void AppStart(ULONG p_arg)
 {
-    (void)first_unused_memory;
-    if (tx_byte_pool_create(&tx_app_byte_pool, "Tx App memory pool", tx_byte_pool_buffer, APP_CFG_BYTE_POOL_SIZE) !=
-        TX_SUCCESS) {
-        for (;;)
-            ;
-    }
+    (void)p_arg;
 
+    tx_thread_sleep(100);
     board_init();
     bcan_config_irq(FDCAN1, BCAN_IRQ_TYPE_RF0NE, can_rx_handler);
     // badc_config_irq(ADC1, BADC_ISR_TYPE_EOS, adc_eos_handler);
@@ -212,8 +221,38 @@ void tx_application_define(VOID *first_unused_memory)
                          0,
                          stack_app0_thread,
                          APP_CFG_TASK_OBJ_STK_SIZE,
-                         APP_CFG_TASK_OBJ_PRIO,
-                         APP_CFG_TASK_OBJ_PRIO,
+                         APP_CFG_TASK_OBJ_PRIO - 1,
+                         APP_CFG_TASK_OBJ_PRIO - 1,
+                         TX_NO_TIME_SLICE,
+                         TX_AUTO_START) != TX_SUCCESS) {
+        for (;;)
+            ;
+    }
+}
+void tx_application_define(VOID *first_unused_memory)
+{
+    (void)first_unused_memory;
+
+    if (tx_byte_pool_create(&tx_app_byte_pool, "Tx App memory pool", tx_byte_pool_buffer, APP_CFG_BYTE_POOL_SIZE) !=
+        TX_SUCCESS) {
+        for (;;)
+            ;
+    }
+
+    char *stack_start_thread;
+    if (tx_byte_allocate(&tx_app_byte_pool, (void **)&stack_start_thread, APP_CFG_TASK_OBJ_STK_SIZE, TX_NO_WAIT) !=
+        TX_SUCCESS) {
+        for (;;)
+            ;
+    }
+    if (tx_thread_create(&TX_thread_start,
+                         "Task 0",
+                         AppStart,
+                         0,
+                         stack_start_thread,
+                         APP_CFG_TASK_OBJ_STK_SIZE,
+                         APP_CFG_TASK_OBJ_PRIO - 2,
+                         APP_CFG_TASK_OBJ_PRIO - 2,
                          TX_NO_TIME_SLICE,
                          TX_AUTO_START) != TX_SUCCESS) {
         for (;;)
@@ -224,6 +263,7 @@ void tx_application_define(VOID *first_unused_memory)
 int main(void)
 {
     SEGGER_RTT_printf(0, "### Analog-IO SW Version %s@pablintino ###\r\n", completeVersion);
+
     board_early_init();
     tx_kernel_enter();
 

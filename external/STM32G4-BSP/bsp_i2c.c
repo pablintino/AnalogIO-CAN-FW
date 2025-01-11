@@ -285,7 +285,8 @@ static ret_status __wait_for_isr_flag_or_nack(bi2c_instance *i2c, uint32_t flag,
         if (status != STATUS_OK) {
             /* NACK received when waiting for the STOP. The transfer has failed */
             return status;
-        } else if (((btick_get_ticks() - start_tick) > timeout) || (start_tick == 0U)) {
+        }
+        if (((btick_get_ticks() - start_tick) > timeout) || (timeout == 0U)) {
             /* Timeout waiting for the given flag to be set */
             return STATUS_TMT;
         }

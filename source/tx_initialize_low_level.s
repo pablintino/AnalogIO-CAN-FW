@@ -472,9 +472,6 @@ SysTick_Handler:
 @
 @
 
-SYSTEM_CLOCK      =   48000000
-SYSTICK_CYCLES    =   ((SYSTEM_CLOCK / 1000) -1)
-
     .text 32
     .align 4
     .syntax unified
@@ -561,17 +558,11 @@ _tx_initialize_low_level:
     LDR     r1, [r0]                                @ Pickup the current value
     ORR     r1, r1, #1                              @ Set the CYCCNTENA bit
     STR     r1, [r0]                                @ Enable the cycle count register
-@
-@    /* Configure SysTick for 100Hz clock, or 16384 cycles if no reference.  */
-@
-    MOV     r0, #0xE000E000                         @ Build address of NVIC registers
-    LDR     r1, =SYSTICK_CYCLES
-    STR     r1, [r0, #0x14]                         @ Setup SysTick Reload Value
-    MOV     r1, #0x7                                @ Build SysTick Control Enable Value
-    STR     r1, [r0, #0x10]                         @ Setup SysTick Control
+
 @
 @    /* Configure handler priorities.  */
 @
+    MOV     r0, #0xE000E000                         @ Build address of NVIC registers
     LDR     r1, =0x00000000                         @ Rsrv, UsgF, BusF, MemM
     STR     r1, [r0, #0xD18]                        @ Setup System Handlers 4-7 Priority Registers
 

@@ -256,14 +256,14 @@ ret_status bclk_config_clocks(const bsp_clk_clock_config_t *clkc)
     }
 
     /* Get the actual configured frequency and call TICK_config to reconfigure SysTick to the current frequency */
-    uint32_t final_freq = bclk_get_hclk_freq();
+    const uint32_t final_freq = bclk_get_hclk_freq();
+    /* Just validate if the desired frequency has been achieved */
+    if (target_hclk_freq != final_freq) {
+        return STATUS_ERR;
+    }
     /* Update the CMSIS clock var */
     SystemCoreClock = final_freq;
-    // TODO Handle return value
-    btick_config(final_freq);
-
-    /* Just validate if the desired frequency has been achieved */
-    return target_hclk_freq == final_freq ? STATUS_OK : STATUS_ERR;
+    return btick_config(final_freq);
 }
 
 /* CMSIS base CPU speed variable update function */
