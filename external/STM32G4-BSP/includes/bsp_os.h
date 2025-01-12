@@ -64,4 +64,13 @@
 #define BOS_OS_MAX_PRIORITY 0
 #endif
 
+#ifdef BSP_NO_OS
+#define BOS_GET_TICKS() ({ 0; })
+#define BOS_CRITICAL_SECTION_BEGIN() ((void)0)
+#define BOS_CRITICAL_SECTION_EXIT() ((void)0)
+#define BOS_ISR_ENTER() ((void)0)
+#define BOS_ISR_EXIT() ((void)0)
+#define BOS_OS_MAX_PRIORITY 0
+#endif
+
 #endif // BSP_OS_H

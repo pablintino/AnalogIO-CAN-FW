@@ -28,6 +28,8 @@ elseif (ENABLE_FREERTOS_USAGE)
 elseif (ENABLE_THREADX_USAGE)
     target_link_libraries(stm32g4-bsp threadx)
     target_compile_definitions(stm32g4-bsp PUBLIC BSP_USING_OS_THREADX)
+else ()
+    target_compile_definitions(stm32g4-bsp PUBLIC BSP_NO_OS)
 endif ()
 
 target_include_directories(
