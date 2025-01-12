@@ -7,7 +7,6 @@
 #ifndef BSP_TICK_H
 #define BSP_TICK_H
 
-
 #include "bsp_types.h"
 
 /* SysTick overflow rate set to 1 ms */
@@ -15,10 +14,10 @@
 
 #ifdef BSP_NO_OS
 void btick_increment(void);
-void btick_delay(uint32_t delay);
 #endif
 
 uint32_t btick_get_ticks(void);
+void btick_delay(uint32_t delay);
 ret_status btick_config(uint32_t sys_frequency);
 
-#endif //BSP_TICK_H
+#endif // BSP_TICK_H

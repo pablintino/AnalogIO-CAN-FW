@@ -68,7 +68,7 @@ static void AppTaskObj0(ULONG p_arg)
         for (;;) {
 
             bio_toggle_port(GPIOA, 6);
-            tx_thread_sleep(5000);
+            btick_delay(5000);
         }
     }
     ret_status status2 = bi2c_master_transfer(I2C3, 0x90U, aRxBuffer, 2, false, 1000);
@@ -76,7 +76,7 @@ static void AppTaskObj0(ULONG p_arg)
         for (;;) {
 
             bio_toggle_port(GPIOA, 6);
-            tx_thread_sleep(5000);
+            btick_delay(5000);
         }
     }
 
@@ -90,10 +90,10 @@ static void AppTaskObj0(ULONG p_arg)
         if (aRxBuffer[0] == 0x75U && aRxBuffer[1] == 0x00U) {
             // busart_put_char(USART1, 'H', 100U);
             bio_toggle_port(GPIOA, 4);
-            tx_thread_sleep(1000);
+            btick_delay(1000);
         } else {
             bio_toggle_port(GPIOA, 6);
-            tx_thread_sleep(500);
+            btick_delay(500);
         }
     }
 }
@@ -110,7 +110,7 @@ static void AppTaskCanTX(ULONG p_arg)
     test.message_marker = 0x00;
 
     for (;;) {
-        tx_thread_sleep(500);
+        btick_delay(500);
 
         badc_start_conversion_dma(ADC1, DMA1, BDMA_CHANNEL_1, (uint8_t *)&adc_dma_conversions, 2);
 
@@ -154,7 +154,7 @@ static void AppStart(ULONG p_arg)
 {
     (void)p_arg;
 
-    tx_thread_sleep(100);
+    btick_delay(100);
     board_init();
     bcan_config_irq(FDCAN1, BCAN_IRQ_TYPE_RF0NE, can_rx_handler);
     // badc_config_irq(ADC1, BADC_ISR_TYPE_EOS, adc_eos_handler);

@@ -28,6 +28,7 @@ uint32_t btick_get_ticks(void)
 
 void btick_delay(uint32_t delay)
 {
+#if defined(BSP_NO_OS)
     uint32_t tickstart = btick_get_ticks();
     uint32_t wait = delay;
 
@@ -38,6 +39,18 @@ void btick_delay(uint32_t delay)
 
     while ((btick_get_ticks() - tickstart) < wait) {
     }
+#endif
+
+#if defined(BSP_USING_OS_THREADX)
+    tx_thread_sleep(delay);
+#endif
+#if defined(BSP_USING_OS_FREERTOS)
+    vTaskDelay(delay);
+#endif
+#if defined(BSP_USING_OS_UCOS)
+    OS_ERR err;
+    OSTimeDly(delay, OS_OPT_TIME_DLY, &err);
+#endif
 }
 ret_status btick_config(uint32_t sys_frequency)
 {
