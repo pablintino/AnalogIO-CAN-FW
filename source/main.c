@@ -63,7 +63,6 @@ static void AppTaskObj0(ULONG p_arg)
 
     bio_write_port(GPIOA, 5, 1);
     //  i2c_transfer7(I2C3, 0x90U, &aTxBuffer, 1, &aRxBuffer, 2);
-    tx_thread_sleep(500);
     ret_status status1 = bi2c_master_transfer(I2C3, 0x90U, aTxBuffer, 1, true, 1000);
     if (status1 != STATUS_OK) {
         for (;;) {
@@ -72,7 +71,6 @@ static void AppTaskObj0(ULONG p_arg)
             tx_thread_sleep(5000);
         }
     }
-    tx_thread_sleep(500);
     ret_status status2 = bi2c_master_transfer(I2C3, 0x90U, aRxBuffer, 2, false, 1000);
     if (status2 != STATUS_OK) {
         for (;;) {

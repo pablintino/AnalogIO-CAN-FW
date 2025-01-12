@@ -107,7 +107,7 @@ static ret_status __configure_i2c(void)
     i2c_config.analog_filter = true;
     i2c_config.digital_filter = BSP_I2C_DIGITAL_FILTER_OFF;
     i2c_config.self_address = 0x00U;
-    i2c_config.fixed_speed = BSP_I2C_SPEED_100;
+    i2c_config.fixed_speed = BSP_I2C_SPEED_400;
     i2c_config.custom_timming = 0x00U;
     return bi2c_master_config(I2C3, &i2c_config);
 }
