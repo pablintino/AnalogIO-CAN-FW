@@ -80,25 +80,11 @@ static void AppTaskObj0(ULONG p_arg)
         }
     }
 
-    // tx_thread_sleep(500);
-
-    /*
-        BSP_USART_put_char(USART1, 'T', 100U);
-        BSP_USART_put_char(USART1, 'E', 100U);
-        BSP_USART_put_char(USART1, 'S', 100U);
-        BSP_USART_put_char(USART1, 'T', 100U);
-        BSP_USART_put_char(USART1, '\r', 100U);
-        busart_put_char(USART1, '\n', 100U);
-    */
-    /*for (int i =0 ; i < 5;i++) {
-
-        BSP_USART_put_char(USART1, 'H', 100U);
-        BSP_IO_toggle_pin(GPIOA, 5);
-        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
-        busart_put_char(USART1, 'O', 100U);
-        bio_toggle_port(GPIOA, 5);
-        OSTimeDly(1000, OS_OPT_TIME_PERIODIC, &err);
-    }*/
+    busart_put_char(USART1, 'T', 100U);
+    busart_put_char(USART1, 'E', 100U);
+    busart_put_char(USART1, 'S', 100U);
+    busart_put_char(USART1, 'T', 100U);
+    busart_put_char(USART1, '\n', 100U);
 
     for (;;) {
         if (aRxBuffer[0] == 0x75U && aRxBuffer[1] == 0x00U) {
