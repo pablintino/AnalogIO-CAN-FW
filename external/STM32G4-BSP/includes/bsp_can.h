@@ -241,7 +241,7 @@ typedef struct bcan_standard_filter_t {
 /**
  * Struct that describes all the time related values of the FDCAN peripheral.
  *
- * This values are all 1-based ones (no zero-based).
+ * These values are all 1-based ones (no zero-based).
  * FDCAN timing calculation are all based on bcan_config_timing_t::phase1, bcan_config_timing_t::phase2 and
  * bcan_config_timing_t::prescaler. To obtain more information about this three values check the individual field
  * documentation or check chapter 44.3.1 of the RM0440.

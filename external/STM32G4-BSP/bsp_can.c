@@ -392,16 +392,18 @@ ret_status bcan_enable_irqs(bcan_instance_t *can)
     if (can == FDCAN2) {
 
         bool irq_enabled;
-        BSP_IRQ_is_enabled(FDCAN2_IT0_IRQn, &irq_enabled);
+        birq_is_enabled(FDCAN2_IT0_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(FDCAN2_IT0_IRQn, __irq_handler_fdcan2_it0);
-            BSP_IRQ_enable_irq(FDCAN2_IT0_IRQn);
+            birq_set_handler(FDCAN2_IT0_IRQn, __irq_handler_fdcan2_it0);
+            birq_enable_irq_with_priority(
+                FDCAN2_IT0_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
 
-        BSP_IRQ_is_enabled(FDCAN2_IT1_IRQn, &irq_enabled);
+        birq_is_enabled(FDCAN2_IT1_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(FDCAN2_IT1_IRQn, __irq_handler_fdcan2_it1);
-            BSP_IRQ_enable_irq(FDCAN2_IT1_IRQn);
+            birq_set_handler(FDCAN2_IT1_IRQn, __irq_handler_fdcan2_it1);
+            birq_enable_irq_with_priority(
+                FDCAN2_IT1_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
     }
 #endif
@@ -409,16 +411,18 @@ ret_status bcan_enable_irqs(bcan_instance_t *can)
     if (can == FDCAN3) {
 
         bool irq_enabled;
-        BSP_IRQ_is_enabled(FDCAN3_IT0_IRQn, &irq_enabled);
+        birq_is_enabled(FDCAN3_IT0_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(FDCAN3_IT0_IRQn, __irq_handler_fdcan3_it0);
-            BSP_IRQ_enable_irq(FDCAN3_IT0_IRQn);
+            birq_set_handler(FDCAN3_IT0_IRQn, __irq_handler_fdcan3_it0);
+            birq_enable_irq_with_priority(
+                FDCAN3_IT0_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
 
-        BSP_IRQ_is_enabled(FDCAN3_IT1_IRQn, &irq_enabled);
+        birq_is_enabled(FDCAN3_IT1_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(FDCAN3_IT1_IRQn, __irq_handler_fdcan3_it1);
-            BSP_IRQ_enable_irq(FDCAN3_IT1_IRQn);
+            birq_set_handler(FDCAN3_IT1_IRQn, __irq_handler_fdcan3_it1);
+            birq_enable_irq_with_priority(
+                FDCAN3_IT1_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
     }
 #endif
@@ -553,19 +557,18 @@ static inline struct __bcan_irqs_state_s *__bsp_can_get_instance_state(bcan_inst
 
 static inline struct __bcan_ram_s *__bsp_can_get_instance_base_address(bcan_instance_t *can)
 {
-
     if (can == FDCAN1) {
         return (struct __bcan_ram_s *)SRAMCAN_BASE;
     }
 
 #if defined(FDCAN2)
     if (can == FDCAN2) {
-        return (__bsp_fdcan_ram_t *)(SRAMCAN_BASE + SRAMCAN_SIZE);
+        return (struct __bcan_ram_s *)(SRAMCAN_BASE + sizeof(struct __bcan_ram_s));
     }
 #endif
 #if defined(FDCAN3)
     if (can == FDCAN3) {
-        return (__bsp_fdcan_ram_t *)(SRAMCAN_BASE + SRAMCAN_SIZE * 2U);
+        return (struct __bcan_ram_s *)(SRAMCAN_BASE + sizeof(struct __bcan_ram_s) * 2U);
     }
 #endif
     return NULL;
