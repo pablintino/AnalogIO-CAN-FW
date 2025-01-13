@@ -50,19 +50,24 @@ add_subdirectory(./external)
 
 # Get top level executable sources and headers
 file(GLOB_RECURSE PROJECT_SOURCES "source/*.c")
-set_property(SOURCE source/tx_initialize_low_level.s APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp")
 
 # Add ARM CPU startup file
 include(arm-add-vectors)
 
 # Just create the top-level executable target. CMAKE_PROJECT_NAME as name
-#add_executable(${EXECUTABLE_NAME} ${PROJECT_SOURCES} ${ARM_STARTUP_FILE}
-#        source/tx_initialize_low_level.c)
-add_executable(${EXECUTABLE_NAME} ${PROJECT_SOURCES} ${ARM_STARTUP_FILE} source/tx_initialize_low_level.s)
+add_executable(${EXECUTABLE_NAME} ${PROJECT_SOURCES} ${ARM_STARTUP_FILE})
+# Add libs to the executable
+target_link_libraries(${EXECUTABLE_NAME} stm32g4-bsp segger-rtt)
+# Add search directories
 target_include_directories(${EXECUTABLE_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/includes)
 
-# Add libs to the executable
-target_link_libraries(${EXECUTABLE_NAME} threadx stm32g4-bsp segger-rtt)
+if (ENABLE_THREADX_USAGE)
+    # Add the ThreadX low level asm file
+    target_sources(${EXECUTABLE_NAME} PRIVATE source/tx_initialize_low_level.s)
+    # Enable preprocessor in the asm file
+    set_property(SOURCE source/tx_initialize_low_level.s APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp")
+    target_link_libraries(${EXECUTABLE_NAME} threadx)
+endif ()
 
 # Add custom build targets
 include(arm-gcc-add-custom-targets)

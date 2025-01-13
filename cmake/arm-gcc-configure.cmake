@@ -23,7 +23,7 @@
 
 # Add FPU options
 if(DEFINED CPU_FPU_ISA AND NOT ${CPU_FPU_ISA} STREQUAL "")
-    set(FPU_OPTIONS "-mfpu=${CPU_FPU_ISA} -mfloat-abi=softfp")
+    set(FPU_OPTIONS "-mfpu=${CPU_FPU_ISA} -mfloat-abi=hard")
 else()
     set(FPU_OPTIONS "")
 endif()
