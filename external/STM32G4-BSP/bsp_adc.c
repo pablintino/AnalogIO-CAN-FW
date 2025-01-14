@@ -293,10 +293,11 @@ ret_status badc_enable_irqs(badc_instance_t *adc)
 #if defined(ADC5)
     if (adc == ADC5) {
         bool irq_enabled;
-        BSP_IRQ_is_enabled(ADC5_IRQn, &irq_enabled);
+        birq_is_enabled(ADC5_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(ADC5_IRQn, __irq_handler_adc5);
-            BSP_IRQ_enable_irq(ADC5_IRQn);
+            birq_set_handler(ADC5_IRQn, __irq_handler_adc5);
+            birq_enable_irq_with_priority(
+                ADC5_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
     }
 #endif
@@ -304,10 +305,11 @@ ret_status badc_enable_irqs(badc_instance_t *adc)
 #if defined(ADC4)
     if (adc == ADC4) {
         bool irq_enabled;
-        BSP_IRQ_is_enabled(ADC4_IRQn, &irq_enabled);
+        birq_is_enabled(ADC4_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(ADC4_IRQn, __irq_handler_adc4);
-            BSP_IRQ_enable_irq(ADC4_IRQn);
+            birq_set_handler(ADC4_IRQn, __irq_handler_adc4);
+            birq_enable_irq_with_priority(
+                ADC4_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
     }
 #endif
@@ -315,10 +317,11 @@ ret_status badc_enable_irqs(badc_instance_t *adc)
 #if defined(ADC3)
     if (adc == ADC3) {
         bool irq_enabled;
-        BSP_IRQ_is_enabled(ADC3_IRQn, &irq_enabled);
+        birq_is_enabled(ADC3_IRQn, &irq_enabled);
         if (!irq_enabled) {
-            BSP_IRQ_set_handler(ADC3_IRQn, __irq_handler_adc3);
-            BSP_IRQ_enable_irq(ADC3_IRQn);
+            birq_set_handler(ADC3_IRQn, __irq_handler_adc3);
+            birq_enable_irq_with_priority(
+                ADC3_IRQn, BSP_IRQ_MANAGER_DEFAULT_PRIORITY, BSP_IRQ_MANAGER_DEFAULT_SUB_PRIORITY);
         }
     }
 #endif

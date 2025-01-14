@@ -148,7 +148,7 @@ static ret_status __get_usart_clk_mux_position(const busart_instance *usart, uin
         *position = 6;
 #if defined(UART5)
     } else if (usart == UART5) {
-        position = 8;
+        *position = 8;
 #endif
     } else {
         return STATUS_ERR;

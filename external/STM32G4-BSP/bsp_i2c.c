@@ -217,7 +217,7 @@ static ret_status __get_i2c_clk_mux_position(bi2c_instance *i2c, uint8_t *positi
 #if defined(I2C4)
     } else if (i2c == I2C4) {
         position = RCC_CCIPR2_I2C4SEL_Pos;
-        *ccipr = RCC->CCIPR2;
+        *ccipr = &RCC->CCIPR2;
 #endif
     } else {
         return STATUS_ERR;

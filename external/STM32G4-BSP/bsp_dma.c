@@ -18,13 +18,14 @@ struct __bdma_channel_irqs_state_s {
     bdma_isr_handler_t xfer_complete_handler;
 };
 
-#if defined(DMA1_Channel7) | defined(DMA1_Channel8)
-static struct __badc_irqs_state_s __bdma_channel_irqs_state[16U];
+/* If DMA1_Channel7 or DMA1_Channel8 present the device is a medium/high density one that has 8 channels per DMA */
+#if defined(DMA1_Channel7) || defined(DMA1_Channel8)
+static struct __bdma_channel_irqs_state_s __bdma_channel_irqs_state[16U];
 #else
 static struct __bdma_channel_irqs_state_s __bdma_channel_irqs_state[12U];
 #endif
 
-#if defined(DMA1_Channel7) | defined(DMA1_Channel8)
+#if defined(DMA1_Channel7) || defined(DMA1_Channel8)
 #define __BDMA_DMUX_DMA_INSTANCE_CHAN_OFFSET 8UL
 #else
 #define __BDMA_DMUX_DMA_INSTANCE_CHAN_OFFSET 6UL
@@ -219,10 +220,10 @@ ret_status bdma_enable_irq(const bdma_instance_t *dma, bdma_chan_t channel)
             return __enable_irq_for_channel(DMA1_Channel5_IRQn, __irq_handler_dma1_chan5);
         case BDMA_CHANNEL_6:
             return __enable_irq_for_channel(DMA1_Channel6_IRQn, __irq_handler_dma1_chan6);
-#if defined(BDMA_CHANNEL_7)
+#if defined(DMA1_Channel7)
             return __enable_irq_for_channel(DMA1_Channel7_IRQn, __irq_handler_dma1_chan7);
 #endif
-#if defined(BDMA_CHANNEL_8)
+#if defined(DMA1_Channel8)
             return __enable_irq_for_channel(DMA1_Channel8_IRQn, __irq_handler_dma1_chan8);
 #endif
         default:
@@ -244,10 +245,10 @@ ret_status bdma_enable_irq(const bdma_instance_t *dma, bdma_chan_t channel)
             return __enable_irq_for_channel(DMA2_Channel5_IRQn, __irq_handler_dma2_chan5);
         case BDMA_CHANNEL_6:
             return __enable_irq_for_channel(DMA2_Channel6_IRQn, __irq_handler_dma2_chan6);
-#if defined(BDMA_CHANNEL_7)
+#if defined(DMA1_Channel7)
             return __enable_irq_for_channel(DMA2_Channel7_IRQn, __irq_handler_dma2_chan7);
 #endif
-#if defined(BDMA_CHANNEL_8)
+#if defined(DMA1_Channel8)
             return __enable_irq_for_channel(DMA2_Channel8_IRQn, __irq_handler_dma2_chan8);
 #endif
         default:

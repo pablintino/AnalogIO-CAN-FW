@@ -383,19 +383,19 @@ void BSP_IntHandlerUART4(void)
 
 void BSP_IntHandlerI2C4_EV(void)
 {
-    interrupt_handler(I2C4_EV_IRQn);
+    __birq_global_irq_handler(I2C4_EV_IRQn);
 }
 void BSP_IntHandlerI2C4_ER(void)
 {
-    interrupt_handler(I2C4_ER_IRQn);
+    __birq_global_irq_handler(I2C4_ER_IRQn);
 }
 void BSP_IntHandlerSPI4(void)
 {
-    interrupt_handler(SPI4_IRQn);
+    __birq_global_irq_handler(SPI4_IRQn);
 }
 void BSP_IntHandlerTIM5(void)
 {
-    interrupt_handler(TIM5_IRQn);
+    __birq_global_irq_handler(TIM5_IRQn);
 }
 
 #endif
@@ -404,27 +404,27 @@ void BSP_IntHandlerTIM5(void)
 
 void BSP_IntHandlerADC4(void)
 {
-    interrupt_handler(ADC4_IRQn);
+    __birq_global_irq_handler(ADC4_IRQn);
 }
 void BSP_IntHandlerADC5(void)
 {
-    interrupt_handler(ADC5_IRQn);
+    __birq_global_irq_handler(ADC5_IRQn);
 }
 void BSP_IntHandlerFDCAN3_IT0(void)
 {
-    interrupt_handler(FDCAN3_IT0_IRQn);
+    __birq_global_irq_handler(FDCAN3_IT0_IRQn);
 }
 void BSP_IntHandlerFDCAN3_IT1(void)
 {
-    interrupt_handler(FDCAN3_IT1_IRQn);
+    __birq_global_irq_handler(FDCAN3_IT1_IRQn);
 }
 void BSP_IntHandlerFSMC(void)
 {
-    interrupt_handler(FMC_IRQn);
+    __birq_global_irq_handler(FMC_IRQn);
 }
 void BSP_IntHandlerCOMP7(void)
 {
-    interrupt_handler(COMP7_IRQn);
+    __birq_global_irq_handler(COMP7_IRQn);
 }
 
 #endif
@@ -433,35 +433,35 @@ void BSP_IntHandlerCOMP7(void)
 
 void BSP_IntHandlerHRTIM_MASTER_IRQn(void)
 {
-    interrupt_handler(HRTIM1_Master_IRQn);
+    __birq_global_irq_handler(HRTIM1_Master_IRQn);
 }
 void BSP_IntHandlerHRTIM_TIMA_IRQn(void)
 {
-    interrupt_handler(HRTIM1_TIMA_IRQn);
+    __birq_global_irq_handler(HRTIM1_TIMA_IRQn);
 }
 void BSP_IntHandlerHRTIM_TIMB_IRQn(void)
 {
-    interrupt_handler(HRTIM1_TIMB_IRQn);
+    __birq_global_irq_handler(HRTIM1_TIMB_IRQn);
 }
 void BSP_IntHandlerHRTIM_TIMC_IRQn(void)
 {
-    interrupt_handler(HRTIM1_TIMC_IRQn);
+    __birq_global_irq_handler(HRTIM1_TIMC_IRQn);
 }
 void BSP_IntHandlerHRTIM_TIMD_IRQn(void)
 {
-    interrupt_handler(HRTIM1_TIMD_IRQn);
+    __birq_global_irq_handler(HRTIM1_TIMD_IRQn);
 }
 void BSP_IntHandlerHRTIM_TIME_IRQn(void)
 {
-    interrupt_handler(HRTIM1_TIME_IRQn);
+    __birq_global_irq_handler(HRTIM1_TIME_IRQn);
 }
 void BSP_IntHandlerHRTIM_FLT_IRQn(void)
 {
-    interrupt_handler(HRTIM1_FLT_IRQn);
+    __birq_global_irq_handler(HRTIM1_FLT_IRQn);
 }
 void BSP_IntHandlerHRTIM_TIMF_IRQn(void)
 {
-    interrupt_handler(HRTIM1_TIMF_IRQn);
+    __birq_global_irq_handler(HRTIM1_TIMF_IRQn);
 }
 
 #endif
@@ -480,31 +480,31 @@ void BSP_IntHandlerAES(void)
 
 void BSP_IntHandlerFDCAN2_IT0(void)
 {
-    interrupt_handler(FDCAN2_IT0_IRQn);
+    __birq_global_irq_handler(FDCAN2_IT0_IRQn);
 }
 void BSP_IntHandlerFDCAN2_IT1(void)
 {
-    interrupt_handler(FDCAN2_IT1_IRQn);
+    __birq_global_irq_handler(FDCAN2_IT1_IRQn);
 }
 void BSP_IntHandlerDMA2_CH7(void)
 {
-    interrupt_handler(DMA2_Channel7_IRQn);
+    __birq_global_irq_handler(DMA2_Channel7_IRQn);
 }
 void BSP_IntHandlerDMA2_CH8(void)
 {
-    interrupt_handler(DMA2_Channel8_IRQn);
+    __birq_global_irq_handler(DMA2_Channel8_IRQn);
 }
 void BSP_IntHandlerDMA1_CH7(void)
 {
-    interrupt_handler(DMA1_Channel7_IRQn);
+    __birq_global_irq_handler(DMA1_Channel7_IRQn);
 }
 void BSP_IntHandlerDMA1_CH8(void)
 {
-    interrupt_handler(DMA1_Channel8_IRQn);
+    __birq_global_irq_handler(DMA1_Channel8_IRQn);
 }
 void BSP_IntHandlerUART5(void)
 {
-    interrupt_handler(UART5_IRQn);
+    __birq_global_irq_handler(UART5_IRQn);
 }
 
 #endif
@@ -513,23 +513,23 @@ void BSP_IntHandlerUART5(void)
 
 void BSP_IntHandlerQUADSPI(void)
 {
-    interrupt_handler(QUADSPI_IRQn);
+    __birq_global_irq_handler(QUADSPI_IRQn);
 }
 void BSP_IntHandlerTIM20_BRK(void)
 {
-    interrupt_handler(TIM20_BRK_IRQn);
+    __birq_global_irq_handler(TIM20_BRK_IRQn);
 }
 void BSP_IntHandlerTIM20_UP(void)
 {
-    interrupt_handler(TIM20_UP_IRQn);
+    __birq_global_irq_handler(TIM20_UP_IRQn);
 }
 void BSP_IntHandlerTIM20_TRG_COM(void)
 {
-    interrupt_handler(TIM20_TRG_COM_IRQn);
+    __birq_global_irq_handler(TIM20_TRG_COM_IRQn);
 }
 void BSP_IntHandlerTIM20_CC(void)
 {
-    interrupt_handler(TIM20_CC_IRQn);
+    __birq_global_irq_handler(TIM20_CC_IRQn);
 }
 
 #endif
