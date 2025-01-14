@@ -4,8 +4,8 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#include "includes/bsp_io.h"
-#include "includes/bsp_common_utils.h"
+#include "bsp_io.h"
+#include "bsp_common_utils.h"
 
 /* internal type */
 typedef enum bsp_port_io_type_e { INPUT = 0x00U, OUTPUT = 0x01U, ALTERNATE = 0x02U, ANALOG = 0x03U } bsp_port_io_type_t;

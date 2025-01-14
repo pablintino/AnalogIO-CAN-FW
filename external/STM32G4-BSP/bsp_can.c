@@ -4,11 +4,11 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#include "includes/bsp_can.h"
-#include "includes/bsp_clocks.h"
-#include "includes/bsp_common_utils.h"
-#include "includes/bsp_irq_manager.h"
-#include "includes/bsp_tick.h"
+#include "bsp_can.h"
+#include "bsp_clocks.h"
+#include "bsp_common_utils.h"
+#include "bsp_irq_manager.h"
+#include "bsp_tick.h"
 #include "internal/bsp_can_internal.h"
 
 static const uint8_t __CAN_DLC_TO_BYTE_NUMBER[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};

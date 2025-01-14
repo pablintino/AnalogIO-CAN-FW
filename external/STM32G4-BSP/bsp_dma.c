@@ -7,7 +7,6 @@
 #include "bsp_dma.h"
 #include "bsp_common_utils.h"
 #include "bsp_irq_manager.h"
-#include "bsp_tick.h"
 #include <stddef.h>
 
 typedef DMAMUX_Channel_TypeDef bdma_dmamux_channel_t;

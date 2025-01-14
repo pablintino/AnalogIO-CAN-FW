@@ -4,10 +4,10 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#include "includes/bsp_usart.h"
-#include "includes/bsp_clocks.h"
-#include "includes/bsp_common_utils.h"
-#include "includes/bsp_tick.h"
+#include "bsp_usart.h"
+#include "bsp_clocks.h"
+#include "bsp_common_utils.h"
+#include "bsp_tick.h"
 
 const uint16_t USART_PRESCALERS[] = {2, 4, 6, 8, 10, 12, 16, 32, 64, 128, 256};
 

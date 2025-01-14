@@ -4,9 +4,9 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#include "includes/bsp_clocks.h"
-#include "includes/bsp_common_utils.h"
-#include "includes/bsp_tick.h"
+#include "bsp_clocks.h"
+#include "bsp_common_utils.h"
+#include "bsp_tick.h"
 #include <stddef.h>
 
 /* CMSIS global that contains the current base CPU speed */

@@ -4,8 +4,8 @@
  * Written by Pablo Rodriguez Nava <info@pablintino.com>, June 2021
  */
 
-#include "includes/bsp_common_utils.h"
-#include "includes/bsp_tick.h"
+#include "bsp_common_utils.h"
+#include "bsp_tick.h"
 
 ret_status butil_wait_flag_status_now(const volatile uint32_t *reg, uint32_t mask, uint32_t masked_value, uint32_t timeout)
 {
