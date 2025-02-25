@@ -73,26 +73,27 @@ typedef enum bcan_standard_filter_type_e {
 } bcan_standard_filter_type_t;
 
 #define BSP_CAN_STD_FILTER_CONFIG_Pos 27
+#define BSP_CAN_EXT_FILTER_CONFIG_Pos 29
 /**
- * Enumeration that holds all the possible values of a STD filter action.
+ * Enumeration that holds all the possible values of an STD/EXT filter action.
  */
-typedef enum bcan_std_filter_action_e {
+typedef enum bcan_filter_action_e {
     /**
      * Filter is disabled.
      */
-    BCAN_STD_FILTER_ACTION_DISABLED = 0x00000000U,
+    BCAN_FILTER_ACTION_DISABLED = 0x00000000U,
     /**
      * Store matching element in RX 0 FIFO.
      */
-    BCAN_STD_FILTER_ACTION_STORE_RX0 = 0x00000001U,
+    BCAN_FILTER_ACTION_STORE_RX0 = 0x00000001U,
     /**
      * Store matching element in RX 1 FIFO.
      */
-    BCAN_STD_FILTER_ACTION_STORE_RX1 = 0x00000002U,
+    BCAN_FILTER_ACTION_STORE_RX1 = 0x00000002U,
     /**
      * Discard the matching element.
      */
-    BCAN_STD_FILTER_ACTION_REJECT = 0x00000003U,
+    BCAN_FILTER_ACTION_REJECT = 0x00000003U,
     /**
      * Matching element flags IR.HPM flag.
      */
@@ -100,12 +101,38 @@ typedef enum bcan_std_filter_action_e {
     /**
      * Store in RX FIFO 0 and flag IR.HPM if message matches.
      */
-    BCAN_STD_FILTER_ACTION_PRIORITIZE_STORE_RX0 = 0x00000005U,
+    BCAN_FILTER_ACTION_PRIORITIZE_STORE_RX0 = 0x00000005U,
     /**
      * Store in RX 1 FIFO and flag IR.HPM if message matches.
      */
-    BCAN_STD_FILTER_ACTION_PRIORITIZE_STORE_RX1 = 0x00000006U
-} bcan_std_filter_action_t;
+    BCAN_FILTER_ACTION_PRIORITIZE_STORE_RX1 = 0x00000006U
+} bcan_filter_action_t;
+
+#define BSP_CAN_EXT_FILTER_TYPE_Pos 30
+/**
+ * Enumeration that holds all the possible extended filter types.
+ */
+typedef enum bcan_extended_filter_type_e {
+    /**
+     * Filter matches if incoming ID is between bcan_extended_filter_t::extended_id1 and filter and
+     * bcan_extended_filter_t::extended_id2.
+     */
+    BCAN_EXT_FILTER_TYPE_RANGE = 0x00000000U,
+    /**
+     * Filter matches if incoming ID is one of bcan_standard_filter_t::extended_id1 or
+     * bcan_extended_filter_t::extended_id2.
+     */
+    BCAN_EXT_FILTER_TYPE_DUAL = 0x00000001U,
+    /**
+     * bcan_extended_filter_t::extended_id1 acts as filter and bcan_standard_filter_t::extended_id2 is the filter mask.
+     */
+    BCAN_EXT_FILTER_TYPE_CLASSIC = 0x00000002U,
+    /**
+     * Filter matches if incoming ID is between bcan_extended_filter_t::extended_id1 and filter and
+     * bcan_extended_filter_t::extended_id2. XIDAM mask not applied.
+     */
+    BCAN_EXT_FILTER_TYPE_RANGE_XIDAM = 0x00000003U,
+} bcan_extended_filter_type_t;
 
 /**
  * Enumeration that holds of possible FDCAN interruption sources.
@@ -220,6 +247,7 @@ typedef struct bcan_tx_metadata_t {
     uint32_t size_b;
     bool store_tx_events;
     uint32_t message_marker;
+    bool extended_id;
 } bcan_tx_metadata_t;
 
 typedef struct bcan_rx_metadata_t {
@@ -233,10 +261,17 @@ typedef struct bcan_rx_metadata_t {
 
 typedef struct bcan_standard_filter_t {
     enum bcan_standard_filter_type_e type;
-    enum bcan_std_filter_action_e action;
-    uint16_t standard_id1;
-    uint16_t standard_id2;
+    enum bcan_filter_action_e action;
+    uint16_t id1;
+    uint16_t id2;
 } bcan_standard_filter_t;
+
+typedef struct bcan_extended_filter_t {
+    enum bcan_extended_filter_type_e type;
+    enum bcan_filter_action_e action;
+    uint32_t id1;
+    uint32_t id2;
+} bcan_extended_filter_t;
 
 /**
  * Struct that describes all the time related values of the FDCAN peripheral.
@@ -291,6 +326,8 @@ ret_status bcan_enable_irqs(bcan_instance_t *can);
 ret_status bcan_start(bcan_instance_t *can);
 
 ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_filter_t *filter, uint8_t index);
+
+ret_status bcan_add_extended_filter(bcan_instance_t *can, const bcan_extended_filter_t *filter, uint8_t index);
 
 ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *tx_metadata, const uint8_t *tx_data);
 

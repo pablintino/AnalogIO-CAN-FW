@@ -196,12 +196,12 @@ static ret_status __configure_can(void)
         return tmp_status;
     }
 
-    bcan_standard_filter_t filter_1 = {0};
-    filter_1.standard_id1 = 123;
-    filter_1.standard_id2 = 321;
-    filter_1.type = BCAN_STD_FILTER_TYPE_RANGE;
-    filter_1.action = BCAN_STD_FILTER_ACTION_PRIORITIZE_STORE_RX0;
-    tmp_status = bcan_add_standard_filter(FDCAN1, &filter_1, 0);
+    bcan_extended_filter_t filter_1 = {0};
+    filter_1.id1 = 0x00077123;
+    filter_1.id2 = 0x00077321;
+    filter_1.type = BCAN_EXT_FILTER_TYPE_RANGE;
+    filter_1.action = BCAN_FILTER_ACTION_PRIORITIZE_STORE_RX0;
+    tmp_status = bcan_add_extended_filter(FDCAN1, &filter_1, 0);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }

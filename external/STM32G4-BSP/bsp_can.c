@@ -65,9 +65,9 @@ static void __irq_handler_fdcan1_it1(void)
 
 static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bcan_config_t *config);
 
-static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader,
-                                      const uint8_t *pTxData,
-                                      volatile struct __bcan_ram_tx_fifo_element_s *message_ram);
+static ret_status __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader,
+                                            const uint8_t *pTxData,
+                                            volatile struct __bcan_ram_tx_fifo_element_s *message_ram);
 
 static void __bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *message,
                                         bcan_rx_metadata_t *rx_metadata,
@@ -201,7 +201,11 @@ ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_fi
         return STATUS_ERR;
     }
 
-    uint8_t number_of_filters = ((can->RXGFC & FDCAN_RXGFC_LSS) >> FDCAN_RXGFC_LSS_Pos);
+    const uint8_t number_of_filters = (can->RXGFC & FDCAN_RXGFC_LSS) >> FDCAN_RXGFC_LSS_Pos;
+    /* If the index is greater than the number of filters append the filter to the end */
+    if (index > number_of_filters) {
+        index = number_of_filters;
+    }
 
     /* Check that we don't get out of bounds by exceeding the total number of filters */
     if (number_of_filters >= sizeof(instance_ram->standard_filters) / sizeof(instance_ram->standard_filters[0])) {
@@ -218,10 +222,53 @@ ret_status bcan_add_standard_filter(bcan_instance_t *can, const bcan_standard_fi
     /* Add the filter itself */
     instance_ram->standard_filters[index] =
         ((filter->type << BSP_CAN_STD_FILTER_TYPE_Pos) | (filter->action << BSP_CAN_STD_FILTER_CONFIG_Pos) |
-         (filter->standard_id1 << 16) | (filter->standard_id2));
+         (filter->id1 << 16) | (filter->id2));
 
     /* Update the number of active filters in filters global register */
-    __BSP_SET_MASKED_REG_VALUE(can->RXGFC, FDCAN_RXGFC_LSS, ((++number_of_filters) << FDCAN_RXGFC_LSS_Pos));
+    __BSP_SET_MASKED_REG_VALUE(can->RXGFC, FDCAN_RXGFC_LSS, ((number_of_filters + 1) << FDCAN_RXGFC_LSS_Pos));
+
+    return STATUS_OK;
+}
+
+ret_status bcan_add_extended_filter(bcan_instance_t *can, const bcan_extended_filter_t *filter, uint8_t index)
+{
+    /* Obtain the portion of RAM mapped to the FDCAN selected instance */
+    struct __bcan_ram_s *instance_ram = __bsp_can_get_instance_base_address(can);
+    if (instance_ram == NULL) {
+        return STATUS_ERR;
+    }
+
+    /* Filters alter RXGFC LSE field which is protected. Ensure that the peripheral has CCE and INIT set to 1 */
+    if (!__BSP_IS_FLAG_SET(can->CCCR, FDCAN_CCCR_CCE) || !__BSP_IS_FLAG_SET(can->CCCR, FDCAN_CCCR_INIT)) {
+        return STATUS_ERR;
+    }
+
+    const uint8_t number_of_filters = (can->RXGFC & FDCAN_RXGFC_LSE) >> FDCAN_RXGFC_LSE_Pos;
+    /* If the index is greater than the number of filters append the filter to the end */
+    if (index > number_of_filters) {
+        index = number_of_filters;
+    }
+
+    /* Check that we don't get out of bounds by exceeding the total number of filters */
+    if (number_of_filters >= sizeof(instance_ram->extended_filters) / sizeof(instance_ram->extended_filters[0])) {
+        return STATUS_ERR;
+    }
+
+    /* If we already have filters we may need to reorder them */
+    if (number_of_filters > 0) {
+        /* Iterate in reverse order to avoid crushing the content of the next filter */
+        for (uint8_t fidx = number_of_filters; fidx > index; fidx--) {
+            instance_ram->extended_filters[fidx].header_word1 = instance_ram->extended_filters[fidx - 1].header_word1;
+            instance_ram->extended_filters[fidx].header_word2 = instance_ram->extended_filters[fidx - 1].header_word2;
+        }
+    }
+
+    /* Add the filter itself */
+    instance_ram->extended_filters[index].header_word1 = (filter->action << BSP_CAN_EXT_FILTER_CONFIG_Pos) |
+                                                         (filter->id1);
+    instance_ram->extended_filters[index].header_word2 = (filter->type << BSP_CAN_EXT_FILTER_TYPE_Pos) | (filter->id2);
+    /* Update the number of active filters in filters global register */
+    __BSP_SET_MASKED_REG_VALUE(can->RXGFC, FDCAN_RXGFC_LSE, ((number_of_filters + 1) << FDCAN_RXGFC_LSE_Pos));
 
     return STATUS_OK;
 }
@@ -235,7 +282,7 @@ ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *t
     }
 
     /* Obtain the index where we will write the new message */
-    uint32_t tx_index = ((can->TXFQS & FDCAN_TXFQS_TFQPI) >> FDCAN_TXFQS_TFQPI_Pos);
+    const uint32_t tx_index = ((can->TXFQS & FDCAN_TXFQS_TFQPI) >> FDCAN_TXFQS_TFQPI_Pos);
 
     /* If FIFO/Queue is full just return an error */
     if (__BSP_IS_FLAG_SET(can->TXFQS, FDCAN_TXFQS_TFQF)) {
@@ -249,8 +296,10 @@ ret_status bcan_add_tx_message(bcan_instance_t *can, const bcan_tx_metadata_t *t
     }
 
     /* Write Tx element header to the message RAM */
-    __bsp_copy_message_to_ram(tx_metadata, tx_data, &instance_ram->tx_fifoq[tx_index]);
-
+    const ret_status send_status = __bsp_copy_message_to_ram(tx_metadata, tx_data, &instance_ram->tx_fifoq[tx_index]);
+    if (send_status != STATUS_OK) {
+        return send_status;
+    }
     /* Activate the corresponding transmission request */
     __BSP_SET_REG_VALUE(can->TXBAR, ((uint32_t)1 << tx_index));
 
@@ -330,7 +379,7 @@ ret_status bcan_get_baudrate(bcan_instance_t *can, uint32_t *baudrate)
     }
 
     uint32_t freq;
-    ret_status tmp_status = __get_can_input_frequency(&freq);
+    const ret_status tmp_status = __get_can_input_frequency(&freq);
     if (tmp_status != STATUS_OK) {
         return tmp_status;
     }
@@ -371,7 +420,9 @@ ret_status bcan_config_irq(bcan_instance_t *can, bcan_irq_type_t irq, bcan_isr_h
     }
 
     struct __bcan_irqs_state_s *instance_state = __bsp_can_get_instance_state(can);
-
+    if (instance_state == NULL) {
+        return STATUS_ERR;
+    }
     __BSP_SET_MASKED_REG(can->IE, (1U << irq));
 
     instance_state->IsrVectors[irq] = handler;
@@ -485,16 +536,20 @@ static void __bsp_can_configure_global_filtering(bcan_instance_t *can, const bca
                                    config->global_filters.non_matching_standard_action);
 }
 
-static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader,
-                                      const uint8_t *pTxData,
-                                      volatile struct __bcan_ram_tx_fifo_element_s *message_ram)
+static ret_status __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader,
+                                            const uint8_t *pTxData,
+                                            volatile struct __bcan_ram_tx_fifo_element_s *message_ram)
 {
     /* If ID is larger than 11 bits the message is sent using extended 29 bits IDs */
-    uint32_t extended_id_xtd = (pTxHeader->id & 0xFFFFF800) ? FDCAN_ELEMENT_MASK_XTD : 0x00U;
+    const bool requires_extended = (pTxHeader->id & 0xFFFFF800) != 0;
+    if (requires_extended && !pTxHeader->extended_id) {
+        return STATUS_ERR;
+    }
 
     /* Write Tx element header to the message RAM */
     message_ram->header_word1 = (pTxHeader->is_rtr ? (1 << 30) : 0x00000000U) |
-                                (pTxHeader->id << (extended_id_xtd ? 0 : 18U)) | extended_id_xtd;
+                                (pTxHeader->id << (pTxHeader->extended_id ? 0 : 18U)) |
+                                (pTxHeader->extended_id ? FDCAN_ELEMENT_MASK_XTD : 0x00U);
 
     const uint8_t message_size = pTxHeader->size_b & 0x0FU;
     message_ram->header_word2 = (pTxHeader->message_marker << 24U) |
@@ -507,6 +562,7 @@ static void __bsp_copy_message_to_ram(const bcan_tx_metadata_t *pTxHeader,
                                                          (pTxData[byte_n + 1U] << 8U) | pTxData[byte_n]);
         element_counter++;
     }
+    return STATUS_OK;
 }
 
 static void __bsp_copy_message_from_ram(volatile struct __bcan_ram_rx_fifo_element_s *message,

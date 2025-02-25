@@ -103,7 +103,8 @@ static void AppTaskCanTX(ULONG p_arg)
     (void)p_arg;
 
     bcan_tx_metadata_t test;
-    test.id = 0x7ff;
+    test.id = 0x77ff;
+    test.extended_id=true;
     test.is_rtr = false;
     test.size_b = 4;
     test.store_tx_events = false;
@@ -115,9 +116,11 @@ static void AppTaskCanTX(ULONG p_arg)
         badc_start_conversion_dma(ADC1, DMA1, BDMA_CHANNEL_1, (uint8_t *)&adc_dma_conversions, 2);
 
         tx_semaphore_get(&TX_adc_sync_sem, TX_WAIT_FOREVER);
-        uint32_t conversion_value = adc_dma_conversions[0] | (adc_dma_conversions[1] << 16);
+        // DMA conversions of both enabled channels. We discard one to add the CAN rx counter
+        //uint32_t conversion_value = adc_dma_conversions[0] | (adc_dma_conversions[1] << 16);
+        uint32_t conversion_value = adc_dma_conversions[0] | (test_n << 16);
         if (bcan_add_tx_message(FDCAN1, &test, (const uint8_t *)&conversion_value) != STATUS_OK) {
-            SEGGER_RTT_WriteString(0, "SEND ERRRRRR\r\n");
+            SEGGER_RTT_WriteString(0, "CAN Tx failure\r\n");
         }
     }
 }
